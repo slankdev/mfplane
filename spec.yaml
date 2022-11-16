@@ -1,0 +1,112 @@
+nodes:
+- name: CLOS
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: s1, type: direct, args: S1#net0 }
+  - { name: r1, type: direct, args: R1#net0 }
+  - { name: r2, type: direct, args: R2#net0 }
+  - { name: r3, type: direct, args: R3#net0 }
+  - { name: n1, type: direct, args: N1#net0 }
+  - { name: n2, type: direct, args: N2#net0 }
+  - { name: n3, type: direct, args: N3#net0 }
+  sysctls:
+  - { sysctl: net.ipv4.fib_multipath_hash_policy=1 }
+- name: S1
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#s1 }
+- name: R1
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#r1 }
+- name: R2
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#r2 }
+- name: R3
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#r3 }
+- name: N1
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#n1 }
+- name: N2
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#n2 }
+- name: N3
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#n3 }
+node_configs:
+- name: CLOS
+  cmds:
+  - cmd: ip addr add 10.255.0.0/24 dev s1
+  - cmd: ip addr add 10.255.0.0/24 dev r1
+  - cmd: ip addr add 10.255.0.0/24 dev r2
+  - cmd: ip addr add 10.255.0.0/24 dev r3
+  - cmd: ip addr add 10.255.0.0/24 dev n1
+  - cmd: ip addr add 10.255.0.0/24 dev n2
+  - cmd: ip addr add 10.255.0.0/24 dev n3
+  - cmd: ip route add 10.255.0.1/32 dev r1
+  - cmd: ip route add 10.255.0.2/32 dev r2
+  - cmd: ip route add 10.255.0.3/32 dev r3
+  - cmd: ip route add 10.255.0.101/32 dev n1
+  - cmd: ip route add 10.255.0.102/32 dev n2
+  - cmd: ip route add 10.255.0.103/32 dev n3
+  - cmd: ip route add 10.255.0.254/32 dev s1
+  - cmd: >
+      ip route add 1.1.1.1/32
+      nexthop via 10.255.0.101 weight 1
+      nexthop via 10.255.0.102 weight 1
+      nexthop via 10.255.0.103 weight 1
+- name: S1
+  cmds:
+  - cmd: ip addr add 10.255.0.254/32 dev net0
+  - cmd: ip route add 10.255.0.0/32 dev net0
+  - cmd: ip route add default via 10.255.0.0
+- name: R1
+  cmds:
+  - cmd: ip addr add 10.255.0.1/32 dev net0
+  - cmd: ip route add 10.255.0.0/32 dev net0
+  - cmd: ip route add default via 10.255.0.0
+- name: R2
+  cmds:
+  - cmd: ip addr add 10.255.0.2/32 dev net0
+  - cmd: ip route add 10.255.0.0/32 dev net0
+  - cmd: ip route add default via 10.255.0.0
+- name: R3
+  cmds:
+  - cmd: ip addr add 10.255.0.3/32 dev net0
+  - cmd: ip route add 10.255.0.0/32 dev net0
+  - cmd: ip route add default via 10.255.0.0
+- name: N1
+  cmds:
+  - cmd: ip addr add 10.255.0.101/32 dev net0
+  - cmd: ip route add 10.255.0.0/32 dev net0
+  - cmd: ip route add default via 10.255.0.0
+  - cmd: sh -c "cat /etc/hostname > /index.html"
+  - cmd: nohup python3 -m http.server 80 &
+- name: N2
+  cmds:
+  - cmd: ip addr add 10.255.0.102/32 dev net0
+  - cmd: ip route add 10.255.0.0/32 dev net0
+  - cmd: ip route add default via 10.255.0.0
+  - cmd: sh -c "cat /etc/hostname > /index.html"
+  - cmd: nohup python3 -m http.server 80 &
+- name: N3
+  cmds:
+  - cmd: ip addr add 10.255.0.103/32 dev net0
+  - cmd: ip route add 10.255.0.0/32 dev net0
+  - cmd: ip route add default via 10.255.0.0
+  - cmd: sh -c "cat /etc/hostname > /index.html"
+  - cmd: nohup python3 -m http.server 80 &
