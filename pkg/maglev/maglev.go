@@ -2,6 +2,7 @@ package maglev
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"sort"
 	"sync"
@@ -26,7 +27,7 @@ type Maglev struct {
 //NewMaglev :
 func NewMaglev(backends []string, m uint64) (*Maglev, error) {
 	if !big.NewInt(0).SetUint64(m).ProbablyPrime(1) {
-		return nil, errors.New("Lookup table size is not a prime number")
+		return nil, errors.New("lookup table size is not a prime number")
 	}
 	mag := &Maglev{m: m, lock: &sync.RWMutex{}}
 	if backends != nil {
@@ -44,12 +45,12 @@ func (m *Maglev) Add(backend string) error {
 
 	for _, v := range m.nodeList {
 		if v == backend {
-			return errors.New("Exist already")
+			return errors.New("exist already")
 		}
 	}
 
 	if m.m == m.n {
-		return errors.New("Number of backends would be greater than lookup table")
+		return errors.New("number of backends would be greater than lookup table")
 	}
 
 	m.nodeList = append(m.nodeList, backend)
@@ -72,7 +73,7 @@ func (m *Maglev) Remove(backend string) error {
 
 	index := sort.SearchStrings(m.nodeList, backend)
 	if index == len(m.nodeList) {
-		return errors.New("Not found")
+		return errors.New("fot found")
 	}
 
 	m.nodeList = append(m.nodeList[:index], m.nodeList[index+1:]...)
@@ -95,7 +96,7 @@ func (m *Maglev) Set(backends []string) error {
 
 	n := uint64(len(backends))
 	if m.m < n {
-		return errors.New("Number of backends is greater than lookup table")
+		return errors.New("number of backends is greater than lookup table")
 	}
 	m.nodeList = make([]string, n)
 	copy(m.nodeList, backends) // Copy to avoid modifying orinal input afterwards
@@ -118,6 +119,18 @@ func (m *Maglev) Clear() {
 	m.nodeList = nil
 	m.permutation = nil
 	m.lookup = nil
+}
+
+func (m *Maglev) GetRawTable() []int64 {
+	return m.lookup
+}
+
+func (m *Maglev) Dump() {
+	fmt.Printf("nodeList.size: %d\n", len(m.nodeList))
+	fmt.Printf("lookup.size: %d\n", len(m.lookup))
+	for idx, u64 := range m.lookup {
+		fmt.Printf("lookup[%010d]: %d\n", idx, u64)
+	}
 }
 
 //Get :Get node name by object string.
