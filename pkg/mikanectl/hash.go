@@ -18,6 +18,7 @@ package mikanectl
 
 import (
 	"fmt"
+	"net"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -31,6 +32,43 @@ func NewCommandHash() *cobra.Command {
 		Use: "hash",
 	}
 	cmd.AddCommand(NewCommandHashPlayground())
+	cmd.AddCommand(NewCommandHashBpftoolCli())
+	return cmd
+}
+
+func NewCommandHashBpftoolCli() *cobra.Command {
+	var clioptTableSize uint32
+	var clioptBackends []string
+	cmd := &cobra.Command{
+		Use: "bpftoolcli",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Check format of backend ipv4 addr string
+			backendIPs := []uint32{}
+			for _, backend := range clioptBackends {
+				ip := net.ParseIP(backend)
+				u32 := util.ConvertIPToUint32(ip)
+				backendIPs = append(backendIPs, u32)
+			}
+
+			m, err := maglev.NewMaglev(clioptBackends, uint64(clioptTableSize))
+			if err != nil {
+				return err
+			}
+			table1 := m.GetRawTable()
+			for idx := uint32(0); idx < uint32(len(table1)); idx++ {
+				idx8 := util.Uint32toBytes(idx)
+				beU8 := util.Uint32toBytes(backendIPs[table1[idx]])
+
+				// sudo bpftool map update name procs 1 0 0 0 0 value 10 254 0 101
+				fmt.Printf("bpftool map update name procs key %d %d %d %d value %d %d %d %d\n",
+					idx8[0], idx8[1], idx8[2], idx8[3],
+					beU8[0], beU8[1], beU8[2], beU8[3])
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringArrayVarP(&clioptBackends, "backends", "b", []string{}, "")
+	cmd.Flags().Uint32VarP(&clioptTableSize, "table-size", "t", uint32(maglev.BigM), "")
 	return cmd
 }
 
