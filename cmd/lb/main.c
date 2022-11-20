@@ -33,16 +33,24 @@ Copyright 2022 Wide Project.
   })
 
 #ifndef memset
-# define memset(dest, chr, n)   __builtin_memset((dest), (chr), (n))
+#define memset(dest, chr, n) __builtin_memset((dest), (chr), (n))
 #endif
-
 #ifndef memcpy
-# define memcpy(dest, src, n)   __builtin_memcpy((dest), (src), (n))
+#define memcpy(dest, src, n) __builtin_memcpy((dest), (src), (n))
+#endif
+#ifndef memmove
+#define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
 #endif
 
-#ifndef memmove
-# define memmove(dest, src, n)  __builtin_memmove((dest), (src), (n))
-#endif
+static inline int same_ipv6(void *a, void *b)
+{
+  __u8 *a8 = (__u8 *)a;
+  __u8 *b8 = (__u8 *)b;
+  for (int i = 0; i < 16; i++)
+    if (a8[i] != b8[i])
+      return a8[i] - b8[i];
+  return 0;
+}
 
 // TODO(slankdev); no support multiple sids in sid-list
 struct outer_header {
@@ -71,6 +79,11 @@ __u8 srv6_tunsrc[16] = {
 
 __u8 srv6_tundst[16] = {
   0xfc, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+};
+
+__u8 srv6_local_sid[16] = {
+  0xfc, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 };
 
@@ -189,34 +202,25 @@ process_ipv4_tcp(struct xdp_md *ctx)
 }
 
 static inline int
-process_ipv6_srh_tcp(struct xdp_md *ctx)
-{
-  return error_packet(ctx);
-}
-
-static inline int
-process_ipv6_rt(struct xdp_md *ctx)
-{
-  bpf_printk("slankdev");
-  return ignore_packet(ctx);
-}
-
-static inline int
 process_ipv6(struct xdp_md *ctx)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
-  struct ipv6hdr *ih = (struct ipv6hdr *)(data + sizeof(struct ethhdr));
-  assert_len(ih, data_end);
-  __u64 pkt_len = data_end - data;
-
-  switch (ih->nexthdr) {
-  case IPPROTO_ROUTING:
-    return process_ipv6_rt(ctx);
-  default:
+  struct outer_header *oh = (struct outer_header *)(data + sizeof(struct ethhdr));
+  assert_len(oh, data_end);
+  if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
+      oh->srh.type != 4 ||
+      oh->srh.hdrlen != 2) {
+    bpf_printk("DEBUG!!!");
     return ignore_packet(ctx);
   }
+  if (same_ipv6(&oh->ip6.daddr, srv6_local_sid) != 0) {
+    return ignore_packet(ctx);
+  }
+
+  bpf_printk("HOGE");
+  return XDP_TX;
 }
 
 static inline int
