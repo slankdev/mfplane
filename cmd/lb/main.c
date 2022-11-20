@@ -16,7 +16,7 @@ Copyright 2022 Wide Project.
 #include "jhash.h"
 
 #ifndef RING_SIZE
-#define RING_SIZE 5
+#define RING_SIZE 17
 //#define RING_SIZE 65537
 #endif
 #define IP_MF     0x2000
@@ -83,9 +83,6 @@ process_ipv4_tcp(struct xdp_md *ctx)
   struct tcphdr *th = (struct tcphdr *)((char *)ih + hdr_len);
   assert_len(th, data_end);
 
-  char tmp[128] = {0};
-  BPF_SNPRINTF(tmp, sizeof(tmp), "%pi4:%u %pi4:%u %u", &ih->saddr, th->source,
-               &ih->daddr, th->dest, ih->protocol);
 
   __u32 hash = 0;
   hash = jhash_2words(ih->saddr, ih->daddr, 0xdeadbeaf);
@@ -93,15 +90,16 @@ process_ipv4_tcp(struct xdp_md *ctx)
   hash = jhash_2words(ih->protocol, 0, hash);
 
   __u32 idx = hash % RING_SIZE;
-  bpf_printk("flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
-
   struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
   if (!p) {
     bpf_printk("no entry fatal");
     return XDP_PASS;
   }
 
-  bpf_printk("processor");
+  char tmp[128] = {0};
+  BPF_SNPRINTF(tmp, sizeof(tmp), "%pi4:%u %pi4:%u %u -> %pi4", &ih->saddr,
+               th->source, &ih->daddr, th->dest, ih->protocol, &p->addr);
+  bpf_printk("flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
   return XDP_PASS;
 }
 
