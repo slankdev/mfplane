@@ -166,6 +166,17 @@ node_configs:
   - cmd: /usr/lib/frr/frrinit.sh start
   - cmd: ip -4 route add blackhole 0.0.0.0/0
   - cmd: ip -6 route add blackhole ::/0
+  - cmd: sysctl -w net.ipv4.conf.all.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.c1.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.default.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.hv1.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.l1.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.l2.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.l3.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.lo.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.n1.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.n2.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.n3.rp_filter=0
   - cmd: >-
       vtysh -c 'conf t'
       -c 'interface lo'
