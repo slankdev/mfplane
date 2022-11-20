@@ -44,6 +44,7 @@ nodes:
   - { name: n2, type: direct, args: N2#net0 }
   - { name: n3, type: direct, args: N3#net0 }
   sysctls:
+  - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
@@ -56,6 +57,7 @@ nodes:
   - { name: net0, type: direct, args: CLOS#hv1 }
   - { name: vm1,  type: direct, args: VM1#net0 }
   sysctls:
+  - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
@@ -67,6 +69,7 @@ nodes:
   interfaces:
   - { name: net0, type: direct, args: HV1#vm1 }
   sysctls:
+  - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
@@ -78,6 +81,7 @@ nodes:
   interfaces:
   - { name: net0, type: direct, args: CLOS#c1 }
   sysctls:
+  - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
@@ -89,6 +93,7 @@ nodes:
   interfaces:
   - { name: net0, type: direct, args: CLOS#l1 }
   sysctls:
+  - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
@@ -100,6 +105,7 @@ nodes:
   interfaces:
   - { name: net0, type: direct, args: CLOS#l2 }
   sysctls:
+  - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
@@ -111,6 +117,7 @@ nodes:
   interfaces:
   - { name: net0, type: direct, args: CLOS#l3 }
   sysctls:
+  - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
@@ -122,6 +129,7 @@ nodes:
   interfaces:
   - { name: net0, type: direct, args: CLOS#n1 }
   sysctls:
+  - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
@@ -133,6 +141,7 @@ nodes:
   interfaces:
   - { name: net0, type: direct, args: CLOS#n2 }
   sysctls:
+  - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
@@ -144,6 +153,7 @@ nodes:
   interfaces:
   - { name: net0, type: direct, args: CLOS#n3 }
   sysctls:
+  - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
@@ -270,12 +280,19 @@ node_configs:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.11 65011
   - cmd: ip route add blackhole fc00:11::/64
   - cmd: ip sr tunsrc set fc00:11::0
-  - cmd: >-
-      ip -6 route replace fc00:11::1/128 encap seg6local
-      action End.DX4 nh4 0.0.0.0 dev net0
-  - cmd: >-
-      ip -4 route replace 10.254.0.0/24 encap seg6
-      mode encap segs fc00:201::1 dev net0
+
+  - cmd: ip link add vrf1 type vrf table 1
+  - cmd: ip link set vrf1 up
+
+  - cmd: ip -6 route replace fc00:11::1 encap seg6local action End.DT4 vrftable 1 dev net0
+  - cmd: ip route replace 10.254.0.0/24 encap seg6 mode encap segs fc00:201::1 dev net0 vrf vrf1
+
+  - cmd: sysctl -w net.ipv4.conf.all.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.default.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.lo.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.vrf1.rp_filter=0
+  - cmd: sysctl -w net.ipv4.conf.net0.rp_filter=0
+
   - cmd: >-
       vtysh -c 'conf te'
       -c 'router bgp'
