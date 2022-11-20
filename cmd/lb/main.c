@@ -215,7 +215,6 @@ process_ipv6(struct xdp_md *ctx)
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
       same_ipv6(&oh->ip6.daddr, srv6_local_sid) != 0) {
-    bpf_printk("DEBUG!!!");
     return ignore_packet(ctx);
   }
 

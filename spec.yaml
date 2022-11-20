@@ -50,6 +50,9 @@ nodes:
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
+  - sysctl: net.ipv4.conf.all.rp_filter=0
+  - sysctl: net.ipv4.conf.default.rp_filter=0
+  - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: HV1
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -63,6 +66,9 @@ nodes:
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
+  - sysctl: net.ipv4.conf.all.rp_filter=0
+  - sysctl: net.ipv4.conf.default.rp_filter=0
+  - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: VM1
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -87,6 +93,9 @@ nodes:
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
+  - sysctl: net.ipv4.conf.all.rp_filter=0
+  - sysctl: net.ipv4.conf.default.rp_filter=0
+  - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: L1
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -169,17 +178,6 @@ node_configs:
   - cmd: /usr/lib/frr/frrinit.sh start
   - cmd: ip -4 route add blackhole 0.0.0.0/0
   - cmd: ip -6 route add blackhole ::/0
-  - cmd: sysctl -w net.ipv4.conf.all.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.c1.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.default.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.hv1.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.l1.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.l2.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.l3.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.lo.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.n1.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.n2.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.n3.rp_filter=0
   - cmd: >-
       vtysh -c 'conf t'
       -c 'interface lo'
@@ -228,15 +226,7 @@ node_configs:
   - cmd: ip addr add 10.255.100.1/32 dev net0
 - name: HV1
   cmds:
-  - cmd: sysctl -w net.vrf.strict_mode=1
-  - cmd: sysctl -w net.ipv4.conf.all.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.default.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.lo.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.net0.rp_filter=0
-  - cmd: sysctl -w net.ipv4.conf.vm1.rp_filter=0
-
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.200.1 65201
-  - cmd: ip route add blackhole fc00:201::/64
   - cmd: >-
       vtysh -c 'conf te'
       -c 'router bgp'
@@ -244,11 +234,9 @@ node_configs:
       -c '  neighbor PEER activate'
       -c '  redistribute kernel'
       -c ' exit-address-family'
-
+  - cmd: ip route add blackhole fc00:201::/64
   - cmd: ip link add vrf1 type vrf table 1
-  - cmd: sysctl -w net.ipv4.conf.vrf1.rp_filter=0
   - cmd: ip link set vrf1 up
-
   - cmd: ip link set vm1 vrf vrf1
   - cmd: ip addr add 10.254.0.1/24 noprefixroute dev vm1
   - cmd: ip route add 10.254.0.10/32 dev vm1 vrf vrf1
@@ -295,13 +283,10 @@ node_configs:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.11 65011
   - cmd: ip route add blackhole fc00:11::/64
   - cmd: ip sr tunsrc set fc00:11::0
-
   - cmd: ip link add vrf1 type vrf table 1
   - cmd: ip link set vrf1 up
-
   - cmd: ip -6 route replace fc00:11::1 encap seg6local action End.DT4 vrftable 1 dev net0
   - cmd: ip route replace 10.254.0.0/24 encap seg6 mode encap segs fc00:201::1 dev net0 vrf vrf1
-
   - cmd: >-
       vtysh -c 'conf te'
       -c 'router bgp'
@@ -309,6 +294,7 @@ node_configs:
       -c '  neighbor PEER activate'
       -c '  redistribute kernel'
       -c ' exit-address-family'
+
 - name: N2
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.12 65012
