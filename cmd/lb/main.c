@@ -207,17 +207,28 @@ process_ipv6(struct xdp_md *ctx)
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
-  struct outer_header *oh = (struct outer_header *)(data + sizeof(struct ethhdr));
+  struct ethhdr *eh = (struct ethhdr *)data;
+  assert_len(eh, data_end);
+  struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
-      oh->srh.hdrlen != 2) {
+      oh->srh.hdrlen != 2 ||
+      same_ipv6(&oh->ip6.daddr, srv6_local_sid) != 0) {
     bpf_printk("DEBUG!!!");
     return ignore_packet(ctx);
   }
-  if (same_ipv6(&oh->ip6.daddr, srv6_local_sid) != 0) {
-    return ignore_packet(ctx);
-  }
+
+  // Craft new ether header
+  __u8 tmp[6] = {0};
+  memcpy(tmp, eh->h_dest, 6);
+  memcpy(eh->h_dest, eh->h_source, 6);
+  memcpy(eh->h_source, tmp, 6);
+
+  // Craft new ipv6 header
+  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.daddr, srv6_tundst, sizeof(struct in6_addr));
+  memcpy(&oh->seg, srv6_tundst, sizeof(struct in6_addr));
 
   bpf_printk("HOGE");
   return XDP_TX;
