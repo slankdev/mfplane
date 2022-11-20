@@ -20,6 +20,7 @@ postinit:
        !
        address-family ipv4 unicast
         redistribute connected
+        redistribute kernel
        exit-address-family
       EOF1
       /usr/lib/frr/frrinit.sh start
@@ -36,9 +37,9 @@ nodes:
   interfaces:
   - { name: hv1, type: direct, args: HV1#net0 }
   - { name: c1, type: direct, args: C1#net0 }
-  - { name: r1, type: direct, args: R1#net0 }
-  - { name: r2, type: direct, args: R2#net0 }
-  - { name: r3, type: direct, args: R3#net0 }
+  - { name: l1, type: direct, args: L1#net0 }
+  - { name: l2, type: direct, args: L2#net0 }
+  - { name: l3, type: direct, args: L3#net0 }
   - { name: n1, type: direct, args: N1#net0 }
   - { name: n2, type: direct, args: N2#net0 }
   - { name: n3, type: direct, args: N3#net0 }
@@ -78,31 +79,31 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
-- name: R1
+- name: L1
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
-  - { name: net0, type: direct, args: CLOS#r1 }
+  - { name: net0, type: direct, args: CLOS#l1 }
   sysctls:
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
-- name: R2
+- name: L2
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
-  - { name: net0, type: direct, args: CLOS#r2 }
+  - { name: net0, type: direct, args: CLOS#l2 }
   sysctls:
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
-- name: R3
+- name: L3
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
-  - { name: net0, type: direct, args: CLOS#r3 }
+  - { name: net0, type: direct, args: CLOS#l3 }
   sysctls:
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
@@ -160,9 +161,9 @@ node_configs:
       -c ' neighbor PEER remote-as external'
       -c ' neighbor hv1 interface peer-group PEER'
       -c ' neighbor c1 interface peer-group PEER'
-      -c ' neighbor r1 interface peer-group PEER'
-      -c ' neighbor r2 interface peer-group PEER'
-      -c ' neighbor r3 interface peer-group PEER'
+      -c ' neighbor l1 interface peer-group PEER'
+      -c ' neighbor l2 interface peer-group PEER'
+      -c ' neighbor l3 interface peer-group PEER'
       -c ' neighbor n1 interface peer-group PEER'
       -c ' neighbor n2 interface peer-group PEER'
       -c ' neighbor n3 interface peer-group PEER'
@@ -174,21 +175,21 @@ node_configs:
 - name: C1
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.100.1 65101
-
 - name: HV1
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.200.1 65201
-
-- name: R1
+- name: L1
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.1 65001
-- name: R2
+  - cmd: ip route add blackhole 10.254.0.0/24
+- name: L2
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.2 65002
-- name: R3
+  #- cmd: ip route add blackhole 10.254.0.0/24
+- name: L3
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
-
+  #- cmd: ip route add blackhole 10.254.0.0/24
 - name: N1
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.11 65011
