@@ -69,6 +69,12 @@ debug_skb(struct xdp_md *ctx, const char *name)
 #endif /* DEBUG */
 
 static inline int
+encap_transit(struct xdp_md *ctx)
+{
+  return XDP_TX;
+}
+
+static inline int
 process_ipv4_tcp(struct xdp_md *ctx)
 {
   __u64 data = ctx->data;
@@ -78,6 +84,10 @@ process_ipv4_tcp(struct xdp_md *ctx)
   struct iphdr *ih = (struct iphdr *)(data + sizeof(struct ethhdr));
   assert_len(ih, data_end);
   pkt_len = data_end - data;
+
+  // if (ih->daddr != 0x01010101) {
+  //   return XDP_PASS;
+  // }
 
   __u8 hdr_len = ih->ihl * 4;
   struct tcphdr *th = (struct tcphdr *)((char *)ih + hdr_len);
