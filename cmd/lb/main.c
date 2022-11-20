@@ -29,7 +29,7 @@ Copyright 2022 Wide Project.
 #define assert_len(interest, end)            \
   ({                                         \
     if ((unsigned long)(interest + 1) > end) \
-      return TC_ACT_SHOT;                    \
+      return XDP_ABORTED;                    \
   })
 
 #ifndef memset
@@ -44,6 +44,14 @@ Copyright 2022 Wide Project.
 # define memmove(dest, src, n)  __builtin_memmove((dest), (src), (n))
 #endif
 
+// TODO(slankdev); no support multiple sids in sid-list
+struct outer_header {
+  struct ipv6hdr ip6;
+  struct ipv6_rt_hdr srh;
+  __u8 padding[4];
+  struct in6_addr seg;
+} __attribute__ ((packed));
+
 struct flow_key {
 	__u32 src4;
 	__u32 src6;
@@ -55,6 +63,16 @@ struct flow_key {
 struct flow_processor {
   __u32 addr;
 } __attribute__ ((packed));
+
+__u8 srv6_tunsrc[16] = {
+  0xfc, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+__u8 srv6_tundst[16] = {
+  0xfc, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
 
 struct {
 	//__uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
@@ -83,8 +101,15 @@ debug_skb(struct xdp_md *ctx, const char *name)
 static inline int
 ignore_packet(struct xdp_md *ctx)
 {
-  bpf_printk("not vip");
+  bpf_printk("ignore packet");
   return XDP_PASS;
+}
+
+static inline int
+error_packet(struct xdp_md *ctx)
+{
+  bpf_printk("error packet");
+  return XDP_DROP;
 }
 
 static inline int
@@ -92,6 +117,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
+  __u64 pkt_len = data_end - data;
 
   struct ethhdr *eh = (struct ethhdr *)data;
   assert_len(eh, data_end);
@@ -124,11 +150,39 @@ process_ipv4_tcp(struct xdp_md *ctx)
                th->source, &ih->daddr, th->dest, ih->protocol, &p->addr);
   bpf_printk("flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
 
-  // TODO encap transmit
-  __u8 tmp_eth_addr[6] = {0};
-  memcpy(tmp_eth_addr, eh->h_source, 6);
-  memcpy(eh->h_source, eh->h_dest, 6);
-  memcpy(eh->h_dest, tmp_eth_addr, 6);
+  // Adjust packet buffer head pointer
+  if (bpf_xdp_adjust_head(ctx, 0 - (int)(sizeof(struct outer_header)))) {
+    return error_packet(ctx);
+  }
+  data = ctx->data;
+  data_end = ctx->data_end;
+
+  // Craft new ether header
+  struct ethhdr *new_eh = (struct ethhdr *)data;
+  struct ethhdr *old_eh = (struct ethhdr *)(data + sizeof(struct outer_header));
+  assert_len(new_eh, data_end);
+  assert_len(old_eh, data_end);
+  memcpy(new_eh->h_dest, old_eh->h_source, 6);
+  memcpy(new_eh->h_source, old_eh->h_dest, 6);
+  new_eh->h_proto = bpf_htons(ETH_P_IPV6);
+
+  // Craft outer IP6 SRv6 header
+  struct outer_header *oh = (struct outer_header *)(new_eh + 1);
+  assert_len(oh, data_end);
+  oh->ip6.version = 6;
+  oh->ip6.priority = 0;
+  oh->ip6.payload_len = bpf_ntohs(pkt_len - sizeof(struct ethhdr) +
+    sizeof(struct ipv6_rt_hdr) + 4 + sizeof(struct in6_addr));
+  oh->ip6.nexthdr = 43; // SR header
+  oh->ip6.hop_limit = 64;
+  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.daddr, srv6_tundst, sizeof(struct in6_addr));
+  oh->srh.hdrlen = 2;
+  oh->srh.nexthdr = 4;
+  oh->srh.segments_left = 0;
+  oh->srh.type = 4;
+  memcpy(&oh->seg, srv6_tundst, sizeof(struct in6_addr));
+
   return XDP_TX;
 }
 
