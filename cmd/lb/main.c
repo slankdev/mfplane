@@ -80,11 +80,11 @@ process_ipv4_tcp(struct xdp_md *ctx)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
-  __u64 pkt_len = 0;
 
-  struct iphdr *ih = (struct iphdr *)(data + sizeof(struct ethhdr));
+  struct ethhdr *eh = (struct ethhdr *)data;
+  assert_len(eh, data_end);
+  struct iphdr *ih = (struct iphdr *)(eh + 1);
   assert_len(ih, data_end);
-  pkt_len = data_end - data;
 
   __u32 vip = bpf_ntohl(0x0afe000a); // 10.254.0.10
   if (ih->daddr != vip) {
@@ -94,7 +94,6 @@ process_ipv4_tcp(struct xdp_md *ctx)
   __u8 hdr_len = ih->ihl * 4;
   struct tcphdr *th = (struct tcphdr *)((char *)ih + hdr_len);
   assert_len(th, data_end);
-
 
   __u32 hash = 0;
   hash = jhash_2words(ih->saddr, ih->daddr, 0xdeadbeaf);
@@ -114,6 +113,8 @@ process_ipv4_tcp(struct xdp_md *ctx)
   bpf_printk("flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
 
   // TODO encap transmit
+
+  // eh->h_dest,
   return XDP_PASS;
 }
 
