@@ -224,16 +224,9 @@ node_configs:
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.100.1 65101
   - cmd: ip addr add 10.255.100.1/32 dev net0
+
 - name: HV1
   cmds:
-  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.200.1 65201
-  - cmd: >-
-      vtysh -c 'conf te'
-      -c 'router bgp'
-      -c ' address-family ipv6 unicast'
-      -c '  neighbor PEER activate'
-      -c '  redistribute kernel'
-      -c ' exit-address-family'
   - cmd: ip route add blackhole fc00:201::/64
   - cmd: ip link add vrf1 type vrf table 1
   - cmd: ip link set vrf1 up
@@ -244,11 +237,17 @@ node_configs:
   - cmd: ip -6 route replace fc00:201::1/128 encap seg6local action End.DT4 vrftable 1 dev net0
   - cmd: ip -4 route add default encap seg6 mode encap segs fc00:1::1 dev net0 vrf vrf1
 
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.200.1 65201
   - cmd: >-
       vtysh -c 'conf te'
       -c 'router bgp'
       -c ' address-family ipv4 unicast'
       -c '  no redistribute kernel'
+      -c ' exit-address-family'
+      -c ' !'
+      -c ' address-family ipv6 unicast'
+      -c '  neighbor PEER activate'
+      -c '  redistribute kernel'
       -c ' exit-address-family'
 
 - name: VM1
@@ -298,6 +297,7 @@ node_configs:
 - name: N2
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.12 65012
+
 - name: N3
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.13 65013
