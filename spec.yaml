@@ -48,6 +48,7 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 - name: HV1
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -59,6 +60,7 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 - name: VM1
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -69,6 +71,7 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 - name: C1
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -79,6 +82,7 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 - name: L1
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -89,6 +93,7 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 - name: L2
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -99,6 +104,7 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 - name: L3
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -109,6 +115,7 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 - name: N1
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -119,6 +126,7 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 - name: N2
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -129,6 +137,7 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 - name: N3
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -139,6 +148,7 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 
 node_configs:
 - name: CLOS
@@ -171,6 +181,10 @@ node_configs:
       -c ' address-family ipv4 unicast'
       -c '  redistribute connected'
       -c ' exit-address-family'
+      -c ' !'
+      -c ' address-family ipv6 unicast'
+      -c '  neighbor PEER activate'
+      -c ' exit-address-family'
 
 - name: C1
   cmds:
@@ -193,6 +207,15 @@ node_configs:
 - name: N1
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.11 65011
+  - cmd: ip route add blackhole fc00:11::/64
+  - cmd: >-
+      vtysh -c 'conf te'
+      -c 'router bgp'
+      -c ' address-family ipv6 unicast'
+      -c '  neighbor PEER activate'
+      -c '  redistribute kernel'
+      -c ' exit-address-family'
+
 - name: N2
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.12 65012
