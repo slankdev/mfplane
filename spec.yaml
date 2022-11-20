@@ -196,14 +196,14 @@ node_configs:
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.1 65001
   - cmd: ip route add blackhole 10.254.0.0/24
-- name: L2
-  cmds:
-  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.2 65002
-  #- cmd: ip route add blackhole 10.254.0.0/24
-- name: L3
-  cmds:
-  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
-  #- cmd: ip route add blackhole 10.254.0.0/24
+# - name: L2
+#   cmds:
+#   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.2 65002
+#   - cmd: ip route add blackhole 10.254.0.0/24
+# - name: L3
+#   cmds:
+#   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
+#   - cmd: ip route add blackhole 10.254.0.0/24
 - name: N1
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.11 65011
