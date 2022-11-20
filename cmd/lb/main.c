@@ -69,12 +69,6 @@ debug_skb(struct xdp_md *ctx, const char *name)
 #endif /* DEBUG */
 
 static inline int
-encap_transit(struct xdp_md *ctx)
-{
-  return XDP_TX;
-}
-
-static inline int
 ignore_packet(struct xdp_md *ctx)
 {
   bpf_printk("not vip");
@@ -118,6 +112,8 @@ process_ipv4_tcp(struct xdp_md *ctx)
   BPF_SNPRINTF(tmp, sizeof(tmp), "%pi4:%u %pi4:%u %u -> %pi4", &ih->saddr,
                th->source, &ih->daddr, th->dest, ih->protocol, &p->addr);
   bpf_printk("flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
+
+  // TODO encap transmit
   return XDP_PASS;
 }
 
