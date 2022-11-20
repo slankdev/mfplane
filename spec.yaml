@@ -154,6 +154,8 @@ node_configs:
 - name: CLOS
   cmds:
   - cmd: /usr/lib/frr/frrinit.sh start
+  - cmd: ip -4 route add blackhole 0.0.0.0/0
+  - cmd: ip -6 route add blackhole ::/0
   - cmd: >-
       vtysh -c 'conf t'
       -c 'interface lo'
@@ -162,6 +164,12 @@ node_configs:
       -c 'interface hv1'
       -c ' ipv6 nd ra-interval 3'
       -c ' no ipv6 nd suppress-ra'
+      -c '!'
+      -c 'ip prefix-list DEFAULT4 seq 5 permit 0.0.0.0/0 le 1'
+      -c 'ip prefix-list DEFAULT4 seq 10 deny any'
+      -c '!'
+      -c 'ipv6 prefix-list DEFAULT6 seq 5 permit ::/0 le 1'
+      -c 'ipv6 prefix-list DEFAULT6 seq 10 deny any'
       -c '!'
       -c 'router bgp 65000'
       -c ' bgp router-id 10.255.0.0'
@@ -180,10 +188,14 @@ node_configs:
       -c ' !'
       -c ' address-family ipv4 unicast'
       -c '  redistribute connected'
+      -c '  redistribute kernel'
+      -c '  neighbor PEER prefix-list DEFAULT4 out'
       -c ' exit-address-family'
       -c ' !'
       -c ' address-family ipv6 unicast'
       -c '  neighbor PEER activate'
+      -c '  redistribute kernel'
+      -c '  neighbor PEER prefix-list DEFAULT6 out'
       -c ' exit-address-family'
 
 - name: C1
