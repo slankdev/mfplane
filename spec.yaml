@@ -247,6 +247,15 @@ node_configs:
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.1 65001
   - cmd: ip route add blackhole 10.254.0.0/24
+  - cmd: ip route add blackhole fc00:1::/64
+  - cmd: >-
+      vtysh -c 'conf te'
+      -c 'router bgp'
+      -c ' address-family ipv6 unicast'
+      -c '  neighbor PEER activate'
+      -c '  redistribute kernel'
+      -c ' exit-address-family'
+
 # - name: L2
 #   cmds:
 #   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.2 65002
@@ -255,6 +264,7 @@ node_configs:
 #   cmds:
 #   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
 #   - cmd: ip route add blackhole 10.254.0.0/24
+
 - name: N1
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.11 65011
