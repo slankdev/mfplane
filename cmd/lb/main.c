@@ -163,7 +163,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
                &ih->saddr, bpf_ntohs(th->source),
                &ih->daddr, bpf_ntohs(th->dest),
                ih->protocol, &p->addr);
-  bpf_printk("flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
+  bpf_printk("dn-flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
 
   // Adjust packet buffer head pointer
   if (bpf_xdp_adjust_head(ctx, 0 - (int)(sizeof(struct outer_header)))) {
@@ -217,6 +217,30 @@ process_ipv6(struct xdp_md *ctx)
       same_ipv6(&oh->ip6.daddr, srv6_local_sid) != 0) {
     return ignore_packet(ctx);
   }
+  struct iphdr *in_ih = (struct iphdr *)(oh + 1);
+  assert_len(in_ih, data_end);
+  __u8 in_ih_len = in_ih->ihl * 4;
+  struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
+  assert_len(in_th, data_end);
+
+  __u32 hash = 0;
+  hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
+  hash = jhash_2words(in_th->dest, in_th->source, hash);
+  hash = jhash_2words(in_ih->protocol, 0, hash);
+
+  __u32 idx = hash % RING_SIZE;
+  struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
+  if (!p) {
+    bpf_printk("no entry fatal");
+    return ignore_packet(ctx);
+  }
+
+  char tmpstr[128] = {0};
+  BPF_SNPRINTF(tmpstr, sizeof(tmpstr), "%pi4:%u %pi4:%u %u -> %pi4",
+               &in_ih->saddr, bpf_ntohs(in_th->source),
+               &in_ih->daddr, bpf_ntohs(in_th->dest),
+               in_ih->protocol, &p->addr);
+  bpf_printk("up-flow=[%s] hash=0x%08x idx=%u", tmpstr, hash, idx);
 
   // Craft new ether header
   __u8 tmp[6] = {0};
@@ -229,7 +253,6 @@ process_ipv6(struct xdp_md *ctx)
   memcpy(&oh->ip6.daddr, srv6_tundst, sizeof(struct in6_addr));
   memcpy(&oh->seg, srv6_tundst, sizeof(struct in6_addr));
 
-  bpf_printk("HOGE");
   return XDP_TX;
 }
 
