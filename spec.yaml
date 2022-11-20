@@ -3,7 +3,8 @@ nodes:
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
-  - { name: s1, type: direct, args: S1#net0 }
+  - { name: hv1, type: direct, args: HV1#net0 }
+  - { name: c1, type: direct, args: C1#net0 }
   - { name: r1, type: direct, args: R1#net0 }
   - { name: r2, type: direct, args: R2#net0 }
   - { name: r3, type: direct, args: R3#net0 }
@@ -11,46 +12,107 @@ nodes:
   - { name: n2, type: direct, args: N2#net0 }
   - { name: n3, type: direct, args: N3#net0 }
   sysctls:
-  - { sysctl: net.ipv4.fib_multipath_hash_policy=1 }
-- name: S1
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+- name: HV1
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
-  - { name: net0, type: direct, args: CLOS#s1 }
+  - { name: net0, type: direct, args: CLOS#hv1 }
+  - { name: vm1,  type: direct, args: VM1#net0 }
+  sysctls:
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+- name: VM1
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: HV1#vm1 }
+  sysctls:
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+
+- name: C1
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#c1 }
+  sysctls:
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+
 - name: R1
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#r1 }
+  sysctls:
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
 - name: R2
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#r2 }
+  sysctls:
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
 - name: R3
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#r3 }
+  sysctls:
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
 - name: N1
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n1 }
+  sysctls:
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
 - name: N2
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n2 }
+  sysctls:
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
 - name: N3
   image: tmp
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n3 }
+  sysctls:
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+
 node_configs:
 - name: CLOS
   cmds:
-  - cmd: ip addr add 10.255.0.0/24 dev s1
   - cmd: ip addr add 10.255.0.0/24 dev r1
   - cmd: ip addr add 10.255.0.0/24 dev r2
   - cmd: ip addr add 10.255.0.0/24 dev r3
@@ -63,17 +125,83 @@ node_configs:
   - cmd: ip route add 10.255.0.101/32 dev n1
   - cmd: ip route add 10.255.0.102/32 dev n2
   - cmd: ip route add 10.255.0.103/32 dev n3
-  - cmd: ip route add 10.255.0.254/32 dev s1
   - cmd: >
       ip route add 1.1.1.1/32
       nexthop via 10.255.0.101 weight 1
       nexthop via 10.255.0.102 weight 1
       nexthop via 10.255.0.103 weight 1
-- name: S1
+
+  - cmd: /usr/lib/frr/frrinit.sh start
+  - cmd: >-
+      vtysh -c 'conf t'
+      -c 'interface lo'
+      -c ' ip addr 10.255.0.0/32'
+      -c '!'
+      -c 'interface hv1'
+      -c ' ipv6 nd ra-interval 3'
+      -c ' no ipv6 nd suppress-ra'
+      -c '!'
+      -c 'router bgp 65001'
+      -c ' bgp router-id 10.255.0.0'
+      -c ' bgp bestpath as-path multipath-relax'
+      -c ' no bgp ebgp-requires-policy'
+      -c ' neighbor PEER peer-group'
+      -c ' neighbor PEER remote-as external'
+      -c ' neighbor hv1 interface peer-group PEER'
+      -c ' neighbor c1 interface peer-group PEER'
+      -c ' !'
+      -c ' address-family ipv4 unicast'
+      -c '  redistribute connected'
+      -c ' exit-address-family'
+
+- name: C1
   cmds:
-  - cmd: ip addr add 10.255.0.254/32 dev net0
-  - cmd: ip route add 10.255.0.0/32 dev net0
-  - cmd: ip route add default via 10.255.0.0
+  - cmd: /usr/lib/frr/frrinit.sh start
+  - cmd: >-
+      vtysh -c 'conf t'
+      -c 'interface lo'
+      -c ' ip addr 10.255.100.1/32'
+      -c '!'
+      -c 'interface net0'
+      -c ' ipv6 nd ra-interval 3'
+      -c ' no ipv6 nd suppress-ra'
+      -c '!'
+      -c 'router bgp 65101'
+      -c ' bgp router-id 10.255.100.1'
+      -c ' bgp bestpath as-path multipath-relax'
+      -c ' no bgp ebgp-requires-policy'
+      -c ' neighbor PEER peer-group'
+      -c ' neighbor PEER remote-as external'
+      -c ' neighbor net0 interface peer-group PEER'
+      -c ' !'
+      -c ' address-family ipv4 unicast'
+      -c '  redistribute connected'
+      -c ' exit-address-family'
+
+- name: HV1
+  cmds:
+  - cmd: /usr/lib/frr/frrinit.sh start
+  - cmd: >-
+      vtysh -c 'conf t'
+      -c 'interface lo'
+      -c ' ip addr 10.255.200.1/32'
+      -c '!'
+      -c 'interface net0'
+      -c ' ipv6 nd ra-interval 3'
+      -c ' no ipv6 nd suppress-ra'
+      -c '!'
+      -c 'router bgp 65201'
+      -c ' bgp router-id 10.255.0.0'
+      -c ' bgp bestpath as-path multipath-relax'
+      -c ' no bgp ebgp-requires-policy'
+      -c ' neighbor PEER peer-group'
+      -c ' neighbor PEER remote-as external'
+      -c ' neighbor net0 interface peer-group PEER'
+      -c ' !'
+      -c ' address-family ipv4 unicast'
+      -c '  redistribute connected'
+      -c ' exit-address-family'
+
 - name: R1
   cmds:
   - cmd: ip addr add 10.255.0.1/32 dev net0
