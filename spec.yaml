@@ -1,3 +1,34 @@
+postinit:
+  cmds:
+  - cmd: |
+      cat <<EOF > /tmp/bgp_conf_init.sh
+      cat <<EOF1 > /etc/frr/frr.conf
+      interface lo
+       ip addr \$1/32
+      !
+      interface net0
+       ipv6 nd ra-interval 3
+       no ipv6 nd suppress-ra
+      !
+      router bgp \$2
+       bgp router-id \$1
+       bgp bestpath as-path multipath-relax
+       no bgp ebgp-requires-policy
+       neighbor PEER peer-group
+       neighbor PEER remote-as external
+       neighbor net0 interface peer-group PEER
+       !
+       address-family ipv4 unicast
+        redistribute connected
+       exit-address-family
+      EOF1
+      /usr/lib/frr/frrinit.sh start
+      EOF
+  - cmd: >-
+      for c in $(docker ps -aq); do
+      docker cp /tmp/bgp_conf_init.sh $c:/usr/bin/bgp_conf_init.sh;
+      done
+
 nodes:
 - name: CLOS
   image: tmp
@@ -37,7 +68,6 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
-
 - name: C1
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -48,7 +78,6 @@ nodes:
   - sysctl: net.ipv6.conf.default.disable_ipv6=0
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
-
 - name: R1
   image: tmp
   docker_run_extra_args: --entrypoint bash
@@ -113,24 +142,6 @@ nodes:
 node_configs:
 - name: CLOS
   cmds:
-  - cmd: ip addr add 10.255.0.0/24 dev r1
-  - cmd: ip addr add 10.255.0.0/24 dev r2
-  - cmd: ip addr add 10.255.0.0/24 dev r3
-  - cmd: ip addr add 10.255.0.0/24 dev n1
-  - cmd: ip addr add 10.255.0.0/24 dev n2
-  - cmd: ip addr add 10.255.0.0/24 dev n3
-  - cmd: ip route add 10.255.0.1/32 dev r1
-  - cmd: ip route add 10.255.0.2/32 dev r2
-  - cmd: ip route add 10.255.0.3/32 dev r3
-  - cmd: ip route add 10.255.0.101/32 dev n1
-  - cmd: ip route add 10.255.0.102/32 dev n2
-  - cmd: ip route add 10.255.0.103/32 dev n3
-  - cmd: >
-      ip route add 1.1.1.1/32
-      nexthop via 10.255.0.101 weight 1
-      nexthop via 10.255.0.102 weight 1
-      nexthop via 10.255.0.103 weight 1
-
   - cmd: /usr/lib/frr/frrinit.sh start
   - cmd: >-
       vtysh -c 'conf t'
@@ -141,7 +152,7 @@ node_configs:
       -c ' ipv6 nd ra-interval 3'
       -c ' no ipv6 nd suppress-ra'
       -c '!'
-      -c 'router bgp 65001'
+      -c 'router bgp 65000'
       -c ' bgp router-id 10.255.0.0'
       -c ' bgp bestpath as-path multipath-relax'
       -c ' no bgp ebgp-requires-policy'
@@ -149,6 +160,12 @@ node_configs:
       -c ' neighbor PEER remote-as external'
       -c ' neighbor hv1 interface peer-group PEER'
       -c ' neighbor c1 interface peer-group PEER'
+      -c ' neighbor r1 interface peer-group PEER'
+      -c ' neighbor r2 interface peer-group PEER'
+      -c ' neighbor r3 interface peer-group PEER'
+      -c ' neighbor n1 interface peer-group PEER'
+      -c ' neighbor n2 interface peer-group PEER'
+      -c ' neighbor n3 interface peer-group PEER'
       -c ' !'
       -c ' address-family ipv4 unicast'
       -c '  redistribute connected'
@@ -156,85 +173,50 @@ node_configs:
 
 - name: C1
   cmds:
-  - cmd: /usr/lib/frr/frrinit.sh start
-  - cmd: >-
-      vtysh -c 'conf t'
-      -c 'interface lo'
-      -c ' ip addr 10.255.100.1/32'
-      -c '!'
-      -c 'interface net0'
-      -c ' ipv6 nd ra-interval 3'
-      -c ' no ipv6 nd suppress-ra'
-      -c '!'
-      -c 'router bgp 65101'
-      -c ' bgp router-id 10.255.100.1'
-      -c ' bgp bestpath as-path multipath-relax'
-      -c ' no bgp ebgp-requires-policy'
-      -c ' neighbor PEER peer-group'
-      -c ' neighbor PEER remote-as external'
-      -c ' neighbor net0 interface peer-group PEER'
-      -c ' !'
-      -c ' address-family ipv4 unicast'
-      -c '  redistribute connected'
-      -c ' exit-address-family'
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.100.1 65101
 
 - name: HV1
   cmds:
-  - cmd: /usr/lib/frr/frrinit.sh start
-  - cmd: >-
-      vtysh -c 'conf t'
-      -c 'interface lo'
-      -c ' ip addr 10.255.200.1/32'
-      -c '!'
-      -c 'interface net0'
-      -c ' ipv6 nd ra-interval 3'
-      -c ' no ipv6 nd suppress-ra'
-      -c '!'
-      -c 'router bgp 65201'
-      -c ' bgp router-id 10.255.0.0'
-      -c ' bgp bestpath as-path multipath-relax'
-      -c ' no bgp ebgp-requires-policy'
-      -c ' neighbor PEER peer-group'
-      -c ' neighbor PEER remote-as external'
-      -c ' neighbor net0 interface peer-group PEER'
-      -c ' !'
-      -c ' address-family ipv4 unicast'
-      -c '  redistribute connected'
-      -c ' exit-address-family'
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.200.1 65201
 
 - name: R1
   cmds:
-  - cmd: ip addr add 10.255.0.1/32 dev net0
-  - cmd: ip route add 10.255.0.0/32 dev net0
-  - cmd: ip route add default via 10.255.0.0
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.1 65001
 - name: R2
   cmds:
-  - cmd: ip addr add 10.255.0.2/32 dev net0
-  - cmd: ip route add 10.255.0.0/32 dev net0
-  - cmd: ip route add default via 10.255.0.0
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.2 65002
 - name: R3
   cmds:
-  - cmd: ip addr add 10.255.0.3/32 dev net0
-  - cmd: ip route add 10.255.0.0/32 dev net0
-  - cmd: ip route add default via 10.255.0.0
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
+
 - name: N1
   cmds:
-  - cmd: ip addr add 10.255.0.101/32 dev net0
-  - cmd: ip route add 10.255.0.0/32 dev net0
-  - cmd: ip route add default via 10.255.0.0
-  - cmd: sh -c "cat /etc/hostname > /index.html"
-  - cmd: nohup python3 -m http.server 80 &
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.11 65011
 - name: N2
   cmds:
-  - cmd: ip addr add 10.255.0.102/32 dev net0
-  - cmd: ip route add 10.255.0.0/32 dev net0
-  - cmd: ip route add default via 10.255.0.0
-  - cmd: sh -c "cat /etc/hostname > /index.html"
-  - cmd: nohup python3 -m http.server 80 &
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.12 65012
 - name: N3
   cmds:
-  - cmd: ip addr add 10.255.0.103/32 dev net0
-  - cmd: ip route add 10.255.0.0/32 dev net0
-  - cmd: ip route add default via 10.255.0.0
-  - cmd: sh -c "cat /etc/hostname > /index.html"
-  - cmd: nohup python3 -m http.server 80 &
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.13 65013
+
+# - name: N1
+#   cmds:
+#   - cmd: ip addr add 10.255.0.101/32 dev net0
+#   - cmd: ip route add 10.255.0.0/32 dev net0
+#   - cmd: ip route add default via 10.255.0.0
+#   - cmd: sh -c "cat /etc/hostname > /index.html"
+#   - cmd: nohup python3 -m http.server 80 &
+# - name: N2
+#   cmds:
+#   - cmd: ip addr add 10.255.0.102/32 dev net0
+#   - cmd: ip route add 10.255.0.0/32 dev net0
+#   - cmd: ip route add default via 10.255.0.0
+#   - cmd: sh -c "cat /etc/hostname > /index.html"
+#   - cmd: nohup python3 -m http.server 80 &
+# - name: N3
+#   cmds:
+#   - cmd: ip addr add 10.255.0.103/32 dev net0
+#   - cmd: ip route add 10.255.0.0/32 dev net0
+#   - cmd: ip route add default via 10.255.0.0
+#   - cmd: sh -c "cat /etc/hostname > /index.html"
+#   - cmd: nohup python3 -m http.server 80 &
