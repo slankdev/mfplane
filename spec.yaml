@@ -222,6 +222,7 @@ node_configs:
 - name: C1
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.100.1 65101
+  - cmd: ip addr add 10.255.100.1/32 dev net0
 - name: HV1
   cmds:
   - cmd: sysctl -w net.vrf.strict_mode=1
