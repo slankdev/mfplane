@@ -75,6 +75,13 @@ encap_transit(struct xdp_md *ctx)
 }
 
 static inline int
+ignore_packet(struct xdp_md *ctx)
+{
+  bpf_printk("not vip");
+  return XDP_PASS;
+}
+
+static inline int
 process_ipv4_tcp(struct xdp_md *ctx)
 {
   __u64 data = ctx->data;
@@ -85,9 +92,10 @@ process_ipv4_tcp(struct xdp_md *ctx)
   assert_len(ih, data_end);
   pkt_len = data_end - data;
 
-  // if (ih->daddr != 0x01010101) {
-  //   return XDP_PASS;
-  // }
+  __u32 vip = bpf_ntohl(0x0afe000a); // 10.254.0.10
+  if (ih->daddr != vip) {
+    return ignore_packet(ctx);
+  }
 
   __u8 hdr_len = ih->ihl * 4;
   struct tcphdr *th = (struct tcphdr *)((char *)ih + hdr_len);
@@ -103,7 +111,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
   struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
   if (!p) {
     bpf_printk("no entry fatal");
-    return XDP_PASS;
+    return ignore_packet(ctx);
   }
 
   char tmp[128] = {0};
@@ -134,7 +142,7 @@ process_ipv4(struct xdp_md *ctx)
   // case IPPROTO_ICMP:
   //   return process_ipv4_icmp(ctx);
   default:
-    return XDP_PASS;
+    return ignore_packet(ctx);
   }
 }
 
@@ -153,7 +161,7 @@ process_ethernet(struct xdp_md *ctx)
   case 0x0800:
     return process_ipv4(ctx);
   default:
-    return XDP_PASS;
+    return ignore_packet(ctx);
   }
 }
 
