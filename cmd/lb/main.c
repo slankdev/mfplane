@@ -32,6 +32,18 @@ Copyright 2022 Wide Project.
       return TC_ACT_SHOT;                    \
   })
 
+#ifndef memset
+# define memset(dest, chr, n)   __builtin_memset((dest), (chr), (n))
+#endif
+
+#ifndef memcpy
+# define memcpy(dest, src, n)   __builtin_memcpy((dest), (src), (n))
+#endif
+
+#ifndef memmove
+# define memmove(dest, src, n)  __builtin_memmove((dest), (src), (n))
+#endif
+
 struct flow_key {
 	__u32 src4;
 	__u32 src6;
@@ -113,9 +125,11 @@ process_ipv4_tcp(struct xdp_md *ctx)
   bpf_printk("flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
 
   // TODO encap transmit
-
-  // eh->h_dest,
-  return XDP_PASS;
+  __u8 tmp_eth_addr[6] = {0};
+  memcpy(tmp_eth_addr, eh->h_source, 6);
+  memcpy(eh->h_source, eh->h_dest, 6);
+  memcpy(eh->h_dest, tmp_eth_addr, 6);
+  return XDP_TX;
 }
 
 static inline int
@@ -161,7 +175,8 @@ process_ethernet(struct xdp_md *ctx)
 SEC("xdp-ingress") int
 xdp_ingress(struct xdp_md *ctx)
 {
-  return process_ethernet(ctx);
+  int act = process_ethernet(ctx);
+  return act;
 }
 
 char __license[] SEC("license") = "GPL";
