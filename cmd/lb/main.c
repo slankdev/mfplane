@@ -198,6 +198,10 @@ process_ipv4_tcp(struct xdp_md *ctx)
   oh->srh.type = 4;
   memcpy(&oh->seg, srv6_tundst, sizeof(struct in6_addr));
 
+  ///////////////////////////////////////////////////
+  // TODO(slankdev): set the NEXT_SID from p->addr //
+  ///////////////////////////////////////////////////
+
   return XDP_TX;
 }
 
@@ -241,6 +245,10 @@ process_ipv6(struct xdp_md *ctx)
                &in_ih->daddr, bpf_ntohs(in_th->dest),
                in_ih->protocol, &p->addr);
   bpf_printk("up-flow=[%s] hash=0x%08x idx=%u", tmpstr, hash, idx);
+
+  ///////////////////////////////////////////////////
+  // TODO(slankdev): set the NEXT_SID from p->addr //
+  ///////////////////////////////////////////////////
 
   // Craft new ether header
   __u8 tmp[6] = {0};
