@@ -146,8 +146,10 @@ process_ipv4_tcp(struct xdp_md *ctx)
   }
 
   char tmp[128] = {0};
-  BPF_SNPRINTF(tmp, sizeof(tmp), "%pi4:%u %pi4:%u %u -> %pi4", &ih->saddr,
-               th->source, &ih->daddr, th->dest, ih->protocol, &p->addr);
+  BPF_SNPRINTF(tmp, sizeof(tmp), "%pi4:%u %pi4:%u %u -> %pi4",
+               &ih->saddr, bpf_ntohs(th->source),
+               &ih->daddr, bpf_ntohs(th->dest),
+               ih->protocol, &p->addr);
   bpf_printk("flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
 
   // Adjust packet buffer head pointer
@@ -187,6 +189,37 @@ process_ipv4_tcp(struct xdp_md *ctx)
 }
 
 static inline int
+process_ipv6_srh_tcp(struct xdp_md *ctx)
+{
+  return error_packet(ctx);
+}
+
+static inline int
+process_ipv6_rt(struct xdp_md *ctx)
+{
+  bpf_printk("slankdev");
+  return ignore_packet(ctx);
+}
+
+static inline int
+process_ipv6(struct xdp_md *ctx)
+{
+  __u64 data = ctx->data;
+  __u64 data_end = ctx->data_end;
+
+  struct ipv6hdr *ih = (struct ipv6hdr *)(data + sizeof(struct ethhdr));
+  assert_len(ih, data_end);
+  __u64 pkt_len = data_end - data;
+
+  switch (ih->nexthdr) {
+  case IPPROTO_ROUTING:
+    return process_ipv6_rt(ctx);
+  default:
+    return ignore_packet(ctx);
+  }
+}
+
+static inline int
 process_ipv4(struct xdp_md *ctx)
 {
   __u64 data = ctx->data;
@@ -221,6 +254,8 @@ process_ethernet(struct xdp_md *ctx)
   switch (bpf_htons(eth_hdr->h_proto)) {
   case 0x0800:
     return process_ipv4(ctx);
+  case 0x86dd:
+    return process_ipv6(ctx);
   default:
     return ignore_packet(ctx);
   }
