@@ -43,11 +43,13 @@ func NewCommandHashBpftoolCli() *cobra.Command {
 		Use: "bpftoolcli",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Check format of backend ipv4 addr string
-			backendIPs := []uint32{}
+			backendIPs := []net.IP{}
 			for _, backend := range clioptBackends {
-				ip := net.ParseIP(backend)
-				u32 := util.ConvertIPToUint32(ip)
-				backendIPs = append(backendIPs, u32)
+				ip6addr := net.ParseIP(backend)
+				if ip6addr == nil || len([]byte(ip6addr)) != net.IPv6len {
+					return fmt.Errorf("invalid format %s", backend)
+				}
+				backendIPs = append(backendIPs, ip6addr)
 			}
 
 			m, err := maglev.NewMaglev(clioptBackends, uint64(clioptTableSize))
@@ -57,12 +59,17 @@ func NewCommandHashBpftoolCli() *cobra.Command {
 			table1 := m.GetRawTable()
 			for idx := uint32(0); idx < uint32(len(table1)); idx++ {
 				idx8 := util.Uint32toBytes(idx)
-				beU8 := util.Uint32toBytes(backendIPs[table1[idx]])
+				beU8 := []byte(backendIPs[table1[idx]])
 
 				// sudo bpftool map update name procs 1 0 0 0 0 value 10 254 0 101
-				fmt.Printf("bpftool map update name procs key %d %d %d %d value %d %d %d %d\n",
+				fmt.Printf("bpftool map update name procs key %d %d %d %d value hex "+
+					"%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
 					idx8[0], idx8[1], idx8[2], idx8[3],
-					beU8[0], beU8[1], beU8[2], beU8[3])
+					beU8[0], beU8[1], beU8[2], beU8[3],
+					beU8[4], beU8[5], beU8[6], beU8[7],
+					beU8[8], beU8[9], beU8[10], beU8[11],
+					beU8[12], beU8[13], beU8[14], beU8[15],
+				)
 			}
 			return nil
 		},
