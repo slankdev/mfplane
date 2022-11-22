@@ -77,11 +77,6 @@ __u8 srv6_tunsrc[16] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-__u8 srv6_tundst[16] = {
-  0xfc, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-};
-
 __u8 srv6_local_sid[16] = {
   0xfc, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
@@ -191,12 +186,12 @@ process_ipv4_tcp(struct xdp_md *ctx)
   oh->ip6.nexthdr = 43; // SR header
   oh->ip6.hop_limit = 64;
   memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
-  memcpy(&oh->ip6.daddr, srv6_tundst, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
   oh->srh.hdrlen = 2;
   oh->srh.nexthdr = 4;
   oh->srh.segments_left = 0;
   oh->srh.type = 4;
-  memcpy(&oh->seg, srv6_tundst, sizeof(struct in6_addr));
+  memcpy(&oh->seg, &p->addr, sizeof(struct in6_addr));
 
   ///////////////////////////////////////////////////
   // TODO(slankdev): set the NEXT_SID from p->addr //
@@ -258,8 +253,8 @@ process_ipv6(struct xdp_md *ctx)
 
   // Craft new ipv6 header
   memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
-  memcpy(&oh->ip6.daddr, srv6_tundst, sizeof(struct in6_addr));
-  memcpy(&oh->seg, srv6_tundst, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
+  memcpy(&oh->seg, &p->addr, sizeof(struct in6_addr));
 
   return XDP_TX;
 }
