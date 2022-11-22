@@ -69,7 +69,7 @@ struct flow_key {
 } __attribute__ ((packed));
 
 struct flow_processor {
-  __u32 addr;
+  struct in6_addr addr;
 } __attribute__ ((packed));
 
 __u8 srv6_tunsrc[16] = {
@@ -159,7 +159,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
   }
 
   char tmp[128] = {0};
-  BPF_SNPRINTF(tmp, sizeof(tmp), "%pi4:%u %pi4:%u %u -> %pi4",
+  BPF_SNPRINTF(tmp, sizeof(tmp), "%pi4:%u %pi4:%u %u -> %pi6",
                &ih->saddr, bpf_ntohs(th->source),
                &ih->daddr, bpf_ntohs(th->dest),
                ih->protocol, &p->addr);
@@ -240,7 +240,7 @@ process_ipv6(struct xdp_md *ctx)
   }
 
   char tmpstr[128] = {0};
-  BPF_SNPRINTF(tmpstr, sizeof(tmpstr), "%pi4:%u %pi4:%u %u -> %pi4",
+  BPF_SNPRINTF(tmpstr, sizeof(tmpstr), "%pi4:%u %pi4:%u %u -> %pi6",
                &in_ih->saddr, bpf_ntohs(in_th->source),
                &in_ih->daddr, bpf_ntohs(in_th->dest),
                in_ih->protocol, &p->addr);
