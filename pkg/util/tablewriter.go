@@ -24,6 +24,13 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+// EXAMPLE
+// 01   table := util.NewTableWriter(os.Stdout)
+// 02   table.SetHeader([]string{"A", "B", "C"})
+// 03   table.Append([]string{"a1", "b1", "c1"})
+// 04   table.Append([]string{"a2", "b2", "c2"})
+// 05   table.Append([]string{"a3", "b3", "c3"})
+// 06   table.Render()
 func NewTableWriter(writer io.Writer) *tablewriter.Table {
 	table := tablewriter.NewWriter(writer)
 	table.SetAutoWrapText(false)
