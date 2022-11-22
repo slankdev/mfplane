@@ -37,8 +37,6 @@ func NewCommand() *cobra.Command {
 }
 
 func NewCommandStat() *cobra.Command {
-	// var clioptTableSize uint32
-	// var clioptBackends []string
 	cmd := &cobra.Command{
 		Use: "stat",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -59,9 +57,5 @@ func NewCommandStat() *cobra.Command {
 			return nil
 		},
 	}
-	// cmd.Flags().IntVarP(&clioptNumTestdatas, "num-tests", "n", 100, "")
-	// cmd.Flags().IntVarP(&clioptNumBackends, "num-backends", "b", 16, "")
-	// cmd.Flags().IntVarP(&clioptTableSize, "table-size", "t", int(maglev.BigM), "")
-	// cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
 	return cmd
 }
