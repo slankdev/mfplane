@@ -213,7 +213,7 @@ process_ipv6(struct xdp_md *ctx)
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
-      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 2) != 0) {
+      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) {
     return ignore_packet(ctx);
   }
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
