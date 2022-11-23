@@ -354,4 +354,4 @@ node_configs:
   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.12 65012 fc00:12::/64 fc00:12::0 fc00:12::1
 - name: N3
   cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.13 65012 fc00:13::/64 fc00:13::0 fc00:13::1
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.13 65013 fc00:13::/64 fc00:13::0 fc00:13::1
