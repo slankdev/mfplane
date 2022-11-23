@@ -81,10 +81,9 @@ postinit:
       for c in $(docker ps -aq); do
       docker cp /tmp/bgp_conf_init.sh $c:/usr/bin/bgp_conf_init.sh;
       docker cp /tmp/n_node_setup.sh $c:/usr/bin/n_node_setup.sh;
-      done
-  - cmd: >-
       for file in $(ls ./bin); do
-      docker cp ./bin/$file CLOS:/usr/bin/;
+      docker cp ./bin/$file $c:/usr/bin/;
+      done
       done
 
 nodes:
