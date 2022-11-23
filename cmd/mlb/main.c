@@ -31,6 +31,28 @@ Copyright 2022 Wide Project.
 #define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
 #endif
 
+struct conntrack_key {
+  __u32 saddr;
+  __u32 daddr;
+  __u16 sport;
+  __u16 dport;
+  __u8 proto;
+}  __attribute__ ((packed));
+
+struct conntrack_val {
+  __u32 pkts;
+  __u32 bytes;
+  __u8 asured;
+  __u8 finished;
+}  __attribute__ ((packed));
+
+struct {
+  __uint(type, BPF_MAP_TYPE_LRU_HASH);
+  __uint(max_entries, 256);
+  __type(key, struct conntrack_key);
+  __type(value, struct conntrack_val);
+} conntrack SEC(".maps");
+
 static inline int same_ipv6(void *a, void *b)
 {
   __u8 *a8 = (__u8 *)a;
@@ -98,6 +120,10 @@ process_ipv6(struct xdp_md *ctx)
   assert_len(eh, data_end);
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
+
+  // TODO(slankdev)???????????????/
+  // CONNECTION TRACKING?????
+
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
