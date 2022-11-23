@@ -297,10 +297,14 @@ node_configs:
   cmds:
   - cmd: ip link set net0 mtu 9000
   - cmd: iptables -t raw -A PREROUTING -j CT
-  - cmd: >-
-      iptables -t filter -A FORWARD -m connlimit
-      --connlimit-above 5 --connlimit-mask 32 --connlimit-saddr
-      -j REJECT --reject-with icmp-port-unreachable
+  - cmd: iptables -t filter -F FORWARD
+  - cmd: iptables -t filter -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+  - cmd: iptables -t filter -A FORWARD -s 10.254.0.0/24 -p tcp -m tcp --syn -m conntrack --ctstate NEW -j ACCEPT
+  - cmd: iptables -t filter -A FORWARD -j REJECT
+  # - cmd: >-
+  #     iptables -t filter -A FORWARD -m connlimit
+  #     --connlimit-above 5 --connlimit-mask 32 --connlimit-saddr
+  #     -j REJECT --reject-with icmp-port-unreachable
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.11 65011
   - cmd: ip route add blackhole fc00:11::/64
   - cmd: ip sr tunsrc set fc00:11::0
@@ -320,10 +324,14 @@ node_configs:
   cmds:
   - cmd: ip link set net0 mtu 9000
   - cmd: iptables -t raw -A PREROUTING -j CT
-  - cmd: >-
-      iptables -t filter -A FORWARD -m connlimit
-      --connlimit-above 5 --connlimit-mask 32 --connlimit-saddr
-      -j REJECT --reject-with icmp-port-unreachable
+  - cmd: iptables -t filter -F FORWARD
+  - cmd: iptables -t filter -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+  - cmd: iptables -t filter -A FORWARD -s 10.254.0.0/24 -p tcp -m tcp --syn -m conntrack --ctstate NEW -j ACCEPT
+  - cmd: iptables -t filter -A FORWARD -j REJECT
+  # - cmd: >-
+  #     iptables -t filter -A FORWARD -m connlimit
+  #     --connlimit-above 5 --connlimit-mask 32 --connlimit-saddr
+  #     -j REJECT --reject-with icmp-port-unreachable
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.12 65012
   - cmd: ip route add blackhole fc00:12::/64
   - cmd: ip sr tunsrc set fc00:12::0
@@ -343,10 +351,14 @@ node_configs:
   cmds:
   - cmd: ip link set net0 mtu 9000
   - cmd: iptables -t raw -A PREROUTING -j CT
-  - cmd: >-
-      iptables -t filter -A FORWARD -m connlimit
-      --connlimit-above 5 --connlimit-mask 32 --connlimit-saddr
-      -j REJECT --reject-with icmp-port-unreachable
+  - cmd: iptables -t filter -F FORWARD
+  - cmd: iptables -t filter -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+  - cmd: iptables -t filter -A FORWARD -s 10.254.0.0/24 -p tcp -m tcp --syn -m conntrack --ctstate NEW -j ACCEPT
+  - cmd: iptables -t filter -A FORWARD -j REJECT
+  # - cmd: >-
+  #     iptables -t filter -A FORWARD -m connlimit
+  #     --connlimit-above 5 --connlimit-mask 32 --connlimit-saddr
+  #     -j REJECT --reject-with icmp-port-unreachable
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.13 65013
   - cmd: ip route add blackhole fc00:13::/64
   - cmd: ip sr tunsrc set fc00:13::0
