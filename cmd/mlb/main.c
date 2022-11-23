@@ -158,12 +158,15 @@ process_ipv6(struct xdp_md *ctx)
                &ct_key.proto);
   bpf_printk("MLB debug %s", tmpstr1);
 
+  struct conntrack_val initval = {0};
   struct conntrack_val *ct_val = bpf_map_lookup_elem(&conntrack, &ct_key);
   if (!ct_val) {
-    // not found
-    // TODO(slankdev)???????????????/
-    // CONNECTION TRACKING?????
-    bpf_printk("MLB debug no-conntrack");
+    if (!(in_th->syn == 1 && in_th->ack == 0))
+      return ignore_packet(ctx);
+    bpf_printk("MLB new connection");
+    initval.created_at = bpf_ktime_get_ns();
+    bpf_map_update_elem(&conntrack, &ct_key, &initval, BPF_ANY);
+    ct_val = &initval;
   } else {
     bpf_printk("MLB debug exist-conntrack");
   }
