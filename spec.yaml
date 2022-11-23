@@ -45,7 +45,7 @@ postinit:
       ip link add vrf1 type vrf table 1
       ip link set vrf1 up
       ip -6 route replace \$SID encap seg6local action End.DT4 vrftable 1 dev net0
-      ip route replace 10.254.0.0/24 encap seg6 mode encap segs fc00:201::1 dev net0 vrf vrf1
+      ip route replace 10.254.0.0/24 encap seg6 mode encap segs fc00:201:1:: dev net0 vrf vrf1
 
       cat <<EOF1 > /etc/frr/frr.conf
       interface lo
@@ -317,15 +317,15 @@ node_configs:
 - name: HV1
   cmds:
   - cmd: ip link set net0 mtu 9000
-  - cmd: ip route add blackhole fc00:201::/64
+  - cmd: ip route add blackhole fc00:201::/32
   - cmd: ip link add vrf1 type vrf table 1
   - cmd: ip link set vrf1 up
   - cmd: ip link set vm1 vrf vrf1
   - cmd: ip addr add 10.254.0.1/24 noprefixroute dev vm1
   - cmd: ip route add 10.254.0.10/32 dev vm1 vrf vrf1
   - cmd: ip sr tunsrc set fc00:201::0
-  - cmd: ip -6 route replace fc00:201::1/128 encap seg6local action End.DT4 vrftable 1 dev net0
-  - cmd: ip -4 route add default encap seg6 mode encap segs fc00:1::1 dev net0 vrf vrf1
+  - cmd: ip -6 route replace fc00:201:1::/48 encap seg6local action End.DT4 vrftable 1 dev net0
+  - cmd: ip -4 route add default encap seg6 mode encap segs fc00:1:1::0 dev net0 vrf vrf1
 
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.200.1 65201
   - cmd: >-
@@ -350,7 +350,7 @@ node_configs:
   - cmd: ip link set net0 mtu 9000
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.1 65001
   - cmd: ip route add blackhole 10.254.0.0/24
-  - cmd: ip route add blackhole fc00:1::/64
+  - cmd: ip route add blackhole fc00:1::/32
   - cmd: >-
       vtysh -c 'conf te'
       -c 'router bgp'
@@ -370,13 +370,13 @@ node_configs:
 
 - name: N1
   cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.11 65011 fc00:11::/64 fc00:11::0 fc00:11::1
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.11 65011 fc00:11::/32 fc00:11::0 fc00:11:1::/48
 - name: N2
   cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.12 65012 fc00:12::/64 fc00:12::0 fc00:12::1
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.12 65012 fc00:12::/32 fc00:12::0 fc00:12:1::/48
 - name: N3
   cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.13 65013 fc00:13::/64 fc00:13::0 fc00:13::1
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.13 65013 fc00:13::/32 fc00:13::0 fc00:13:1::/48
 - name: N4
   cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.14 65014 fc00:14::/64 fc00:14::0 fc00:14::1
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.14 65014 fc00:14::/32 fc00:14::0 fc00:14:1::/48

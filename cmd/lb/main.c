@@ -42,11 +42,11 @@ Copyright 2022 Wide Project.
 #define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
 #endif
 
-static inline int same_ipv6(void *a, void *b)
+static inline int same_ipv6(void *a, void *b, int prefix_bytes)
 {
   __u8 *a8 = (__u8 *)a;
   __u8 *b8 = (__u8 *)b;
-  for (int i = 0; i < 16; i++)
+  for (int i = 0; (i < prefix_bytes && i < 16); i++)
     if (a8[i] != b8[i])
       return a8[i] - b8[i];
   return 0;
@@ -78,8 +78,8 @@ __u8 srv6_tunsrc[16] = {
 };
 
 __u8 srv6_local_sid[16] = {
-  0xfc, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+  0xfc, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
 struct {
@@ -213,7 +213,7 @@ process_ipv6(struct xdp_md *ctx)
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
-      same_ipv6(&oh->ip6.daddr, srv6_local_sid) != 0) {
+      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 2) != 0) {
     return ignore_packet(ctx);
   }
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
