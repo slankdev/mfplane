@@ -36,13 +36,13 @@ nodes:
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: hv1, type: direct, args: HV1#net0 }
-  - { name: c1, type: direct, args: C1#net0 }
-  - { name: l1, type: direct, args: L1#net0 }
-  - { name: l2, type: direct, args: L2#net0 }
-  - { name: l3, type: direct, args: L3#net0 }
-  - { name: n1, type: direct, args: N1#net0 }
-  - { name: n2, type: direct, args: N2#net0 }
-  - { name: n3, type: direct, args: N3#net0 }
+  - { name: c1 , type: direct, args: C1#net0  }
+  - { name: l1 , type: direct, args: L1#net0  }
+  - { name: l2 , type: direct, args: L2#net0  }
+  - { name: l3 , type: direct, args: L3#net0  }
+  - { name: n1 , type: direct, args: N1#net0  }
+  - { name: n2 , type: direct, args: N2#net0  }
+  - { name: n3 , type: direct, args: N3#net0  }
   sysctls:
   - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
@@ -181,6 +181,14 @@ nodes:
 node_configs:
 - name: CLOS
   cmds:
+  - cmd: ip link set hv1 mtu 9000
+  - cmd: ip link set c1  mtu 9000
+  - cmd: ip link set l1  mtu 9000
+  - cmd: ip link set l2  mtu 9000
+  - cmd: ip link set l3  mtu 9000
+  - cmd: ip link set n1  mtu 9000
+  - cmd: ip link set n2  mtu 9000
+  - cmd: ip link set n3  mtu 9000
   - cmd: /usr/lib/frr/frrinit.sh start
   - cmd: ip -4 route add blackhole 0.0.0.0/0
   - cmd: ip -6 route add blackhole ::/0
@@ -233,6 +241,7 @@ node_configs:
 
 - name: HV1
   cmds:
+  - cmd: ip link set net0 mtu 9000
   - cmd: ip route add blackhole fc00:201::/64
   - cmd: ip link add vrf1 type vrf table 1
   - cmd: ip link set vrf1 up
@@ -263,6 +272,7 @@ node_configs:
 
 - name: L1
   cmds:
+  - cmd: ip link set net0 mtu 9000
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.1 65001
   - cmd: ip route add blackhole 10.254.0.0/24
   - cmd: ip route add blackhole fc00:1::/64
@@ -285,6 +295,12 @@ node_configs:
 
 - name: N1
   cmds:
+  - cmd: ip link set net0 mtu 9000
+  - cmd: iptables -t raw -A PREROUTING -j CT
+  - cmd: >-
+      iptables -t filter -A FORWARD -m connlimit
+      --connlimit-above 5 --connlimit-mask 32 --connlimit-saddr
+      -j REJECT --reject-with icmp-port-unreachable
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.11 65011
   - cmd: ip route add blackhole fc00:11::/64
   - cmd: ip sr tunsrc set fc00:11::0
@@ -302,6 +318,12 @@ node_configs:
 
 - name: N2
   cmds:
+  - cmd: ip link set net0 mtu 9000
+  - cmd: iptables -t raw -A PREROUTING -j CT
+  - cmd: >-
+      iptables -t filter -A FORWARD -m connlimit
+      --connlimit-above 5 --connlimit-mask 32 --connlimit-saddr
+      -j REJECT --reject-with icmp-port-unreachable
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.12 65012
   - cmd: ip route add blackhole fc00:12::/64
   - cmd: ip sr tunsrc set fc00:12::0
@@ -319,6 +341,12 @@ node_configs:
 
 - name: N3
   cmds:
+  - cmd: ip link set net0 mtu 9000
+  - cmd: iptables -t raw -A PREROUTING -j CT
+  - cmd: >-
+      iptables -t filter -A FORWARD -m connlimit
+      --connlimit-above 5 --connlimit-mask 32 --connlimit-saddr
+      -j REJECT --reject-with icmp-port-unreachable
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.13 65013
   - cmd: ip route add blackhole fc00:13::/64
   - cmd: ip sr tunsrc set fc00:13::0
