@@ -10,3 +10,6 @@ WORKDIR /root
 RUN useradd syslog
 RUN apt install -y frr --no-install-recommends --no-install-suggests
 RUN sed -i -e "s/bgpd=no/bgpd=yes/g" /etc/frr/daemons
+RUN apt install -y conntrack
+RUN apt install -y netcat
+RUN apt install -y iperf3
