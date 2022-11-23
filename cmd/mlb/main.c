@@ -49,7 +49,7 @@ struct conntrack_val {
 
 struct {
   __uint(type, BPF_MAP_TYPE_LRU_HASH);
-  __uint(max_entries, 256);
+  __uint(max_entries, 16);
   __type(key, struct conntrack_key);
   __type(value, struct conntrack_val);
 } conntrack SEC(".maps");
@@ -72,12 +72,12 @@ struct outer_header {
 } __attribute__ ((packed));
 
 __u8 srv6_tunsrc[16] = {
-  0xfc, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, //TODO(slankdev): set from map
+  0xfc, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, //TODO(slankdev): set from map
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
 __u8 srv6_local_sid[16] = {
-  0xfc, 0x00, 0x00, 0x11, 0x00, 0x01, 0x00, 0x00, //TODO(slankdev): set from map
+  0xfc, 0x00, 0x00, 0x12, 0x00, 0x01, 0x00, 0x00, //TODO(slankdev): set from map
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
@@ -153,54 +153,56 @@ process_ipv6(struct xdp_md *ctx)
   char tmpstr1[128] = {0};
   BPF_SNPRINTF(tmpstr1, sizeof(tmpstr1), "dir=%d %pi4:%u -> %pi4:%u %u",
                dir_left,
-               &ct_key.addr1, &ct_key.port1,
-               &ct_key.addr2, &ct_key.port2,
-               &ct_key.proto);
+               &ct_key.addr1, ct_key.port1,
+               &ct_key.addr2, ct_key.port2,
+               ct_key.proto);
   bpf_printk("MLB debug %s", tmpstr1);
 
   struct conntrack_val initval = {0};
   struct conntrack_val *ct_val = bpf_map_lookup_elem(&conntrack, &ct_key);
   if (!ct_val) {
-    if (!(in_th->syn == 1 && in_th->ack == 0))
-      return ignore_packet(ctx);
+    if (!(in_th->syn == 1 && in_th->ack == 0)) {
+      bpf_printk("MLB REDIRECT");
+      struct in6_addr next_sid = {0};
+      memcpy(&next_sid, &oh->ip6.daddr, sizeof(struct in6_addr));
+      next_sid.in6_u.u6_addr16[1] = next_sid.in6_u.u6_addr16[7];
+      next_sid.in6_u.u6_addr16[7] = bpf_htons(0x0001);
+
+      char tmpstr[128] = {0};
+      BPF_SNPRINTF(tmpstr, sizeof(tmpstr), "%pi6 -> %pi6",
+                  &oh->ip6.daddr, &next_sid);
+      bpf_printk("MLB [%s]", tmpstr);
+
+      // Craft new ether header
+      __u8 tmp[6] = {0};
+      memcpy(tmp, eh->h_dest, 6);
+      memcpy(eh->h_dest, eh->h_source, 6);
+      memcpy(eh->h_source, tmp, 6);
+      memcpy(&oh->ip6.saddr, &srv6_tunsrc, 16);
+      memcpy(&oh->ip6.daddr, &next_sid, 16);
+      memcpy(&oh->seg, &next_sid, 16);
+      return XDP_TX;
+    }
+
     bpf_printk("MLB new connection");
     initval.created_at = bpf_ktime_get_ns();
     bpf_map_update_elem(&conntrack, &ct_key, &initval, BPF_ANY);
     ct_val = &initval;
-  } else {
-    bpf_printk("MLB debug exist-conntrack");
+  }
+  if (in_th->syn == 1 && in_th->ack == 1) {
+    if (ct_val->established_at == 0) {
+      bpf_printk("MLB establish connection");
+      ct_val->established_at = bpf_ktime_get_ns();
+    }
+  }
+  if (in_th->fin == 1) {
+    if (ct_val->finished_at == 0) {
+      bpf_printk("MLB finished connection");
+      ct_val->finished_at = bpf_ktime_get_ns();
+    }
   }
 
   return XDP_PASS;
-
-  // TODO(slankdev)
-  // struct iphdr *in_ih = (struct iphdr *)(oh + 1);
-  // assert_len(in_ih, data_end);
-  // __u8 in_ih_len = in_ih->ihl * 4;
-  // struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
-  // assert_len(in_th, data_end);
-
-  struct in6_addr next_sid = {0};
-  memcpy(&next_sid, &oh->ip6.daddr, sizeof(struct in6_addr));
-  next_sid.in6_u.u6_addr16[1] = next_sid.in6_u.u6_addr16[7];
-  next_sid.in6_u.u6_addr16[7] = bpf_htons(0x0001);
-
-  char tmpstr[128] = {0};
-  BPF_SNPRINTF(tmpstr, sizeof(tmpstr), "%pi6 -> %pi6",
-               &oh->ip6.daddr, &next_sid);
-  bpf_printk("MLB [%s]", tmpstr);
-
-
-  // Craft new ether header
-  __u8 tmp[6] = {0};
-  memcpy(tmp, eh->h_dest, 6);
-  memcpy(eh->h_dest, eh->h_source, 6);
-  memcpy(eh->h_source, tmp, 6);
-  memcpy(&oh->ip6.saddr, &srv6_tunsrc, 16);
-  memcpy(&oh->ip6.daddr, &next_sid, 16);
-  memcpy(&oh->seg, &next_sid, 16);
-
-  return XDP_TX;
 }
 
 static inline int
