@@ -25,9 +25,62 @@ postinit:
       EOF1
       /usr/lib/frr/frrinit.sh start
       EOF
+  - cmd: |
+      cat <<EOF > /tmp/n_node_setup.sh
+      LO_ADDR=\$1
+      ASN=\$2
+      LOCATOR=\$3
+      TUNSRC=\$4
+      SID=\$5
+
+      ip link set net0 mtu 9000
+      iptables -t raw -A PREROUTING -j CT
+      iptables -t filter -F FORWARD
+      iptables -t filter -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+      iptables -t filter -A FORWARD -s 10.254.0.0/24 -p tcp -m tcp --syn -m conntrack --ctstate NEW -j ACCEPT
+      iptables -t filter -A FORWARD -j REJECT
+
+      ip route add blackhole \$LOCATOR
+      ip sr tunsrc set \$TUNSRC
+      ip link add vrf1 type vrf table 1
+      ip link set vrf1 up
+      ip -6 route replace \$SID encap seg6local action End.DT4 vrftable 1 dev net0
+      ip route replace 10.254.0.0/24 encap seg6 mode encap segs fc00:201::1 dev net0 vrf vrf1
+
+      cat <<EOF1 > /etc/frr/frr.conf
+      interface lo
+       ip addr \$LO_ADDR/32
+      !
+      interface net0
+       ipv6 nd ra-interval 3
+       no ipv6 nd suppress-ra
+      !
+      router bgp \$ASN
+       bgp router-id \$LO_ADDR
+       bgp bestpath as-path multipath-relax
+       no bgp ebgp-requires-policy
+       neighbor PEER peer-group
+       neighbor PEER remote-as external
+       neighbor net0 interface peer-group PEER
+       !
+       address-family ipv4 unicast
+        redistribute connected
+        redistribute kernel
+       exit-address-family
+       !
+       address-family ipv6 unicast
+        neighbor PEER activate
+        redistribute kernel
+       exit-address-family
+      !
+      EOF1
+
+      /usr/lib/frr/frrinit.sh start
+      EOF
   - cmd: >-
       for c in $(docker ps -aq); do
       docker cp /tmp/bgp_conf_init.sh $c:/usr/bin/bgp_conf_init.sh;
+      docker cp /tmp/n_node_setup.sh $c:/usr/bin/n_node_setup.sh;
       done
 
 nodes:
@@ -295,69 +348,10 @@ node_configs:
 
 - name: N1
   cmds:
-  - cmd: ip link set net0 mtu 9000
-  - cmd: iptables -t raw -A PREROUTING -j CT
-  - cmd: iptables -t filter -F FORWARD
-  - cmd: iptables -t filter -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
-  - cmd: iptables -t filter -A FORWARD -s 10.254.0.0/24 -p tcp -m tcp --syn -m conntrack --ctstate NEW -j ACCEPT
-  - cmd: iptables -t filter -A FORWARD -j REJECT
-  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.11 65011
-  - cmd: ip route add blackhole fc00:11::/64
-  - cmd: ip sr tunsrc set fc00:11::0
-  - cmd: ip link add vrf1 type vrf table 1
-  - cmd: ip link set vrf1 up
-  - cmd: ip -6 route replace fc00:11::1 encap seg6local action End.DT4 vrftable 1 dev net0
-  - cmd: ip route replace 10.254.0.0/24 encap seg6 mode encap segs fc00:201::1 dev net0 vrf vrf1
-  - cmd: >-
-      vtysh -c 'conf te'
-      -c 'router bgp'
-      -c ' address-family ipv6 unicast'
-      -c '  neighbor PEER activate'
-      -c '  redistribute kernel'
-      -c ' exit-address-family'
-
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.11 65011 fc00:11::/64 fc00:11::0 fc00:11::1
 - name: N2
   cmds:
-  - cmd: ip link set net0 mtu 9000
-  - cmd: iptables -t raw -A PREROUTING -j CT
-  - cmd: iptables -t filter -F FORWARD
-  - cmd: iptables -t filter -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
-  - cmd: iptables -t filter -A FORWARD -s 10.254.0.0/24 -p tcp -m tcp --syn -m conntrack --ctstate NEW -j ACCEPT
-  - cmd: iptables -t filter -A FORWARD -j REJECT
-  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.12 65012
-  - cmd: ip route add blackhole fc00:12::/64
-  - cmd: ip sr tunsrc set fc00:12::0
-  - cmd: ip link add vrf1 type vrf table 1
-  - cmd: ip link set vrf1 up
-  - cmd: ip -6 route replace fc00:12::1 encap seg6local action End.DT4 vrftable 1 dev net0
-  - cmd: ip route replace 10.254.0.0/24 encap seg6 mode encap segs fc00:201::1 dev net0 vrf vrf1
-  - cmd: >-
-      vtysh -c 'conf te'
-      -c 'router bgp'
-      -c ' address-family ipv6 unicast'
-      -c '  neighbor PEER activate'
-      -c '  redistribute kernel'
-      -c ' exit-address-family'
-
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.12 65012 fc00:12::/64 fc00:12::0 fc00:12::1
 - name: N3
   cmds:
-  - cmd: ip link set net0 mtu 9000
-  - cmd: iptables -t raw -A PREROUTING -j CT
-  - cmd: iptables -t filter -F FORWARD
-  - cmd: iptables -t filter -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
-  - cmd: iptables -t filter -A FORWARD -s 10.254.0.0/24 -p tcp -m tcp --syn -m conntrack --ctstate NEW -j ACCEPT
-  - cmd: iptables -t filter -A FORWARD -j REJECT
-  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.13 65013
-  - cmd: ip route add blackhole fc00:13::/64
-  - cmd: ip sr tunsrc set fc00:13::0
-  - cmd: ip link add vrf1 type vrf table 1
-  - cmd: ip link set vrf1 up
-  - cmd: ip -6 route replace fc00:13::1 encap seg6local action End.DT4 vrftable 1 dev net0
-  - cmd: ip route replace 10.254.0.0/24 encap seg6 mode encap segs fc00:201::1 dev net0 vrf vrf1
-  - cmd: >-
-      vtysh -c 'conf te'
-      -c 'router bgp'
-      -c ' address-family ipv6 unicast'
-      -c '  neighbor PEER activate'
-      -c '  redistribute kernel'
-      -c ' exit-address-family'
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.13 65012 fc00:13::/64 fc00:13::0 fc00:13::1
