@@ -15,6 +15,8 @@ Copyright 2022 Wide Project.
 #include <bpf/bpf_endian.h>
 #include "jhash.h"
 
+#define LP "MLB " // log prefix
+
 #define assert_len(interest, end)            \
   ({                                         \
     if ((unsigned long)(interest + 1) > end) \
@@ -81,33 +83,17 @@ __u8 srv6_local_sid[16] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-#ifdef DEBUG
-static inline void
-debug_skb(struct xdp_md *ctx, const char *name)
-{
-  bpf_printk("%s(%u:%u)", name, ctx->ingress_ifindex, ctx->ifindex);
-  bpf_printk(" tstamp:%u mark:%u l4_hash:%u", ctx->tstamp, ctx->mark, ctx->hash);
-  bpf_printk(" cb[0]: %u", ctx->cb[0]);
-  bpf_printk(" cb[1]: %u", ctx->cb[1]);
-  bpf_printk(" cb[2]: %u", ctx->cb[2]);
-  bpf_printk(" cb[3]: %u", ctx->cb[3]); bpf_printk(" cb[4]: %u", ctx->cb[4]);
-  bpf_printk(" data_meta: %u", ctx->data_meta);
-  bpf_printk(" data:      %u", ctx->data);
-  bpf_printk(" data_end:  %u", ctx->data_end);
-}
-#endif /* DEBUG */
-
 static inline int
 ignore_packet(struct xdp_md *ctx)
 {
-  bpf_printk("ignore packet");
+  bpf_printk(LP"ignore packet");
   return XDP_PASS;
 }
 
 static inline int
 error_packet(struct xdp_md *ctx)
 {
-  bpf_printk("error packet");
+  bpf_printk(LP"error packet");
   return XDP_DROP;
 }
 
@@ -150,19 +136,18 @@ process_ipv6(struct xdp_md *ctx)
     ct_key.port2 = in_th->source;
     ct_key.proto = in_ih->protocol;
   }
-  char tmpstr1[128] = {0};
-  BPF_SNPRINTF(tmpstr1, sizeof(tmpstr1), "dir=%d %pi4:%u -> %pi4:%u %u",
+  char connstr[128] = {0};
+  BPF_SNPRINTF(connstr, sizeof(connstr), "dir=%d %pi4:%u -> %pi4:%u %u",
                dir_left,
-               &ct_key.addr1, ct_key.port1,
-               &ct_key.addr2, ct_key.port2,
+               &ct_key.addr1, bpf_ntohs(ct_key.port1),
+               &ct_key.addr2, bpf_ntohs(ct_key.port2),
                ct_key.proto);
-  bpf_printk("MLB debug %s", tmpstr1);
 
   struct conntrack_val initval = {0};
   struct conntrack_val *ct_val = bpf_map_lookup_elem(&conntrack, &ct_key);
   if (!ct_val) {
     if (!(in_th->syn == 1 && in_th->ack == 0)) {
-      bpf_printk("MLB REDIRECT");
+      bpf_printk(LP"REDIRECT %s", connstr);
       struct in6_addr next_sid = {0};
       memcpy(&next_sid, &oh->ip6.daddr, sizeof(struct in6_addr));
       next_sid.in6_u.u6_addr16[1] = next_sid.in6_u.u6_addr16[7];
@@ -171,7 +156,7 @@ process_ipv6(struct xdp_md *ctx)
       char tmpstr[128] = {0};
       BPF_SNPRINTF(tmpstr, sizeof(tmpstr), "%pi6 -> %pi6",
                   &oh->ip6.daddr, &next_sid);
-      bpf_printk("MLB [%s]", tmpstr);
+      bpf_printk(LP"[%s]", tmpstr);
 
       // Craft new ether header
       __u8 tmp[6] = {0};
@@ -184,20 +169,20 @@ process_ipv6(struct xdp_md *ctx)
       return XDP_TX;
     }
 
-    bpf_printk("MLB new connection");
+    bpf_printk(LP"new connection %s", connstr);
     initval.created_at = bpf_ktime_get_ns();
     bpf_map_update_elem(&conntrack, &ct_key, &initval, BPF_ANY);
     ct_val = &initval;
   }
   if (in_th->syn == 1 && in_th->ack == 1) {
     if (ct_val->established_at == 0) {
-      bpf_printk("MLB establish connection");
+      bpf_printk(LP"establish connection", connstr);
       ct_val->established_at = bpf_ktime_get_ns();
     }
   }
   if (in_th->fin == 1) {
     if (ct_val->finished_at == 0) {
-      bpf_printk("MLB finished connection");
+      bpf_printk(LP"finished connection", connstr);
       ct_val->finished_at = bpf_ktime_get_ns();
     }
   }

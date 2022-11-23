@@ -15,6 +15,7 @@ Copyright 2022 Wide Project.
 #include <bpf/bpf_endian.h>
 #include "jhash.h"
 
+#define LP "CLB " // log prefix
 #ifndef RING_SIZE
 #define RING_SIZE 17
 //#define RING_SIZE 65537
@@ -90,33 +91,17 @@ struct {
 	__uint(max_entries, RING_SIZE);
 } procs SEC(".maps");
 
-#ifdef DEBUG
-static inline void
-debug_skb(struct xdp_md *ctx, const char *name)
-{
-  bpf_printk("%s(%u:%u)", name, ctx->ingress_ifindex, ctx->ifindex);
-  bpf_printk(" tstamp:%u mark:%u l4_hash:%u", ctx->tstamp, ctx->mark, ctx->hash);
-  bpf_printk(" cb[0]: %u", ctx->cb[0]);
-  bpf_printk(" cb[1]: %u", ctx->cb[1]);
-  bpf_printk(" cb[2]: %u", ctx->cb[2]);
-  bpf_printk(" cb[3]: %u", ctx->cb[3]); bpf_printk(" cb[4]: %u", ctx->cb[4]);
-  bpf_printk(" data_meta: %u", ctx->data_meta);
-  bpf_printk(" data:      %u", ctx->data);
-  bpf_printk(" data_end:  %u", ctx->data_end);
-}
-#endif /* DEBUG */
-
 static inline int
 ignore_packet(struct xdp_md *ctx)
 {
-  bpf_printk("ignore packet");
+  bpf_printk(LP"ignore packet");
   return XDP_PASS;
 }
 
 static inline int
 error_packet(struct xdp_md *ctx)
 {
-  bpf_printk("error packet");
+  bpf_printk(LP"error packet");
   return XDP_DROP;
 }
 
@@ -149,7 +134,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
   __u32 idx = hash % RING_SIZE;
   struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
   if (!p) {
-    bpf_printk("no entry fatal");
+    bpf_printk(LP"no entry fatal");
     return ignore_packet(ctx);
   }
 
@@ -158,7 +143,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
                &ih->saddr, bpf_ntohs(th->source),
                &ih->daddr, bpf_ntohs(th->dest),
                ih->protocol, &p->addr);
-  bpf_printk("dn-flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
+  bpf_printk(LP"dn-flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
 
   // Adjust packet buffer head pointer
   if (bpf_xdp_adjust_head(ctx, 0 - (int)(sizeof(struct outer_header)))) {
@@ -230,7 +215,7 @@ process_ipv6(struct xdp_md *ctx)
   __u32 idx = hash % RING_SIZE;
   struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
   if (!p) {
-    bpf_printk("no entry fatal");
+    bpf_printk(LP"no entry fatal");
     return ignore_packet(ctx);
   }
 
@@ -239,7 +224,7 @@ process_ipv6(struct xdp_md *ctx)
                &in_ih->saddr, bpf_ntohs(in_th->source),
                &in_ih->daddr, bpf_ntohs(in_th->dest),
                in_ih->protocol, &p->addr);
-  bpf_printk("up-flow=[%s] hash=0x%08x idx=%u", tmpstr, hash, idx);
+  bpf_printk(LP"up-flow=[%s] hash=0x%08x idx=%u", tmpstr, hash, idx);
 
   ///////////////////////////////////////////////////
   // TODO(slankdev): set the NEXT_SID from p->addr //
