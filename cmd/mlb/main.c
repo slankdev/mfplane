@@ -32,18 +32,19 @@ Copyright 2022 Wide Project.
 #endif
 
 struct conntrack_key {
-  __u32 saddr;
-  __u32 daddr;
-  __u16 sport;
-  __u16 dport;
+  __u32 addr1;
+  __u32 addr2;
+  __u16 port1;
+  __u16 port2;
   __u8 proto;
 }  __attribute__ ((packed));
 
 struct conntrack_val {
   __u32 pkts;
   __u32 bytes;
-  __u8 asured;
-  __u8 finished;
+  __u64 created_at;
+  __u64 established_at;
+  __u64 finished_at;
 }  __attribute__ ((packed));
 
 struct {
@@ -71,12 +72,12 @@ struct outer_header {
 } __attribute__ ((packed));
 
 __u8 srv6_tunsrc[16] = {
-  0xfc, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00,
+  0xfc, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, //TODO(slankdev): set from map
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
 __u8 srv6_local_sid[16] = {
-  0xfc, 0x00, 0x00, 0x12, 0x00, 0x01, 0x00, 0x00,
+  0xfc, 0x00, 0x00, 0x11, 0x00, 0x01, 0x00, 0x00, //TODO(slankdev): set from map
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
@@ -121,15 +122,53 @@ process_ipv6(struct xdp_md *ctx)
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
 
-  // TODO(slankdev)???????????????/
-  // CONNECTION TRACKING?????
-
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
       same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) {
     return ignore_packet(ctx);
   }
+  struct iphdr *in_ih = (struct iphdr *)(oh + 1);
+  assert_len(in_ih, data_end);
+  __u8 in_ih_len = in_ih->ihl * 4;
+  struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
+  assert_len(in_th, data_end);
+
+  struct conntrack_key ct_key = {0};
+  int dir_left = 0;
+  if (in_ih->saddr < in_ih->daddr) {
+    dir_left = 1;
+    ct_key.addr1 = in_ih->saddr;
+    ct_key.addr2 = in_ih->daddr;
+    ct_key.port1 = in_th->source;
+    ct_key.port2 = in_th->dest;
+    ct_key.proto = in_ih->protocol;
+  } else {
+    ct_key.addr1 = in_ih->daddr;
+    ct_key.addr2 = in_ih->saddr;
+    ct_key.port1 = in_th->dest;
+    ct_key.port2 = in_th->source;
+    ct_key.proto = in_ih->protocol;
+  }
+  char tmpstr1[128] = {0};
+  BPF_SNPRINTF(tmpstr1, sizeof(tmpstr1), "dir=%d %pi4:%u -> %pi4:%u %u",
+               dir_left,
+               &ct_key.addr1, &ct_key.port1,
+               &ct_key.addr2, &ct_key.port2,
+               &ct_key.proto);
+  bpf_printk("MLB debug %s", tmpstr1);
+
+  struct conntrack_val *ct_val = bpf_map_lookup_elem(&conntrack, &ct_key);
+  if (!ct_val) {
+    // not found
+    // TODO(slankdev)???????????????/
+    // CONNECTION TRACKING?????
+    bpf_printk("MLB debug no-conntrack");
+  } else {
+    bpf_printk("MLB debug exist-conntrack");
+  }
+
+  return XDP_PASS;
 
   // TODO(slankdev)
   // struct iphdr *in_ih = (struct iphdr *)(oh + 1);
