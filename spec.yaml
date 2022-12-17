@@ -47,6 +47,9 @@ postinit:
       ip -6 route replace \$SID encap seg6local action End.DT4 vrftable 1 dev net0
       ip route replace 10.254.0.0/24 encap seg6 mode encap segs fc00:201:1:: dev net0 vrf vrf1
 
+      ## Bandwidth Control
+      tc qdisc add dev net0 root handle 1:0 tbf limit 500kb burst 50kb rate 50mbit
+
       cat <<EOF1 > /etc/frr/frr.conf
       interface lo
        ip addr \$LO_ADDR/32
@@ -100,6 +103,10 @@ nodes:
   - { name: n2 , type: direct, args: N2#net0  }
   - { name: n3 , type: direct, args: N3#net0  }
   - { name: n4 , type: direct, args: N4#net0  }
+  - { name: n5 , type: direct, args: N5#net0  }
+  - { name: n6 , type: direct, args: N6#net0  }
+  - { name: n7 , type: direct, args: N7#net0  }
+  - { name: n8 , type: direct, args: N8#net0  }
   sysctls:
   - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
@@ -249,6 +256,66 @@ nodes:
   - sysctl: net.ipv4.conf.all.rp_filter=0
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
+- name: N5
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#n5 }
+  sysctls:
+  - sysctl: net.vrf.strict_mode=1
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
+  - sysctl: net.ipv4.conf.all.rp_filter=0
+  - sysctl: net.ipv4.conf.default.rp_filter=0
+  - sysctl: net.ipv4.conf.lo.rp_filter=0
+- name: N6
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#n6 }
+  sysctls:
+  - sysctl: net.vrf.strict_mode=1
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
+  - sysctl: net.ipv4.conf.all.rp_filter=0
+  - sysctl: net.ipv4.conf.default.rp_filter=0
+  - sysctl: net.ipv4.conf.lo.rp_filter=0
+- name: N7
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#n7 }
+  sysctls:
+  - sysctl: net.vrf.strict_mode=1
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
+  - sysctl: net.ipv4.conf.all.rp_filter=0
+  - sysctl: net.ipv4.conf.default.rp_filter=0
+  - sysctl: net.ipv4.conf.lo.rp_filter=0
+- name: N8
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#n8 }
+  sysctls:
+  - sysctl: net.vrf.strict_mode=1
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
+  - sysctl: net.ipv4.conf.all.rp_filter=0
+  - sysctl: net.ipv4.conf.default.rp_filter=0
+  - sysctl: net.ipv4.conf.lo.rp_filter=0
 
 node_configs:
 - name: CLOS
@@ -262,6 +329,10 @@ node_configs:
   - cmd: ip link set n2  mtu 9000
   - cmd: ip link set n3  mtu 9000
   - cmd: ip link set n4  mtu 9000
+  - cmd: ip link set n5  mtu 9000
+  - cmd: ip link set n6  mtu 9000
+  - cmd: ip link set n7  mtu 9000
+  - cmd: ip link set n8  mtu 9000
   - cmd: /usr/lib/frr/frrinit.sh start
   - cmd: ip -4 route add blackhole 0.0.0.0/0
   - cmd: ip -6 route add blackhole ::/0
@@ -295,6 +366,10 @@ node_configs:
       -c ' neighbor n2 interface peer-group PEER'
       -c ' neighbor n3 interface peer-group PEER'
       -c ' neighbor n4 interface peer-group PEER'
+      -c ' neighbor n5 interface peer-group PEER'
+      -c ' neighbor n6 interface peer-group PEER'
+      -c ' neighbor n7 interface peer-group PEER'
+      -c ' neighbor n8 interface peer-group PEER'
       -c ' !'
       -c ' address-family ipv4 unicast'
       -c '  redistribute connected'
@@ -379,3 +454,15 @@ node_configs:
 - name: N4
   cmds:
   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.14 65014 fc00:14::/32 fc00:14::0 fc00:14:1::/48
+- name: N5
+  cmds:
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.15 65015 fc00:15::/32 fc00:15::0 fc00:15:1::/48
+- name: N6
+  cmds:
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.16 65016 fc00:16::/32 fc00:16::0 fc00:16:1::/48
+- name: N7
+  cmds:
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.17 65017 fc00:17::/32 fc00:17::0 fc00:17:1::/48
+- name: N8
+  cmds:
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.18 65018 fc00:18::/32 fc00:18::0 fc00:18:1::/48
