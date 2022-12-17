@@ -86,14 +86,18 @@ __u8 srv6_local_sid[16] = {
 static inline int
 ignore_packet(struct xdp_md *ctx)
 {
+#ifdef DEBUG
   bpf_printk(LP"ignore packet");
+#endif
   return XDP_PASS;
 }
 
 static inline int
 error_packet(struct xdp_md *ctx)
 {
+#ifdef DEBUG
   bpf_printk(LP"error packet");
+#endif
   return XDP_DROP;
 }
 
@@ -147,7 +151,9 @@ process_ipv6(struct xdp_md *ctx)
   struct conntrack_val *ct_val = bpf_map_lookup_elem(&conntrack, &ct_key);
   if (!ct_val) {
     if (!(in_th->syn == 1 && in_th->ack == 0)) {
+#ifdef DEBUG
       bpf_printk(LP"REDIRECT %s", connstr);
+#endif
       struct in6_addr next_sid = {0};
       memcpy(&next_sid, &oh->ip6.daddr, sizeof(struct in6_addr));
       next_sid.in6_u.u6_addr16[1] = next_sid.in6_u.u6_addr16[7];
@@ -156,7 +162,9 @@ process_ipv6(struct xdp_md *ctx)
       char tmpstr[128] = {0};
       BPF_SNPRINTF(tmpstr, sizeof(tmpstr), "%pi6 -> %pi6",
                   &oh->ip6.daddr, &next_sid);
+#ifdef DEBUG
       bpf_printk(LP"[%s]", tmpstr);
+#endif
 
       // Craft new ether header
       __u8 tmp[6] = {0};
@@ -169,20 +177,26 @@ process_ipv6(struct xdp_md *ctx)
       return XDP_TX;
     }
 
+#ifdef DEBUG
     bpf_printk(LP"new connection %s", connstr);
+#endif
     initval.created_at = bpf_ktime_get_ns();
     bpf_map_update_elem(&conntrack, &ct_key, &initval, BPF_ANY);
     ct_val = &initval;
   }
   if (in_th->syn == 1 && in_th->ack == 1) {
     if (ct_val->established_at == 0) {
+#ifdef DEBUG
       bpf_printk(LP"establish connection", connstr);
+#endif
       ct_val->established_at = bpf_ktime_get_ns();
     }
   }
   if (in_th->fin == 1) {
     if (ct_val->finished_at == 0) {
+#ifdef DEBUG
       bpf_printk(LP"finished connection", connstr);
+#endif
       ct_val->finished_at = bpf_ktime_get_ns();
     }
   }

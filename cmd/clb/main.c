@@ -94,14 +94,18 @@ struct {
 static inline int
 ignore_packet(struct xdp_md *ctx)
 {
+#ifdef DEBUG
   bpf_printk(LP"ignore packet");
+#endif
   return XDP_PASS;
 }
 
 static inline int
 error_packet(struct xdp_md *ctx)
 {
+#ifdef DEBUG
   bpf_printk(LP"error packet");
+#endif
   return XDP_DROP;
 }
 
@@ -134,7 +138,9 @@ process_ipv4_tcp(struct xdp_md *ctx)
   __u32 idx = hash % RING_SIZE;
   struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
   if (!p) {
+#ifdef DEBUG
     bpf_printk(LP"no entry fatal");
+#endif
     return ignore_packet(ctx);
   }
 
@@ -143,7 +149,9 @@ process_ipv4_tcp(struct xdp_md *ctx)
                &ih->saddr, bpf_ntohs(th->source),
                &ih->daddr, bpf_ntohs(th->dest),
                ih->protocol, &p->addr);
+#ifdef DEBUG
   bpf_printk(LP"dn-flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
+#endif
 
   // Adjust packet buffer head pointer
   if (bpf_xdp_adjust_head(ctx, 0 - (int)(sizeof(struct outer_header)))) {
@@ -215,7 +223,9 @@ process_ipv6(struct xdp_md *ctx)
   __u32 idx = hash % RING_SIZE;
   struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
   if (!p) {
+#ifdef DEBUG
     bpf_printk(LP"no entry fatal");
+#endif
     return ignore_packet(ctx);
   }
 
@@ -224,7 +234,9 @@ process_ipv6(struct xdp_md *ctx)
                &in_ih->saddr, bpf_ntohs(in_th->source),
                &in_ih->daddr, bpf_ntohs(in_th->dest),
                in_ih->protocol, &p->addr);
+#ifdef DEBUG
   bpf_printk(LP"up-flow=[%s] hash=0x%08x idx=%u", tmpstr, hash, idx);
+#endif
 
   ///////////////////////////////////////////////////
   // TODO(slankdev): set the NEXT_SID from p->addr //
