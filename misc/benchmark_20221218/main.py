@@ -3,12 +3,19 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import json
 import sys
+import pprint
 
 dd = {}
-with open("./P6_b100M.json") as f:
+with open("./t5_P10_b100M.json") as f:
     dd = json.load(f)
 
-pprint.pprint(dd)
+for interval in dd["intervals"]:
+    for stream in interval["streams"]:
+        #pprint.pprint(stream)
+        print(stream["rtt"])
+        #sys.exit(0)
+    
+#pprint.pprint(dd["end"]["streams"])
 sys.exit(0)
 
 data = pd.read_csv('./data.csv')
