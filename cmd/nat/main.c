@@ -16,6 +16,7 @@ Copyright 2022 Wide Project.
 #include "jhash.h"
 
 #define LP "NAT " // log prefix
+#define DEBUG
 
 #define assert_len(interest, end)            \
   ({                                         \
@@ -79,7 +80,8 @@ __u8 srv6_tunsrc[16] = {
 };
 
 __u8 srv6_local_sid[16] = {
-  0xfc, 0x00, 0x00, 0x12, 0x00, 0x01, 0x00, 0x00, //TODO(slankdev): set from map
+  // fc00:11:1:::
+  0xfc, 0x00, 0x00, 0x11, 0x00, 0x01, 0x00, 0x00, //TODO(slankdev): set from map
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
@@ -124,84 +126,47 @@ process_ipv6(struct xdp_md *ctx)
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
-  struct conntrack_key ct_key = {0};
-  int dir_left = 0;
-  if (in_ih->saddr < in_ih->daddr) {
-    dir_left = 1;
-    ct_key.addr1 = in_ih->saddr;
-    ct_key.addr2 = in_ih->daddr;
-    ct_key.port1 = in_th->source;
-    ct_key.port2 = in_th->dest;
-    ct_key.proto = in_ih->protocol;
+  // to-nat check
+  __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
+  __u32 saddrupdate = bpf_ntohl(0x8e000001); // 142.0.0.1
+  bpf_printk("nat %08x %08x", in_ih->saddr, saddrmatch);
+  if (in_ih->saddr == saddrmatch) {
+    bpf_printk("nat match");
+    __u32 hash = 0;
+    hash = jhash_2words(in_ih->saddr, in_ih->daddr, 0xdeadbeaf);
+    hash = jhash_2words(in_th->source, in_th->dest, hash);
+    hash = jhash_2words(in_ih->protocol, 0, hash);
+    __u32 sourceport = hash % 0xffff;
+#ifdef DEBUG
+    char tmp[128] = {0};
+    BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u/%pi4:%u -> %pi4:%u",
+                in_ih->protocol,
+                &in_ih->saddr, bpf_ntohs(in_th->source),
+                &saddrupdate, bpf_ntohs(sourceport),
+                &in_ih->daddr, bpf_ntohs(in_th->dest));
+    bpf_printk(LP"nat! %s", tmp);
+#endif
+    in_ih->saddr = saddrupdate;
+    in_th->source = sourceport;
+
+    // mac addr swap
+    struct ethhdr *old_eh = (struct ethhdr *)data;
+    struct ethhdr *new_eh = (struct ethhdr *)(data + sizeof(struct outer_header));
+    assert_len(new_eh, data_end);
+    assert_len(old_eh, data_end);
+    new_eh->h_proto = bpf_htons(ETH_P_IP);
+    memcpy(new_eh->h_source, old_eh->h_dest, 6);
+    memcpy(new_eh->h_dest, old_eh->h_source, 6);
+
+    // decap and TX
+    if (bpf_xdp_adjust_head(ctx, 0 + (int)sizeof(struct outer_header))) {
+      return error_packet(ctx);
+    }
+    return XDP_TX;
   } else {
-    ct_key.addr1 = in_ih->daddr;
-    ct_key.addr2 = in_ih->saddr;
-    ct_key.port1 = in_th->dest;
-    ct_key.port2 = in_th->source;
-    ct_key.proto = in_ih->protocol;
+    bpf_printk("nat no match");
+    return ignore_packet(ctx);
   }
-  char connstr[128] = {0};
-  BPF_SNPRINTF(connstr, sizeof(connstr), "dir=%d %pi4:%u -> %pi4:%u %u",
-               dir_left,
-               &ct_key.addr1, bpf_ntohs(ct_key.port1),
-               &ct_key.addr2, bpf_ntohs(ct_key.port2),
-               ct_key.proto);
-
-  struct conntrack_val initval = {0};
-  struct conntrack_val *ct_val = bpf_map_lookup_elem(&conntrack, &ct_key);
-  if (!ct_val) {
-    if (!(in_th->syn == 1 && in_th->ack == 0)) {
-#ifdef DEBUG
-      bpf_printk(LP"REDIRECT %s", connstr);
-#endif
-      struct in6_addr next_sid = {0};
-      memcpy(&next_sid, &oh->ip6.daddr, sizeof(struct in6_addr));
-      next_sid.in6_u.u6_addr16[1] = next_sid.in6_u.u6_addr16[7];
-      next_sid.in6_u.u6_addr16[7] = bpf_htons(0x0001);
-
-      char tmpstr[128] = {0};
-      BPF_SNPRINTF(tmpstr, sizeof(tmpstr), "%pi6 -> %pi6",
-                  &oh->ip6.daddr, &next_sid);
-#ifdef DEBUG
-      bpf_printk(LP"[%s]", tmpstr);
-#endif
-
-      // Craft new ether header
-      __u8 tmp[6] = {0};
-      memcpy(tmp, eh->h_dest, 6);
-      memcpy(eh->h_dest, eh->h_source, 6);
-      memcpy(eh->h_source, tmp, 6);
-      memcpy(&oh->ip6.saddr, &srv6_tunsrc, 16);
-      memcpy(&oh->ip6.daddr, &next_sid, 16);
-      memcpy(&oh->seg, &next_sid, 16);
-      return XDP_TX;
-    }
-
-#ifdef DEBUG
-    bpf_printk(LP"new connection %s", connstr);
-#endif
-    initval.created_at = bpf_ktime_get_ns();
-    bpf_map_update_elem(&conntrack, &ct_key, &initval, BPF_ANY);
-    ct_val = &initval;
-  }
-  if (in_th->syn == 1 && in_th->ack == 1) {
-    if (ct_val->established_at == 0) {
-#ifdef DEBUG
-      bpf_printk(LP"establish connection", connstr);
-#endif
-      ct_val->established_at = bpf_ktime_get_ns();
-    }
-  }
-  if (in_th->fin == 1) {
-    if (ct_val->finished_at == 0) {
-#ifdef DEBUG
-      bpf_printk(LP"finished connection", connstr);
-#endif
-      ct_val->finished_at = bpf_ktime_get_ns();
-    }
-  }
-
-  return XDP_PASS;
 }
 
 static inline int
