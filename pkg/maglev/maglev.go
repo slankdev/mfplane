@@ -128,11 +128,11 @@ func (m *Maglev) GetRawTable() []int64 {
 }
 
 func (m *Maglev) Dump() {
-	fmt.Printf("nodeList.size: %d\n", len(m.nodeList))
-	fmt.Printf("lookup.size: %d\n", len(m.lookup))
-	for idx, u64 := range m.lookup {
-		fmt.Printf("lookup[%010d]: %d\n", idx, u64)
-	}
+	//fmt.Printf("nodeList.size: %d\n", len(m.nodeList))
+	//fmt.Printf("lookup.size: %d\n", len(m.lookup))
+	//for idx, u64 := range m.lookup {
+	//	fmt.Printf("lookup[%010d]: %d\n", idx, u64)
+	//}
 }
 
 //Get :Get node name by object string.
@@ -167,14 +167,14 @@ func (m *Maglev) generatePopulation() {
 
 	sort.Strings(m.nodeList)
 
-	fmt.Printf("-----\n")
+	//fmt.Printf("-----\n")
 	for i := 0; i < len(m.nodeList); i++ {
 		bData := []byte(m.nodeList[i])
 
 		offset := siphash.Hash(0xdeadbabe, 0, bData) % m.m
 		skip := (siphash.Hash(0xdeadbeef, 0, bData) % (m.m - 1)) + 1
 
-		fmt.Printf("%s %d %d\n", m.nodeList[i], offset, skip)
+		// fmt.Printf("%s %d %d\n", m.nodeList[i], offset, skip)
 
 		iRow := make([]uint64, m.m)
 		var j uint64
@@ -183,10 +183,10 @@ func (m *Maglev) generatePopulation() {
 		}
 
 		m.permutation = append(m.permutation, iRow)
-		fmt.Printf("LOG: len(permutation) = %d\n", len(m.permutation))
-		for idx := range m.permutation {
-			fmt.Printf("LOG: len(permutation[%d]) = %d\n", idx, len(m.permutation[idx]))
-		}
+		// fmt.Printf("LOG: len(permutation) = %d\n", len(m.permutation))
+		// for idx := range m.permutation {
+		// 	fmt.Printf("LOG: len(permutation[%d]) = %d\n", idx, len(m.permutation[idx]))
+		// }
 		tab := util.NewTableWriter(os.Stdout)
 		hdr := []string{"idx"}
 		for idx := range m.permutation {
@@ -200,9 +200,9 @@ func (m *Maglev) generatePopulation() {
 			}
 			tab.Append(data)
 		}
-		tab.Render()
+		//tab.Render()
 	}
-	fmt.Printf("-----\n\n")
+	// fmt.Printf("-----\n\n")
 }
 
 func (m *Maglev) populate() {
