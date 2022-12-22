@@ -18,8 +18,10 @@ package mikanectl
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -107,9 +109,16 @@ func NewCommandHashPlayground() *cobra.Command {
 				return backends
 			}
 
+			rand.Seed(time.Now().UnixNano())
+
 			table1 := m.GetRawTable()
 			be1 := test(clioptNumTestdatas)
-			m.RemoveOrDie("backend-4")
+
+			delIdx := rand.Intn(clioptNumBackends)
+			name := fmt.Sprintf("backend-%d", delIdx)
+			m.RemoveOrDie(name)
+			fmt.Printf("LOG: %s is deleted\n", name)
+
 			table2 := m.GetRawTable()
 			be2 := test(clioptNumTestdatas)
 
