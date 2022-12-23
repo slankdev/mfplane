@@ -34,6 +34,18 @@ Copyright 2022 Wide Project.
 #define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
 #endif
 
+static inline __u16 csum_fold_helper(__u32 csum) {
+  __u32 sum;
+	sum = (csum >> 16) + (csum & 0xffff);
+	sum += (sum >> 16);
+	return ~sum;
+}
+
+static inline void ipv4_csum(void *data_start, int data_size,  __u32 *csum) {
+  *csum = bpf_csum_diff(0, 0, data_start, data_size, *csum);
+  *csum = csum_fold_helper(*csum);
+}
+
 struct conntrack_key {
   __u32 addr1;
   __u32 addr2;
@@ -73,6 +85,9 @@ struct outer_header {
   __u8 padding[4];
   struct in6_addr seg;
 } __attribute__ ((packed));
+
+#define TCP_CSUM_OFF (ETH_HLEN + sizeof(struct outer_header) + \
+  sizeof(struct iphdr) + offsetof(struct tcphdr, check))
 
 __u8 srv6_tunsrc[16] = {
   0xfc, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, //TODO(slankdev): set from map
@@ -148,6 +163,11 @@ process_ipv6(struct xdp_md *ctx)
 #endif
     in_ih->saddr = saddrupdate;
     in_th->source = sourceport;
+
+    in_ih->check = 0;
+    __u32 check = 0;
+    ipv4_csum(in_ih, sizeof(*in_ih), &check);
+    in_ih->check = check;
 
     // mac addr swap
     struct ethhdr *old_eh = (struct ethhdr *)data;
