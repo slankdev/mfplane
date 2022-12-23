@@ -154,6 +154,9 @@ process_ipv6(struct xdp_md *ctx)
     in_ih->saddr = saddrupdate;
     in_th->source = sourceport;
 
+    // Special thanks: kametan0730/curo
+    // https://github.com/kametan0730/curo/blob/master/nat.cpp
+
     // update ip checksum
     __u32 check;
     check = in_ih->check;
