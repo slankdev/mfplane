@@ -129,6 +129,11 @@ process_nat_return(struct xdp_md *ctx)
 
   __u16 hash = th->dest;
   __u32 idx = hash % RING_SIZE;
+  struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
+  if (!p) {
+    bpf_printk(LP"no entry fatal");
+    return ignore_packet(ctx);
+  }
 
 #ifdef DEBUG
   char tmp[128] = {0};
@@ -140,8 +145,40 @@ process_nat_return(struct xdp_md *ctx)
   bpf_printk(LP"%s", tmp);
 #endif
 
-  bpf_printk(LP"KOKO!!!");
-  return error_packet(ctx);
+  // Adjust packet buffer head pointer
+  if (bpf_xdp_adjust_head(ctx, 0 - (int)(sizeof(struct outer_header)))) {
+    return error_packet(ctx);
+  }
+  data = ctx->data;
+  data_end = ctx->data_end;
+
+  // Craft new ether header
+  struct ethhdr *new_eh = (struct ethhdr *)data;
+  struct ethhdr *old_eh = (struct ethhdr *)(data + sizeof(struct outer_header));
+  assert_len(new_eh, data_end);
+  assert_len(old_eh, data_end);
+  memcpy(new_eh->h_dest, old_eh->h_source, 6);
+  memcpy(new_eh->h_source, old_eh->h_dest, 6);
+  new_eh->h_proto = bpf_htons(ETH_P_IPV6);
+
+  // Craft outer IP6 SRv6 header
+  struct outer_header *oh = (struct outer_header *)(new_eh + 1);
+  assert_len(oh, data_end);
+  oh->ip6.version = 6;
+  oh->ip6.priority = 0;
+  oh->ip6.payload_len = bpf_ntohs(pkt_len - sizeof(struct ethhdr) +
+    sizeof(struct ipv6_rt_hdr) + 4 + sizeof(struct in6_addr));
+  oh->ip6.nexthdr = 43; // SR header
+  oh->ip6.hop_limit = 64;
+  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
+  oh->srh.hdrlen = 2;
+  oh->srh.nexthdr = 4;
+  oh->srh.segments_left = 0;
+  oh->srh.type = 4;
+  memcpy(&oh->seg, &p->addr, sizeof(struct in6_addr));
+
+  return XDP_TX;
 }
 
 static inline int
@@ -265,9 +302,7 @@ process_ipv6(struct xdp_md *ctx)
   __u32 idx = hash % RING_SIZE;
   struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
   if (!p) {
-#ifdef DEBUG
     bpf_printk(LP"no entry fatal");
-#endif
     return ignore_packet(ctx);
   }
 
