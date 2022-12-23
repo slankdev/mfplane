@@ -13,3 +13,4 @@ RUN sed -i -e "s/bgpd=no/bgpd=yes/g" /etc/frr/daemons
 RUN apt install -y conntrack
 RUN apt install -y netcat
 RUN apt install -y iperf3
+RUN apt update && apt install -y tshark
