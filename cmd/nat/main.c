@@ -107,6 +107,12 @@ error_packet(struct xdp_md *ctx)
 }
 
 static inline int
+process_nat_return(struct xdp_md *ctx)
+{
+  return XDP_DROP;
+}
+
+static inline int
 process_ipv6(struct xdp_md *ctx)
 {
   __u64 data = ctx->data;
