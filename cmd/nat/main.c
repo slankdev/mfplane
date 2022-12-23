@@ -92,7 +92,7 @@ static inline int
 ignore_packet(struct xdp_md *ctx)
 {
 #ifdef DEBUG
-  bpf_printk(LP"ignore packet");
+  //bpf_printk(LP"ignore packet");
 #endif
   return XDP_PASS;
 }
@@ -145,14 +145,13 @@ process_ipv6(struct xdp_md *ctx)
   // to-nat check
   __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
   __u32 saddrupdate = bpf_ntohl(0x8e000001); // 142.0.0.1
-  bpf_printk("nat %08x %08x", in_ih->saddr, saddrmatch);
   if (in_ih->saddr == saddrmatch) {
-    bpf_printk("nat match");
     __u32 hash = 0;
-    hash = jhash_2words(in_ih->saddr, in_ih->daddr, 0xdeadbeaf);
-    hash = jhash_2words(in_th->source, in_th->dest, hash);
+    hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
+    hash = jhash_2words(in_th->dest, in_th->source, hash);
     hash = jhash_2words(in_ih->protocol, 0, hash);
-    __u32 sourceport = hash % 0xffff;
+    __u32 sourceport = hash & 0xffff;
+
 #ifdef DEBUG
     char tmp[128] = {0};
     BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u/%pi4:%u -> %pi4:%u",
@@ -162,6 +161,7 @@ process_ipv6(struct xdp_md *ctx)
                 &in_ih->daddr, bpf_ntohs(in_th->dest));
     bpf_printk(LP"nat! %s", tmp);
 #endif
+
     __u32 oldsource = in_ih->saddr;
     __u16 oldsourceport = in_th->source;
     in_ih->saddr = saddrupdate;
