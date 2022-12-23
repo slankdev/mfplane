@@ -154,6 +154,7 @@ process_ipv6(struct xdp_md *ctx)
     in_ih->saddr = saddrupdate;
     in_th->source = sourceport;
 
+    // update ip checksum
     __u32 check;
     check = in_ih->check;
     check = ~check;
@@ -166,6 +167,7 @@ process_ipv6(struct xdp_md *ctx)
       check = (check & 0xffff) + (check >> 16);
     in_ih->check = check;
 
+    // update tcp checksum
     check = in_th->check;
     check = ~check;
     check -= oldsource & 0xffff;
@@ -178,8 +180,6 @@ process_ipv6(struct xdp_md *ctx)
     if (check > 0xffff)
       check = (check & 0xffff) + (check >> 16);
     in_th->check = check;
-
-    bpf_printk("check 0x%04x", bpf_htons(in_th->check));
 
     // mac addr swap
     struct ethhdr *old_eh = (struct ethhdr *)data;
