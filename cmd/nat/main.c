@@ -34,92 +34,6 @@ Copyright 2022 Wide Project.
 #define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
 #endif
 
-static inline __u16 csum_fold_helper(__u32 csum)
-{
-  __u32 sum;
-	sum = (csum >> 16) + (csum & 0xffff);
-	sum += (sum >> 16);
-	return ~sum;
-}
-
-static inline void ipv4_csum(void *data_start, int data_size,  __u32 *csum)
-{
-  *csum = bpf_csum_diff(0, 0, data_start, data_size, *csum);
-  *csum = csum_fold_helper(*csum);
-}
-
-struct pseudo_hdr {
-  __u32 source;
-  __u32 dest;
-  __u8 zero;
-  __u8 proto;
-  __u16 tcp_len;
-  __u16 sport;
-  __u16 dport;
-};
-
-static inline __u16 tcpipv4_csum(struct pseudo_hdr *hdr)
-{
-  return 0;
-}
-
-static inline __u16 checksum(void *buf, int bufsz, __u32 sum)
-{
-    __u16 *buf16 = (__u16 *)buf;
-    while (bufsz > 1) {
-        sum += *buf16;
-        buf16++;
-        bufsz -= 2;
-    }
-
-    if (bufsz == 1)
-        sum += *(__u16 *)buf16;
-    sum = (sum & 0xffff) + (sum >> 16);
-    sum = (sum & 0xffff) + (sum >> 16);
-    return ~sum;
-}
-
-// static inline __u16 checksum2(void *buf, __u64 end, __u32 sum)
-// {
-//     __u16 *buf16 = (__u16 *)buf;
-//     while (end - buf16 > 0) {
-//         sum += *buf16;
-//         buf16++;
-//         bufsz -= 2;
-//     }
-
-//     if (bufsz == 1)
-//         sum += *(__u16 *)buf16;
-//     sum = (sum & 0xffff) + (sum >> 16);
-//     sum = (sum & 0xffff) + (sum >> 16);
-//     return ~sum;
-// }
-
-
-static inline __u16 l4_checksum(void *l3buf, int l3bufsz,
-                                void *l4buf, int l4bufsz)
-{
-  __u32 sum = 0;
-  __u16 *l3buf16 = (__u16 *)l3buf;
-  while (l3bufsz > 1) {
-      sum += *l3buf16;
-      l3buf16++;
-      l3bufsz -= 2;
-  }
-  __u16 *l4buf16 = (__u16 *)l4buf;
-  while (l4bufsz > 1) {
-      sum += *l4buf16;
-      l4buf16++;
-      l4bufsz -= 2;
-  }
-  if (l4bufsz == 1)
-      sum += *(__u16 *)l4buf16;
-
-  sum = (sum & 0xffff) + (sum >> 16);
-  sum = (sum & 0xffff) + (sum >> 16);
-  return ~sum;
-}
-
 struct conntrack_key {
   __u32 addr1;
   __u32 addr2;
@@ -240,9 +154,16 @@ process_ipv6(struct xdp_md *ctx)
     in_ih->saddr = saddrupdate;
     in_th->source = sourceport;
 
-    in_ih->check = 0;
-    __u32 check = 0;
-    ipv4_csum(in_ih, sizeof(*in_ih), &check);
+    __u32 check;
+    check = in_ih->check;
+    check = ~check;
+    check -= oldsource & 0xffff;
+    check -= oldsource >> 16;
+    check += in_ih->saddr & 0xffff;
+    check += in_ih->saddr >> 16;
+    check = ~check;
+    if (check > 0xffff)
+      check = (check & 0xffff) + (check >> 16);
     in_ih->check = check;
 
     check = in_th->check;
