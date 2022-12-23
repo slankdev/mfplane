@@ -427,7 +427,13 @@ node_configs:
   - cmd: ip route add blackhole fc00:1::/32
   - cmd: >-
       vtysh -c 'conf te'
+      -c 'ip route 142.0.0.1/32 Null0'
+      -c '!'
       -c 'router bgp'
+      -c ' address-family ipv4 unicast'
+      -c ' network 142.0.0.1/32'
+      -c ' exit-address-family'
+      -c ' !'
       -c ' address-family ipv6 unicast'
       -c '  neighbor PEER activate'
       -c '  redistribute kernel'
