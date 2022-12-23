@@ -135,6 +135,13 @@ process_ipv6(struct xdp_md *ctx)
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
+  // TODO: slankdev
+  // // from-nat check
+  // __u32 daddrmatch = bpf_ntohl(0x8e000001); // 142.0.0.1
+  // if (some) {
+  //   return process_nat_return(ctx);
+  // }
+
   // to-nat check
   __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
   __u32 saddrupdate = bpf_ntohl(0x8e000001); // 142.0.0.1
