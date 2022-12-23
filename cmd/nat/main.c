@@ -34,16 +34,90 @@ Copyright 2022 Wide Project.
 #define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
 #endif
 
-static inline __u16 csum_fold_helper(__u32 csum) {
+static inline __u16 csum_fold_helper(__u32 csum)
+{
   __u32 sum;
 	sum = (csum >> 16) + (csum & 0xffff);
 	sum += (sum >> 16);
 	return ~sum;
 }
 
-static inline void ipv4_csum(void *data_start, int data_size,  __u32 *csum) {
+static inline void ipv4_csum(void *data_start, int data_size,  __u32 *csum)
+{
   *csum = bpf_csum_diff(0, 0, data_start, data_size, *csum);
   *csum = csum_fold_helper(*csum);
+}
+
+struct pseudo_hdr {
+  __u32 source;
+  __u32 dest;
+  __u8 zero;
+  __u8 proto;
+  __u16 tcp_len;
+  __u16 sport;
+  __u16 dport;
+};
+
+static inline __u16 tcpipv4_csum(struct pseudo_hdr *hdr)
+{
+  return 0;
+}
+
+static inline __u16 checksum(void *buf, int bufsz, __u32 sum)
+{
+    __u16 *buf16 = (__u16 *)buf;
+    while (bufsz > 1) {
+        sum += *buf16;
+        buf16++;
+        bufsz -= 2;
+    }
+
+    if (bufsz == 1)
+        sum += *(__u16 *)buf16;
+    sum = (sum & 0xffff) + (sum >> 16);
+    sum = (sum & 0xffff) + (sum >> 16);
+    return ~sum;
+}
+
+// static inline __u16 checksum2(void *buf, __u64 end, __u32 sum)
+// {
+//     __u16 *buf16 = (__u16 *)buf;
+//     while (end - buf16 > 0) {
+//         sum += *buf16;
+//         buf16++;
+//         bufsz -= 2;
+//     }
+
+//     if (bufsz == 1)
+//         sum += *(__u16 *)buf16;
+//     sum = (sum & 0xffff) + (sum >> 16);
+//     sum = (sum & 0xffff) + (sum >> 16);
+//     return ~sum;
+// }
+
+
+static inline __u16 l4_checksum(void *l3buf, int l3bufsz,
+                                void *l4buf, int l4bufsz)
+{
+  __u32 sum = 0;
+  __u16 *l3buf16 = (__u16 *)l3buf;
+  while (l3bufsz > 1) {
+      sum += *l3buf16;
+      l3buf16++;
+      l3bufsz -= 2;
+  }
+  __u16 *l4buf16 = (__u16 *)l4buf;
+  while (l4bufsz > 1) {
+      sum += *l4buf16;
+      l4buf16++;
+      l4bufsz -= 2;
+  }
+  if (l4bufsz == 1)
+      sum += *(__u16 *)l4buf16;
+
+  sum = (sum & 0xffff) + (sum >> 16);
+  sum = (sum & 0xffff) + (sum >> 16);
+  return ~sum;
 }
 
 struct conntrack_key {
@@ -161,6 +235,8 @@ process_ipv6(struct xdp_md *ctx)
                 &in_ih->daddr, bpf_ntohs(in_th->dest));
     bpf_printk(LP"nat! %s", tmp);
 #endif
+    __u32 oldsource = in_ih->saddr;
+    __u16 oldsourceport = in_th->source;
     in_ih->saddr = saddrupdate;
     in_th->source = sourceport;
 
@@ -168,6 +244,164 @@ process_ipv6(struct xdp_md *ctx)
     __u32 check = 0;
     ipv4_csum(in_ih, sizeof(*in_ih), &check);
     in_ih->check = check;
+
+    //tcp checksum
+    // check = bpf_ntohs(in_th->check);
+    // // check = in_th->check;
+
+    // __u32 dec_sum = 0;
+    // dec_sum += bpf_ntohs(oldsourceport);
+    // dec_sum += (bpf_ntohl(oldsource) >> 16) & 0xffff;
+    // dec_sum += (bpf_ntohl(oldsource) >> 0) & 0xffff;
+
+    // __u32 inc_sum = 0;
+    // inc_sum += bpf_ntohs(in_th->source);
+    // inc_sum += (bpf_ntohl(in_ih->saddr) >> 16) & 0xffff;
+    // inc_sum += (bpf_ntohl(in_ih->saddr) >> 0) & 0xffff;
+
+#if 0
+    check = bpf_htons(in_th->check);
+    //check = ~check & 0xffff;
+
+    //
+
+    check -= bpf_ntohs(oldsourceport);
+    //check = check & 0xffff;
+    check += bpf_ntohs(in_th->source);
+    //check = (check & 0xffff) + (check >> 16);
+
+    check -= (bpf_ntohl(oldsource) >> 16) & 0xffff;
+    //check = check & 0xffff;
+    check += (bpf_ntohl(in_ih->saddr) >> 16) & 0xffff;
+    //check = (check & 0xffff) + (check >> 16);
+
+    check -= (bpf_ntohl(oldsource) >> 0) & 0xffff;
+    //check = check & 0xffff;
+    check += (bpf_ntohl(in_ih->saddr) >> 0) & 0xffff;
+    //check = (check & 0xffff) + (check >> 16);
+
+    char tmp0[256] = {0};
+    BPF_SNPRINTF(tmp0, sizeof(tmp0), "inc %u dec %u check %u -> %u",
+                 dec_sum, inc_sum, bpf_htons(in_th->check), check);
+    bpf_printk("%s", tmp0);
+
+    // if (dec_sum > inc_sum) {
+    //   bpf_printk("my incremenet");
+    //   check += 1;
+    // }
+
+    //check += 1;
+    //   check += 1;
+    //bpf_printk("check 0x%04x", check);
+    // if (check < 0)
+    //   check += 1;
+    check = (~check) & 0xffff;
+    // if (dec_sum > inc_sum)
+    //   check = (~check) & 0xffff;
+    // else
+    //   check = (~check - 1) & 0xffff;
+
+    in_th->check = bpf_htons(check);
+
+    bpf_printk("check 0x%04x", check);
+#else
+    check = in_th->check;
+    check = ~check;
+
+    check -= (oldsource >> 0) & 0xffff;
+    check -= (oldsource >> 16);
+    check -= oldsourceport;
+
+    check += (in_ih->saddr >> 0) & 0xffff;
+    check += (in_ih->saddr >> 16);
+    check += in_th->source;
+
+    check = ~check;
+    if (check > 0xffff)
+      check = (check & 0xffff) + (check >> 16);
+
+    in_th->check = check;
+#endif
+    bpf_printk("check 0x%04x", bpf_htons(in_th->check));
+    // //check = ~( ~checksum_old + ~data1_old + ~data2_old + data1_new + data2_new);
+
+
+    // check ~= ((oldsource >> 16) & 0xffff);
+    // check ~= ((oldsource >>  0) & 0xffff);
+    // check |= (saddrupdate >> 16) & 0xffff;
+    // check |= (saddrupdate >>  0) & 0xffff;
+    // check ~= (oldsourceport);
+    // check |= sourceport;
+    // check = csum_fold_helper(check);
+    // // check = 0x08e3;
+    // // check = bpf_htons(0x08e3);
+    // // check = bpf_htons(0xbd9b);
+    // //in_th->check = bpf_htons(check);
+    // in_th->check = check;
+
+#if 1
+    // const __u32 csum_off = ETH_HLEN + sizeof(struct outer_header) +
+    //   sizeof(struct iphdr) + offsetof(struct tcphdr, check);
+    // __u32 sum = bpf_csum_diff(&oldsource, 4, &saddrupdate, 4, 0);
+    // bpf_printk("sum %d", sum);
+    // check = bpf_ntohs(in_th->check);
+    // check += sum;
+    // in_th->check = bpf_ntohs(check);
+    // if (bpf_l4_csum_replace(ctx, csum_off, 0, sum, BPF_F_PSEUDO_HDR) < 0)
+    //   return error_packet(ctx);
+
+    // __u16 tcp_len = bpf_ntohs(in_ih->tot_len);
+    // tcp_len -= sizeof(struct iphdr);
+    // __u64 p = (__u64)in_th;
+    // if (p + tcp_len + 1> data_end) {
+    //   return XDP_ABORTED;
+    // }
+
+    // struct pseudo_hdr ph0 = {0};
+    // ph0.source = oldsource;
+    // ph0.dest = in_ih->daddr;
+    // ph0.proto = in_ih->protocol;
+    // ph0.tcp_len = bpf_htons(tcp_len);
+    // ph0.sport = oldsourceport;
+    // ph0.dport = in_th->dest;
+    // check = checksum(&ph0, sizeof(ph0), 0);
+    // bpf_printk("old check 0x%04x", check);
+
+    // struct pseudo_hdr ph = {0};
+    // ph.source = in_ih->saddr;
+    // // ph.source = 0x0200 008e;
+    // // ph.source = bpf_ntohl(0x8e000002);
+    // ph.source = oldsource;
+    // ph.dest = in_ih->daddr;
+    // ph.proto = in_ih->protocol;
+    // ph.tcp_len = bpf_htons(tcp_len);
+    // ph.sport = in_th->source;
+    // ph.dport = in_th->dest;
+    // check = checksum(&ph, sizeof(ph), 0);
+    // bpf_printk("new check 0x%04x", check);
+
+    // in_th->check = 0;
+
+    // const int offset = ETH_HLEN + sizeof(struct outer_header) + sizeof(struct iphdr);
+    // __u64 data0 = ctx->data + offset;
+    // __u64 data0_end = ctx->data_end;
+    // assert_len(in_th, data0_end);
+    // check = checksum2(in_th, data0_end);
+
+    //check = l4_checksum(&ph, sizeof(ph), in_th, tcp_len);
+    //check = l4_checksum(&ph, sizeof(ph), in_th, 0);
+
+
+    // check = 0;
+    // check = bpf_csum_diff(0, 0, (void *)&ph, sizeof(ph), check);
+    // check = checksum((void*)in_th, tcp_len, check);
+    // //check = bpf_csum_diff(0, 0, (void *)in_th, tcp_len, check);
+    // //check = bpf_csum_diff(0, 0, (void *)in_th, tcp_len, check);
+    // //check = bpf_csum_diff(0, 0, (void *)in_th, sizeof(struct pseudo_hdr), check);
+    //   // in_ih->tot_len - sizeof(struct iphdr) + sizeof(struct pseudo_hdr), check);
+    // check = csum_fold_helper(check);
+    // in_th->check = check;
+#endif
 
     // mac addr swap
     struct ethhdr *old_eh = (struct ethhdr *)data;
