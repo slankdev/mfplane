@@ -109,6 +109,38 @@ error_packet(struct xdp_md *ctx)
 static inline int
 process_nat_return(struct xdp_md *ctx)
 {
+  __u64 data = ctx->data;
+  __u64 data_end = ctx->data_end;
+
+  struct ethhdr *eh = (struct ethhdr *)data;
+  assert_len(eh, data_end);
+  struct outer_header *oh = (struct outer_header *)(eh + 1);
+  assert_len(oh, data_end);
+  if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
+      oh->srh.type != 4 ||
+      oh->srh.hdrlen != 2 ||
+      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) {
+    return ignore_packet(ctx);
+  }
+  struct iphdr *in_ih = (struct iphdr *)(oh + 1);
+  assert_len(in_ih, data_end);
+  __u8 in_ih_len = in_ih->ihl * 4;
+  struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
+  assert_len(in_th, data_end);
+
+#ifdef DEBUG
+    char tmp[128] = {0};
+    BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u -> %pi4:%u",
+                in_ih->protocol,
+                &in_ih->saddr, bpf_ntohs(in_th->source),
+                &in_ih->daddr, bpf_ntohs(in_th->dest));
+    bpf_printk(LP"nat-ret %s", tmp);
+#endif
+
+  // TODO(slankdev): lookup local session cache
+  // KOKOKOKOKOOKOOOOKOKKKOk
+  bpf_printk(LP"KOKO!!");
+
   return XDP_DROP;
 }
 
@@ -122,7 +154,6 @@ process_ipv6(struct xdp_md *ctx)
   assert_len(eh, data_end);
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
-
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
@@ -135,12 +166,11 @@ process_ipv6(struct xdp_md *ctx)
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
-  // TODO: slankdev
-  // // from-nat check
-  // __u32 daddrmatch = bpf_ntohl(0x8e000001); // 142.0.0.1
-  // if (some) {
-  //   return process_nat_return(ctx);
-  // }
+  // from-nat check
+  __u32 daddrmatch = bpf_ntohl(0x8e000001); // 142.0.0.1
+  if (in_ih->daddr == daddrmatch) {
+    return process_nat_return(ctx);
+  }
 
   // to-nat check
   __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
@@ -159,7 +189,7 @@ process_ipv6(struct xdp_md *ctx)
                 &in_ih->saddr, bpf_ntohs(in_th->source),
                 &saddrupdate, bpf_ntohs(sourceport),
                 &in_ih->daddr, bpf_ntohs(in_th->dest));
-    bpf_printk(LP"nat! %s", tmp);
+    bpf_printk(LP"nat-out %s", tmp);
 #endif
 
     __u32 oldsource = in_ih->saddr;
