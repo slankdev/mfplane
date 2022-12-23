@@ -34,28 +34,22 @@ Copyright 2022 Wide Project.
 #define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
 #endif
 
-struct conntrack_key {
-  __u32 addr1;
-  __u32 addr2;
-  __u16 port1;
-  __u16 port2;
-  __u8 proto;
+struct nat_ret_table_key {
+  __u32 addr;
+  __u16 port;
 }  __attribute__ ((packed));
 
-struct conntrack_val {
-  __u32 pkts;
-  __u32 bytes;
-  __u64 created_at;
-  __u64 established_at;
-  __u64 finished_at;
+struct nat_ret_table_val {
+  __u32 addr;
+  __u16 port;
 }  __attribute__ ((packed));
 
 struct {
   __uint(type, BPF_MAP_TYPE_LRU_HASH);
-  __uint(max_entries, 16);
-  __type(key, struct conntrack_key);
-  __type(value, struct conntrack_val);
-} conntrack SEC(".maps");
+  __uint(max_entries, 160);
+  __type(key, struct nat_ret_table_key);
+  __type(value, struct nat_ret_table_val);
+} nat_ret_table SEC(".maps");
 
 static inline int same_ipv6(void *a, void *b, int prefix_bytes)
 {
@@ -128,20 +122,74 @@ process_nat_return(struct xdp_md *ctx)
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
+  // lookup
+  struct nat_ret_table_val *val = NULL;
+  struct nat_ret_table_key key = {
+    .addr = in_ih->daddr,
+    .port = in_th->dest,
+  };
+  val = bpf_map_lookup_elem(&nat_ret_table, &key);
+  if (!val) {
+    bpf_printk(LP"lookup fail");
+    return XDP_DROP;
+  }
+
 #ifdef DEBUG
     char tmp[128] = {0};
-    BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u -> %pi4:%u",
+    BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u -> %pi4:%u/%pi4:%u",
                 in_ih->protocol,
                 &in_ih->saddr, bpf_ntohs(in_th->source),
-                &in_ih->daddr, bpf_ntohs(in_th->dest));
+                &in_ih->daddr, bpf_ntohs(in_th->dest),
+                &val->addr, bpf_ntohs(val->port));
     bpf_printk(LP"nat-ret %s", tmp);
 #endif
 
-  // TODO(slankdev): lookup local session cache
-  // KOKOKOKOKOOKOOOOKOKKKOk
-  bpf_printk(LP"KOKO!!");
+  // reverse nat
+  __u32 olddest = in_ih->daddr;
+  __u16 olddestport = in_th->dest;
+  in_ih->daddr = val->addr;
+  in_th->dest = val->port;
 
-  return XDP_DROP;
+  // update ip checksum
+  __u32 check;
+  check = in_ih->check;
+  check = ~check;
+  check -= olddest & 0xffff;
+  check -= olddest >> 16;
+  check += in_ih->daddr & 0xffff;
+  check += in_ih->daddr >> 16;
+  check = ~check;
+  if (check > 0xffff)
+    check = (check & 0xffff) + (check >> 16);
+  in_ih->check = check;
+
+  // update tcp checksum
+  check = in_th->check;
+  check = ~check;
+  check -= olddest & 0xffff;
+  check -= olddest >> 16;
+  check -= olddestport;
+  check += in_ih->daddr & 0xffff;
+  check += in_ih->daddr >> 16;
+  check += in_th->dest;
+  check = ~check;
+  if (check > 0xffff)
+    check = (check & 0xffff) + (check >> 16);
+  in_th->check = check;
+
+  // mac addr swap
+  __u8 tmpmac[6] = {0};
+  memcpy(tmpmac, eh->h_dest, 6);
+  memcpy(eh->h_dest, eh->h_source, 6);
+  memcpy(eh->h_source, tmpmac, 6);
+
+  // TODO: KOKOKO
+  // // Craft new ipv6 header
+  // memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  // memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
+  // memcpy(&oh->seg, &p->addr, sizeof(struct in6_addr));
+
+  return XDP_TX;
 }
 
 static inline int
@@ -173,6 +221,12 @@ process_ipv6(struct xdp_md *ctx)
   }
 
   // to-nat check
+  // __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
+  // if (in_ih->saddr == saddrmatch) {
+  //   return process_nat_out(ctx);
+  // }
+
+  // to-nat check
   __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
   __u32 saddrupdate = bpf_ntohl(0x8e000001); // 142.0.0.1
   if (in_ih->saddr == saddrmatch) {
@@ -181,6 +235,16 @@ process_ipv6(struct xdp_md *ctx)
     hash = jhash_2words(in_th->dest, in_th->source, hash);
     hash = jhash_2words(in_ih->protocol, 0, hash);
     __u32 sourceport = hash & 0xffff;
+
+    struct nat_ret_table_key key = {
+      .addr = saddrupdate,
+      .port = sourceport,
+    };
+    struct nat_ret_table_val val = {
+      .addr = in_ih->saddr,
+      .port = in_th->source,
+    };
+    bpf_map_update_elem(&nat_ret_table, &key, &val, BPF_ANY);
 
 #ifdef DEBUG
     char tmp[128] = {0};
