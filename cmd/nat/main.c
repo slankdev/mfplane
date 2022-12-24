@@ -82,6 +82,12 @@ __u8 srv6_local_sid[16] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+__u8 srv6_vm_remote_sid[16] = {
+  // fc00:201:1:::
+  0xfc, 0x00, 0x02, 0x01, 0x00, 0x01, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
 static inline int
 ignore_packet(struct xdp_md *ctx)
 {
@@ -183,11 +189,10 @@ process_nat_return(struct xdp_md *ctx)
   memcpy(eh->h_dest, eh->h_source, 6);
   memcpy(eh->h_source, tmpmac, 6);
 
-  // TODO: KOKOKO
-  // // Craft new ipv6 header
-  // memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
-  // memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
-  // memcpy(&oh->seg, &p->addr, sizeof(struct in6_addr));
+  // Craft new ipv6 header
+  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.daddr, srv6_vm_remote_sid, sizeof(struct in6_addr));
+  memcpy(&oh->seg, srv6_vm_remote_sid, sizeof(struct in6_addr));
 
   return XDP_TX;
 }
