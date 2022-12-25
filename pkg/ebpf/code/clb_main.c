@@ -13,7 +13,8 @@ Copyright 2022 Wide Project.
 #include <linux/pkt_cls.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
-#include "jhash.h"
+#include "lib/jhash.h"
+#include "lib/memory.h"
 
 #define LP "CLB " // log prefix
 #ifndef RING_SIZE
@@ -32,16 +33,6 @@ Copyright 2022 Wide Project.
     if ((unsigned long)(interest + 1) > end) \
       return XDP_ABORTED;                    \
   })
-
-#ifndef memset
-#define memset(dest, chr, n) __builtin_memset((dest), (chr), (n))
-#endif
-#ifndef memcpy
-#define memcpy(dest, src, n) __builtin_memcpy((dest), (src), (n))
-#endif
-#ifndef memmove
-#define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
-#endif
 
 static inline int same_ipv6(void *a, void *b, int prefix_bytes)
 {
