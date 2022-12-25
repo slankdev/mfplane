@@ -15,6 +15,7 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
 #include "lib/jhash.h"
+#include "lib/memory.h"
 
 #define LP "NAT " // log prefix
 #define DEBUG
@@ -24,16 +25,6 @@
     if ((unsigned long)(interest + 1) > end) \
       return XDP_ABORTED;                    \
   })
-
-#ifndef memset
-#define memset(dest, chr, n) __builtin_memset((dest), (chr), (n))
-#endif
-#ifndef memcpy
-#define memcpy(dest, src, n) __builtin_memcpy((dest), (src), (n))
-#endif
-#ifndef memmove
-#define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
-#endif
 
 struct nat_ret_table_key {
   __u32 addr;
