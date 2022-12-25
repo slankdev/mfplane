@@ -17,10 +17,16 @@ limitations under the License.
 package ebpf
 
 import (
+	"embed"
 	"fmt"
 
 	"github.com/spf13/cobra"
 )
+
+//go:embed code
+var codeFS embed.FS
+
+var files []string
 
 func NewCommand(name, file string) *cobra.Command {
 	cmd := &cobra.Command{
@@ -30,12 +36,41 @@ func NewCommand(name, file string) *cobra.Command {
 	return cmd
 }
 
+func init() {
+	// XXX: no support for depth>2
+	ents, err := codeFS.ReadDir("code")
+	if err != nil {
+		panic(err)
+	}
+	for _, ent := range ents {
+		name := ent.Name()
+		if ent.IsDir() {
+			subpath := fmt.Sprintf("code/%s", name)
+			subents, err := codeFS.ReadDir(subpath)
+			if err != nil {
+				panic(err)
+			}
+			for _, subent := range subents {
+				subname := subent.Name()
+				if !subent.IsDir() {
+					files = append(files, fmt.Sprintf("code/%s/%s", name, subname))
+				}
+			}
+		} else {
+			files = append(files, fmt.Sprintf("code/%s", name))
+		}
+	}
+}
+
 func newCommandAttach(file string) *cobra.Command {
 	var clioptInterface string
 	cmd := &cobra.Command{
 		Use: "attach",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("hello %s %s\n", file, clioptInterface)
+			for _, file := range files {
+				fmt.Printf("%s\n", file)
+			}
 
 			// TODO(slankdev): implement me
 			// create temp dir
