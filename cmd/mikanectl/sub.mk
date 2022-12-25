@@ -13,13 +13,13 @@ nat-attach-all: \
 	# END
 nat-attach-n1: mikanectl-build
 	docker cp ./bin/mikanectl N1:/usr/bin/mikanectl
-	docker exec N1 mikanectl bpf nat attach -i net0 -f
+	docker exec N1 mikanectl bpf nat attach -i net0 -f -d -n n1
 nat-attach-n2: mikanectl-build
 	docker cp ./bin/mikanectl N2:/usr/bin/mikanectl
-	docker exec N2 mikanectl bpf nat attach -i net0 -f
+	docker exec N2 mikanectl bpf nat attach -i net0 -f -d -n n2
 nat-attach-n3: mikanectl-build
 	docker cp ./bin/mikanectl N3:/usr/bin/mikanectl
-	docker exec N3 mikanectl bpf nat attach -i net0 -f
+	docker exec N3 mikanectl bpf nat attach -i net0 -f -d -n n3
 clb-attach-l1: mikanectl-build
 	docker cp ./bin/mikanectl L1:/usr/bin/mikanectl
-	docker exec L1 mikanectl bpf clb attach -i net0 -f
+	docker exec L1 mikanectl bpf clb attach -i net0 -f -d -n l1
