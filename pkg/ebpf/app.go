@@ -37,7 +37,7 @@ func NewCommand(name, file, section string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: name,
 	}
-	cmd.AddCommand(newCommandAttach(file, section))
+	cmd.AddCommand(newCommandXdpAttach(file, section))
 	return cmd
 }
 
@@ -67,7 +67,7 @@ func init() {
 	}
 }
 
-func newCommandAttach(file, section string) *cobra.Command {
+func newCommandXdpAttach(file, section string) *cobra.Command {
 	var clioptInterface string
 	var clioptDebug bool
 	var clioptForce bool
