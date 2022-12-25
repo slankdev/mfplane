@@ -13,14 +13,19 @@
 #include "jhash.h"
 #include "memory.h"
 
-#ifndef NAME
-#define NAME updateme999
-#endif
-
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x) " "
 #define GLUE_HELPER(x, y) x##_##y
 #define GLUE(x, y) GLUE_HELPER(x, y)
+
+#ifndef NAME
+#error "please define NAME"
+#endif
+
+// TODO(slankdev): i'm not sure how to write like follow...
+// #if STR_HELPER(NAME) == ""
+// #error "PLEASE DEFINE \"NAME\""
+// #endif
 
 #define assert_len(interest, end)            \
   ({                                         \
