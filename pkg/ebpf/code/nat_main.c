@@ -16,14 +16,6 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-#define LP "NAT " // log prefix
-
-#define assert_len(interest, end)            \
-  ({                                         \
-    if ((unsigned long)(interest + 1) > end) \
-      return XDP_ABORTED;                    \
-  })
-
 struct nat_ret_table_key {
   __u32 addr;
   __u16 port;
@@ -39,7 +31,7 @@ struct {
   __uint(max_entries, 160);
   __type(key, struct nat_ret_table_key);
   __type(value, struct nat_ret_table_val);
-} nat_ret_table SEC(".maps");
+} GLUE(NAME, nat_ret_table) SEC(".maps");
 
 struct outer_header {
   struct ipv6hdr ip6;
@@ -96,9 +88,9 @@ process_nat_return(struct xdp_md *ctx)
     .addr = in_ih->daddr,
     .port = in_th->dest,
   };
-  val = bpf_map_lookup_elem(&nat_ret_table, &key);
+  val = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
   if (!val) {
-    bpf_printk(LP"lookup fail");
+    bpf_printk(STR(NAME)"lookup fail");
     return XDP_DROP;
   }
 
@@ -109,7 +101,7 @@ process_nat_return(struct xdp_md *ctx)
                 &in_ih->saddr, bpf_ntohs(in_th->source),
                 &in_ih->daddr, bpf_ntohs(in_th->dest),
                 &val->addr, bpf_ntohs(val->port));
-    bpf_printk(LP"nat-ret %s", tmp);
+    bpf_printk(STR(NAME)"nat-ret %s", tmp);
 #endif
 
   // reverse nat
@@ -211,7 +203,7 @@ process_ipv6(struct xdp_md *ctx)
       .addr = in_ih->saddr,
       .port = in_th->source,
     };
-    bpf_map_update_elem(&nat_ret_table, &key, &val, BPF_ANY);
+    bpf_map_update_elem(&GLUE(NAME, nat_ret_table), &key, &val, BPF_ANY);
 
 #ifdef DEBUG
     char tmp[128] = {0};
@@ -220,7 +212,7 @@ process_ipv6(struct xdp_md *ctx)
                 &in_ih->saddr, bpf_ntohs(in_th->source),
                 &saddrupdate, bpf_ntohs(sourceport),
                 &in_ih->daddr, bpf_ntohs(in_th->dest));
-    bpf_printk(LP"nat-out %s", tmp);
+    bpf_printk(STR(NAME)"nat-out %s", tmp);
 #endif
 
     __u32 oldsource = in_ih->saddr;
