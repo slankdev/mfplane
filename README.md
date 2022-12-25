@@ -1,6 +1,17 @@
 # hyperplane
 
 ```
+tinet reconf | sudo sh -xe
+make nat-attach-n1
+make clb-attach-l1
+mikanectl hash bpftoolcli -t 17 -b fc00:11:1::1 -n l1 | sudo sh -xe
+
+sudo bpftool prog tracelog
+de CLOS tcpdump -nni any not icmp6 and not tcp port 179
+de VM1 curl 10.255.100.1
+```
+
+```
 slankdev:~/git/hyperplane[main]$ de CLOS tcpdump -nni any not icmp6 and not tcp port 179
 tcpdump: data link type LINUX_SLL2
 tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
