@@ -33,7 +33,7 @@ var codeFS embed.FS
 
 var files []string
 
-func NewCommand(name, file, section string) *cobra.Command {
+func NewCommandXdp(name, file, section string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: name,
 	}
@@ -73,6 +73,7 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 	var clioptDebug bool
 	var clioptForce bool
 	var clioptVerbose bool
+	var clioptMode string
 	cmd := &cobra.Command{
 		Use: name,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -130,8 +131,8 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 
 			// detach once if force-mode
 			if clioptForce {
-				if _, err := util.LocalExecutef("ip link set %s xdpgeneric off",
-					clioptInterface); err != nil {
+				if _, err := util.LocalExecutef("ip link set %s %s off",
+					clioptInterface, clioptMode); err != nil {
 					return err
 				}
 				if clioptVerbose {
@@ -141,8 +142,8 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 
 			// attach on specified network interface
 			if _, err := util.LocalExecutef(
-				"ip link set %s xdpgeneric obj %s/bin/out.o sec %s",
-				clioptInterface, tmppath, section); err != nil {
+				"ip link set %s %s obj %s/bin/out.o sec %s",
+				clioptInterface, clioptMode, tmppath, section); err != nil {
 				return err
 			}
 			if clioptVerbose {
@@ -152,6 +153,8 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&clioptInterface, "interface", "i", "", "")
+	cmd.Flags().StringVarP(&clioptMode, "mode", "m", "xdpgeneric",
+		"xdp  or xdpgeneric")
 	cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
 	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	cmd.Flags().BoolVarP(&clioptForce, "force", "f", false,
@@ -161,6 +164,7 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 
 func newCommandXdpDetach(name string) *cobra.Command {
 	var clioptInterface string
+	var clioptMode string
 	var clioptDebug bool
 	var clioptVerbose bool
 	cmd := &cobra.Command{
@@ -173,7 +177,7 @@ func newCommandXdpDetach(name string) *cobra.Command {
 
 			// detach on specified network interface
 			if _, err := util.LocalExecutef(
-				"ip link set %s xdpgeneric off", clioptInterface); err != nil {
+				"ip link set %s %s off", clioptInterface, clioptMode); err != nil {
 				return err
 			}
 			if clioptVerbose {
@@ -183,6 +187,8 @@ func newCommandXdpDetach(name string) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&clioptInterface, "interface", "i", "", "")
+	cmd.Flags().StringVarP(&clioptMode, "mode", "m", "xdpgeneric",
+		"xdp  or xdpgeneric")
 	cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
 	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	return cmd
