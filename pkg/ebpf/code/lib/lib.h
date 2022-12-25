@@ -13,6 +13,20 @@
 #include "jhash.h"
 #include "memory.h"
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x) " "
+#define GLUE_HELPER(x, y) x##_##y
+#define GLUE(x, y) GLUE_HELPER(x, y)
+
+#ifndef NAME
+#error "please define NAME"
+#endif
+
+// TODO(slankdev): i'm not sure how to write like follow...
+// #if STR_HELPER(NAME) == ""
+// #error "PLEASE DEFINE \"NAME\""
+// #endif
+
 #define assert_len(interest, end)            \
   ({                                         \
     if ((unsigned long)(interest + 1) > end) \
@@ -33,7 +47,7 @@ static inline int
 ignore_packet(struct xdp_md *ctx)
 {
 #ifdef DEBUG
-  bpf_printk(LP"ignore packet");
+  bpf_printk(STR(NAME)"ignore packet");
 #endif
   return XDP_PASS;
 }
@@ -42,7 +56,7 @@ static inline int
 error_packet(struct xdp_md *ctx)
 {
 #ifdef DEBUG
-  bpf_printk(LP"error packet");
+  bpf_printk(STR(NAME)"error packet");
 #endif
   return XDP_DROP;
 }
