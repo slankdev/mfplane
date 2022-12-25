@@ -19,13 +19,13 @@ package mikanectl
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/slankdev/hyperplane/pkg/ebpf/nat"
+	"github.com/slankdev/hyperplane/pkg/ebpf"
 )
 
 func NewCommandBpf() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "bpf",
 	}
-	cmd.AddCommand(nat.NewCommand("nat"))
+	cmd.AddCommand(ebpf.NewCommand("nat", "nat_main.c"))
 	return cmd
 }
