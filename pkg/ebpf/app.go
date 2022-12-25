@@ -77,7 +77,7 @@ func newCommandAttach(file, section string) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// init logger
 			logger, _ := zap.NewProduction()
-			defer logger.Sync() // flushes buffer, if any
+			defer logger.Sync()
 			log := logger.Sugar()
 
 			// create temp dir
