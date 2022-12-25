@@ -19,7 +19,10 @@ limitations under the License.
 package util
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -31,6 +34,22 @@ func FileUnmarshalAsYaml(in string, v interface{}) error {
 	}
 	err = yaml.Unmarshal(yamlFile, v)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func WriteFile(filepath string, content []byte) error {
+	words := strings.Split(filepath, "/")
+	wordsDir := words[:len(words)-1]
+	dir := ""
+	for _, word := range wordsDir {
+		dir = fmt.Sprintf("%s/%s", dir, word)
+	}
+	if err := os.MkdirAll(dir, 0777); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(filepath, content, os.ModePerm); err != nil {
 		return err
 	}
 	return nil

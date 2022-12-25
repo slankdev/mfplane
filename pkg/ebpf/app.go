@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/slankdev/hyperplane/pkg/util"
 	"github.com/spf13/cobra"
@@ -103,7 +102,8 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				if err := writeFile(fmt.Sprintf("%s/%s", tmppath, file), f); err != nil {
+				if err := util.WriteFile(fmt.Sprintf("%s/%s", tmppath, file),
+					f); err != nil {
 					return err
 				}
 			}
@@ -192,20 +192,4 @@ func newCommandXdpDetach(name string) *cobra.Command {
 	cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
 	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	return cmd
-}
-
-func writeFile(filepath string, content []byte) error {
-	words := strings.Split(filepath, "/")
-	wordsDir := words[:len(words)-1]
-	dir := ""
-	for _, word := range wordsDir {
-		dir = fmt.Sprintf("%s/%s", dir, word)
-	}
-	if err := os.MkdirAll(dir, 0777); err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(filepath, content, os.ModePerm); err != nil {
-		return err
-	}
-	return nil
 }
