@@ -38,6 +38,7 @@ func NewCommand(name, file, section string) *cobra.Command {
 		Use: name,
 	}
 	cmd.AddCommand(newCommandXdpAttach("attach", file, section))
+	cmd.AddCommand(newCommandXdpDetach("detach"))
 	return cmd
 }
 
@@ -146,7 +147,6 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 			if clioptVerbose {
 				log.Info("attach once", "netdev", clioptInterface, "section", section)
 			}
-
 			return nil
 		},
 	}
@@ -155,6 +155,35 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	cmd.Flags().BoolVarP(&clioptForce, "force", "f", false,
 		"if attached, once detach and try force attach the bpf code")
+	return cmd
+}
+
+func newCommandXdpDetach(name string) *cobra.Command {
+	var clioptInterface string
+	var clioptDebug bool
+	var clioptVerbose bool
+	cmd := &cobra.Command{
+		Use: name,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// init logger
+			logger, _ := zap.NewProduction()
+			defer logger.Sync()
+			log := logger.Sugar()
+
+			// detach on specified network interface
+			if _, err := util.LocalExecutef(
+				"ip link set %s xdpgeneric off", clioptInterface); err != nil {
+				return err
+			}
+			if clioptVerbose {
+				log.Info("detach once", "netdev", clioptInterface)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptInterface, "interface", "i", "", "")
+	cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
+	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	return cmd
 }
 
