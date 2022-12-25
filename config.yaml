@@ -1,7 +1,8 @@
-segmentRouting:
-  srv6:
-    locators:
-    - name: myloc1
-      prefix: fc00:1::/64
-    encapsulationSourceAddress: fc00:1::
-    hoplimit: 60
+# TODO(slankdev): implement me
+# segmentRouting:
+#   srv6:
+#     locators:
+#     - name: myloc1
+#       prefix: fc00:1::/64
+#     encapsulationSourceAddress: fc00:1::
+#     hoplimit: 60
