@@ -22,3 +22,7 @@ nat-attach-all: nat-build \
 	nat-attach-n2 \
 	nat-attach-n3 \
 	# END
+
+nat-new-attach-n1: mikanectl-build
+	docker cp ./bin/mikanectl N1:/usr/bin/mikanectl
+	docker exec N1 mikanectl bpf nat attach -i net0
