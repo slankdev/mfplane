@@ -25,4 +25,5 @@ nat-attach-all: nat-build \
 
 nat-new-attach-n1: mikanectl-build
 	docker cp ./bin/mikanectl N1:/usr/bin/mikanectl
+	docker exec N1 rm -rf /var/run/mfplane
 	docker exec N1 mikanectl bpf nat attach -i net0

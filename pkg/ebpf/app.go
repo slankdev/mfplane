@@ -23,6 +23,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/slankdev/hyperplane/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -67,18 +68,19 @@ func init() {
 
 func newCommandAttach(file string) *cobra.Command {
 	var clioptInterface string
+	var clioptDebug bool
 	cmd := &cobra.Command{
 		Use: "attach",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO(slankdev): delete it
-			fmt.Printf("hello %s %s\n", file, clioptInterface)
-
 			// create temp dir
 			if err := os.MkdirAll("/var/run/mfplane", 0777); err != nil {
 				return err
 			}
 			tmppath, err := ioutil.TempDir("/var/run/mfplane", "")
 			if err != nil {
+				return err
+			}
+			if err := os.MkdirAll(fmt.Sprintf("%s/bin", tmppath), 0777); err != nil {
 				return err
 			}
 
@@ -94,15 +96,25 @@ func newCommandAttach(file string) *cobra.Command {
 			}
 
 			// build with some special parameter
-			// KOKOKOKO
+			cflags := "-target bpf -O3 -g -I /usr/include/x86_64-linux-gnu"
+			if clioptDebug {
+				cflags += " -DDEBUG"
+			}
+			if _, err := util.LocalExecutef(
+				"clang %s -c %s/code/%s -o %s/bin/out.o",
+				cflags, tmppath, file, tmppath); err != nil {
+				return err
+			}
 
 			// TODO(slankdev): implement me
 			// attach on specified network interface
+			fmt.Printf("bind %s\n", clioptInterface)
 
 			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptInterface, "interface", "i", "", "")
+	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	return cmd
 }
 
