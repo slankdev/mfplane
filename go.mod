@@ -15,6 +15,7 @@ require (
 require (
 	github.com/dchest/siphash v1.2.3 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/k0kubun/pp v3.0.1+incompatible // indirect
 	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect

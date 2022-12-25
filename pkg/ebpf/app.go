@@ -19,6 +19,9 @@ package ebpf
 import (
 	"embed"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -67,16 +70,33 @@ func newCommandAttach(file string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "attach",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// TODO(slankdev): delete it
 			fmt.Printf("hello %s %s\n", file, clioptInterface)
-			for _, file := range files {
-				fmt.Printf("%s\n", file)
+
+			// create temp dir
+			if err := os.MkdirAll("/var/run/mfplane", 0777); err != nil {
+				return err
+			}
+			tmppath, err := ioutil.TempDir("/var/run/mfplane", "")
+			if err != nil {
+				return err
 			}
 
-			// TODO(slankdev): implement me
-			// create temp dir
-			// copy lib files
-			// copy main.c files
+			// copy bpf c code
+			for _, file := range files {
+				f, err := codeFS.ReadFile(file)
+				if err != nil {
+					return err
+				}
+				if err := writeFile(fmt.Sprintf("%s/%s", tmppath, file), f); err != nil {
+					return err
+				}
+			}
+
 			// build with some special parameter
+			// KOKOKOKO
+
+			// TODO(slankdev): implement me
 			// attach on specified network interface
 
 			return nil
@@ -84,4 +104,20 @@ func newCommandAttach(file string) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&clioptInterface, "interface", "i", "", "")
 	return cmd
+}
+
+func writeFile(filepath string, content []byte) error {
+	words := strings.Split(filepath, "/")
+	wordsDir := words[:len(words)-1]
+	dir := ""
+	for _, word := range wordsDir {
+		dir = fmt.Sprintf("%s/%s", dir, word)
+	}
+	if err := os.MkdirAll(dir, 0777); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(filepath, content, os.ModePerm); err != nil {
+		return err
+	}
+	return nil
 }
