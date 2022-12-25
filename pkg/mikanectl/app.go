@@ -39,5 +39,6 @@ func NewCommandBpf() *cobra.Command {
 		Use: "bpf",
 	}
 	cmd.AddCommand(ebpf.NewCommandXdp("nat", "nat_main.c", "xdp-ingress"))
+	cmd.AddCommand(ebpf.NewCommandXdp("clb", "clb_main.c", "xdp-ingress"))
 	return cmd
 }
