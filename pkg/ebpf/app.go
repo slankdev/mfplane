@@ -111,6 +111,7 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 			}
 
 			// build with some special parameter
+			// TODO(slankdev): cflags += " -nostdinc" for less dependency
 			cflags := "-target bpf -O3 -g -I /usr/include/x86_64-linux-gnu"
 			if clioptDebug {
 				cflags += " -DDEBUG"
