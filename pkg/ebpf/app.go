@@ -73,6 +73,7 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 	var clioptForce bool
 	var clioptVerbose bool
 	var clioptMode string
+	var clioptName string
 	cmd := &cobra.Command{
 		Use: name,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -114,6 +115,7 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 			// build with some special parameter
 			// TODO(slankdev): cflags += " -nostdinc" for less dependency
 			cflags := "-target bpf -O3 -g -I /usr/include/x86_64-linux-gnu"
+			cflags += " -D NAME=" + clioptName
 			if clioptDebug {
 				cflags += " -DDEBUG"
 			}
@@ -152,6 +154,7 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().StringVarP(&clioptName, "name", "n", "updateme000", "")
 	cmd.Flags().StringVarP(&clioptInterface, "interface", "i", "", "")
 	cmd.Flags().StringVarP(&clioptMode, "mode", "m", "xdpgeneric",
 		"xdp  or xdpgeneric")
