@@ -93,7 +93,7 @@ static inline int
 ignore_packet(struct xdp_md *ctx)
 {
 #ifdef DEBUG
-  //bpf_printk(LP"ignore packet");
+  bpf_printk(LP"ignore packet");
 #endif
   return XDP_PASS;
 }
