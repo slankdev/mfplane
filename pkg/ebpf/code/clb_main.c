@@ -1,7 +1,8 @@
 /*
-Copyright 2022 Hiroki Shirokura.
-Copyright 2022 Wide Project.
-*/
+ * SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+ * Copyright 2022 Hiroki Shirokura.
+ * Copyright 2022 Wide Project.
+ */
 
 #include <linux/if_ether.h>
 #include <linux/in.h>
@@ -13,8 +14,7 @@ Copyright 2022 Wide Project.
 #include <linux/pkt_cls.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
-#include "lib/jhash.h"
-#include "lib/memory.h"
+#include "lib/lib.h"
 
 #define LP "CLB " // log prefix
 #ifndef RING_SIZE
@@ -27,22 +27,6 @@ Copyright 2022 Wide Project.
 #define INTERFACE_MAX_FLOW_LIMIT 8
 #endif
 #define MAX_INTERFACES 512
-
-#define assert_len(interest, end)            \
-  ({                                         \
-    if ((unsigned long)(interest + 1) > end) \
-      return XDP_ABORTED;                    \
-  })
-
-static inline int same_ipv6(void *a, void *b, int prefix_bytes)
-{
-  __u8 *a8 = (__u8 *)a;
-  __u8 *b8 = (__u8 *)b;
-  for (int i = 0; (i < prefix_bytes && i < 16); i++)
-    if (a8[i] != b8[i])
-      return a8[i] - b8[i];
-  return 0;
-}
 
 // TODO(slankdev); no support multiple sids in sid-list
 struct outer_header {
@@ -81,24 +65,6 @@ struct {
 	__type(value, struct flow_processor);
 	__uint(max_entries, RING_SIZE);
 } procs SEC(".maps");
-
-static inline int
-ignore_packet(struct xdp_md *ctx)
-{
-#ifdef DEBUG
-  bpf_printk(LP"ignore packet");
-#endif
-  return XDP_PASS;
-}
-
-static inline int
-error_packet(struct xdp_md *ctx)
-{
-#ifdef DEBUG
-  bpf_printk(LP"error packet");
-#endif
-  return XDP_DROP;
-}
 
 static inline int
 process_nat_return(struct xdp_md *ctx)

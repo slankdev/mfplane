@@ -14,11 +14,9 @@
 #include <linux/pkt_cls.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
-#include "lib/jhash.h"
-#include "lib/memory.h"
+#include "lib/lib.h"
 
 #define LP "NAT " // log prefix
-#define DEBUG
 
 #define assert_len(interest, end)            \
   ({                                         \
@@ -42,16 +40,6 @@ struct {
   __type(key, struct nat_ret_table_key);
   __type(value, struct nat_ret_table_val);
 } nat_ret_table SEC(".maps");
-
-static inline int same_ipv6(void *a, void *b, int prefix_bytes)
-{
-  __u8 *a8 = (__u8 *)a;
-  __u8 *b8 = (__u8 *)b;
-  for (int i = 0; (i < prefix_bytes && i < 16); i++)
-    if (a8[i] != b8[i])
-      return a8[i] - b8[i];
-  return 0;
-}
 
 struct outer_header {
   struct ipv6hdr ip6;
@@ -79,24 +67,6 @@ __u8 srv6_vm_remote_sid[16] = {
   0xfc, 0x00, 0x02, 0x01, 0x00, 0x01, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
-
-static inline int
-ignore_packet(struct xdp_md *ctx)
-{
-#ifdef DEBUG
-  bpf_printk(LP"ignore packet");
-#endif
-  return XDP_PASS;
-}
-
-static inline int
-error_packet(struct xdp_md *ctx)
-{
-#ifdef DEBUG
-  bpf_printk(LP"error packet");
-#endif
-  return XDP_DROP;
-}
 
 static inline int
 process_nat_return(struct xdp_md *ctx)
