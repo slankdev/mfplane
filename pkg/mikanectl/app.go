@@ -19,6 +19,7 @@ package mikanectl
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/slankdev/hyperplane/pkg/ebpf"
 	"github.com/slankdev/hyperplane/pkg/util"
 )
 
@@ -27,7 +28,16 @@ func NewCommand() *cobra.Command {
 		Use: "mikanectl",
 	}
 	cmd.AddCommand(NewCommandHash())
+	cmd.AddCommand(NewCommandBpf())
 	cmd.AddCommand(util.NewCommandVersion())
 	cmd.AddCommand(util.NewCmdCompletion(cmd))
+	return cmd
+}
+
+func NewCommandBpf() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "bpf",
+	}
+	cmd.AddCommand(ebpf.NewCommandXdp("nat", "nat_main.c", "xdp-ingress"))
 	return cmd
 }
