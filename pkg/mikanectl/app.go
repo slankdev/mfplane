@@ -27,6 +27,7 @@ func NewCommand() *cobra.Command {
 		Use: "mikanectl",
 	}
 	cmd.AddCommand(NewCommandHash())
+	cmd.AddCommand(NewCommandBpf())
 	cmd.AddCommand(util.NewCommandVersion())
 	cmd.AddCommand(util.NewCmdCompletion(cmd))
 	return cmd
