@@ -128,11 +128,11 @@ func (m *Maglev) GetRawTable() []int64 {
 }
 
 func (m *Maglev) Dump() {
-	//fmt.Printf("nodeList.size: %d\n", len(m.nodeList))
-	//fmt.Printf("lookup.size: %d\n", len(m.lookup))
-	//for idx, u64 := range m.lookup {
-	//	fmt.Printf("lookup[%010d]: %d\n", idx, u64)
-	//}
+	fmt.Printf("nodeList.size: %d\n", len(m.nodeList))
+	fmt.Printf("lookup.size: %d\n", len(m.lookup))
+	for idx, u64 := range m.lookup {
+		fmt.Printf("lookup[%010d]: %d\n", idx, u64)
+	}
 }
 
 //Get :Get node name by object string.
