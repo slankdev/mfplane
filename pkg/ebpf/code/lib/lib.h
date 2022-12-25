@@ -13,6 +13,15 @@
 #include "jhash.h"
 #include "memory.h"
 
+#ifndef NAME
+#define NAME updateme999
+#endif
+
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x) " "
+#define GLUE_HELPER(x, y) x##_##y
+#define GLUE(x, y) GLUE_HELPER(x, y)
+
 #define assert_len(interest, end)            \
   ({                                         \
     if ((unsigned long)(interest + 1) > end) \
@@ -33,7 +42,7 @@ static inline int
 ignore_packet(struct xdp_md *ctx)
 {
 #ifdef DEBUG
-  bpf_printk(LP"ignore packet");
+  bpf_printk(STR(NAME)"ignore packet");
 #endif
   return XDP_PASS;
 }
@@ -42,7 +51,7 @@ static inline int
 error_packet(struct xdp_md *ctx)
 {
 #ifdef DEBUG
-  bpf_printk(LP"error packet");
+  bpf_printk(STR(NAME)"error packet");
 #endif
   return XDP_DROP;
 }
