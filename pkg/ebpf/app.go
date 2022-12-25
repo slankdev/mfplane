@@ -25,6 +25,7 @@ import (
 
 	"github.com/slankdev/hyperplane/pkg/util"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 //go:embed code
@@ -32,11 +33,11 @@ var codeFS embed.FS
 
 var files []string
 
-func NewCommand(name, file string) *cobra.Command {
+func NewCommand(name, file, section string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: name,
 	}
-	cmd.AddCommand(newCommandAttach(file))
+	cmd.AddCommand(newCommandAttach(file, section))
 	return cmd
 }
 
@@ -66,12 +67,19 @@ func init() {
 	}
 }
 
-func newCommandAttach(file string) *cobra.Command {
+func newCommandAttach(file, section string) *cobra.Command {
 	var clioptInterface string
 	var clioptDebug bool
+	var clioptForce bool
+	var clioptVerbose bool
 	cmd := &cobra.Command{
 		Use: "attach",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// init logger
+			logger, _ := zap.NewProduction()
+			defer logger.Sync() // flushes buffer, if any
+			log := logger.Sugar()
+
 			// create temp dir
 			if err := os.MkdirAll("/var/run/mfplane", 0777); err != nil {
 				return err
@@ -82,6 +90,9 @@ func newCommandAttach(file string) *cobra.Command {
 			}
 			if err := os.MkdirAll(fmt.Sprintf("%s/bin", tmppath), 0777); err != nil {
 				return err
+			}
+			if clioptVerbose {
+				log.Info("create tmp dir", "path", tmppath)
 			}
 
 			// copy bpf c code
@@ -94,6 +105,9 @@ func newCommandAttach(file string) *cobra.Command {
 					return err
 				}
 			}
+			if clioptVerbose {
+				log.Info("write c files", "path", tmppath)
+			}
 
 			// build with some special parameter
 			cflags := "-target bpf -O3 -g -I /usr/include/x86_64-linux-gnu"
@@ -105,16 +119,42 @@ func newCommandAttach(file string) *cobra.Command {
 				cflags, tmppath, file, tmppath); err != nil {
 				return err
 			}
+			if clioptVerbose {
+				log.Info("build c files",
+					"main", fmt.Sprintf("%s/code/%s", tmppath, file),
+					"out", fmt.Sprintf("%s/bin/out.o", tmppath),
+					"cflags", cflags)
+			}
 
-			// TODO(slankdev): implement me
+			// detach once if force-mode
+			if clioptForce {
+				if _, err := util.LocalExecutef("ip link set %s xdpgeneric off",
+					clioptInterface); err != nil {
+					return err
+				}
+				if clioptVerbose {
+					log.Info("detach once", "netdev", clioptInterface)
+				}
+			}
+
 			// attach on specified network interface
-			fmt.Printf("bind %s\n", clioptInterface)
+			if _, err := util.LocalExecutef(
+				"ip link set %s xdpgeneric obj %s/bin/out.o sec %s",
+				clioptInterface, tmppath, section); err != nil {
+				return err
+			}
+			if clioptVerbose {
+				log.Info("attach once", "netdev", clioptInterface, "section", section)
+			}
 
 			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptInterface, "interface", "i", "", "")
+	cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
 	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
+	cmd.Flags().BoolVarP(&clioptForce, "force", "f", false,
+		"if attached, once detach and try force attach the bpf code")
 	return cmd
 }
 
