@@ -43,8 +43,6 @@ Copyright 2022 Wide Project.
 #define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
 #endif
 
-#define DEBUG
-
 static inline int same_ipv6(void *a, void *b, int prefix_bytes)
 {
   __u8 *a8 = (__u8 *)a;
@@ -97,7 +95,7 @@ static inline int
 ignore_packet(struct xdp_md *ctx)
 {
 #ifdef DEBUG
-  //bpf_printk(LP"ignore packet");
+  bpf_printk(LP"ignore packet");
 #endif
   return XDP_PASS;
 }
