@@ -16,7 +16,6 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-#define LP "CLB " // log prefix
 #ifndef RING_SIZE
 #define RING_SIZE 17
 //#define RING_SIZE 65537
@@ -64,7 +63,7 @@ struct {
 	__type(key, __u32);
 	__type(value, struct flow_processor);
 	__uint(max_entries, RING_SIZE);
-} procs SEC(".maps");
+} GLUE(NAME, procs) SEC(".maps");
 
 static inline int
 process_nat_return(struct xdp_md *ctx)
@@ -84,9 +83,9 @@ process_nat_return(struct xdp_md *ctx)
 
   __u16 hash = th->dest;
   __u32 idx = hash % RING_SIZE;
-  struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
+  struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
-    bpf_printk(LP"no entry fatal");
+    bpf_printk(STR(NAME)"no entry fatal");
     return ignore_packet(ctx);
   }
 
@@ -97,7 +96,7 @@ process_nat_return(struct xdp_md *ctx)
                &ih->saddr, bpf_ntohs(th->source),
                &ih->daddr, bpf_ntohs(th->dest),
                ih->protocol, hash, hash, idx);
-  bpf_printk(LP"%s", tmp);
+  bpf_printk(STR(NAME)"%s", tmp);
 #endif
 
   // Adjust packet buffer head pointer
@@ -169,10 +168,10 @@ process_ipv4_tcp(struct xdp_md *ctx)
   hash = hash & 0xffff;
 
   __u32 idx = hash % RING_SIZE;
-  struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
+  struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
 #ifdef DEBUG
-    bpf_printk(LP"no entry fatal");
+    bpf_printk(STR(NAME)"no entry fatal");
 #endif
     return ignore_packet(ctx);
   }
@@ -183,7 +182,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
                &ih->daddr, bpf_ntohs(th->dest),
                ih->protocol, &p->addr);
 #ifdef DEBUG
-  bpf_printk(LP"dn-flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
+  bpf_printk(STR(NAME)"dn-flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
 #endif
 
   // Adjust packet buffer head pointer
@@ -255,9 +254,9 @@ process_ipv6(struct xdp_md *ctx)
   hash = hash & 0xffff;
 
   __u32 idx = hash % RING_SIZE;
-  struct flow_processor *p = bpf_map_lookup_elem(&procs, &idx);
+  struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
-    bpf_printk(LP"no entry fatal");
+    bpf_printk(STR(NAME)"no entry fatal");
     return ignore_packet(ctx);
   }
 
@@ -268,7 +267,7 @@ process_ipv6(struct xdp_md *ctx)
                &in_ih->saddr, bpf_ntohs(in_th->source),
                &in_ih->daddr, bpf_ntohs(in_th->dest),
                in_ih->protocol, hash, hash, idx);
-  bpf_printk(LP"%s", tmpstr);
+  bpf_printk(STR(NAME)"%s", tmpstr);
 #endif
 
   ///////////////////////////////////////////////////

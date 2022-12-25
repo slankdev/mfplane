@@ -41,6 +41,7 @@ func NewCommandHash() *cobra.Command {
 func NewCommandHashBpftoolCli() *cobra.Command {
 	var clioptTableSize uint32
 	var clioptBackends []string
+	var clioptName string
 	cmd := &cobra.Command{
 		Use: "bpftoolcli",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -64,8 +65,9 @@ func NewCommandHashBpftoolCli() *cobra.Command {
 				beU8 := []byte(backendIPs[table1[idx]])
 
 				// sudo bpftool map update name procs 1 0 0 0 0 value 10 254 0 101
-				fmt.Printf("bpftool map update name procs key %d %d %d %d value hex "+
+				fmt.Printf("bpftool map update name %s_procs key %d %d %d %d value hex "+
 					"%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
+					clioptName,
 					idx8[0], idx8[1], idx8[2], idx8[3],
 					beU8[0], beU8[1], beU8[2], beU8[3],
 					beU8[4], beU8[5], beU8[6], beU8[7],
@@ -76,6 +78,7 @@ func NewCommandHashBpftoolCli() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().StringVarP(&clioptName, "name", "n", "updateme000", "")
 	cmd.Flags().StringArrayVarP(&clioptBackends, "backends", "b", []string{}, "")
 	cmd.Flags().Uint32VarP(&clioptTableSize, "table-size", "t", uint32(maglev.BigM), "")
 	return cmd
