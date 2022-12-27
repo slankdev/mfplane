@@ -1,8 +1,61 @@
-# TODO(slankdev): implement me
-# segmentRouting:
-#   srv6:
-#     locators:
-#     - name: myloc1
-#       prefix: fc00:1::/64
-#     encapsulationSourceAddress: fc00:1::
-#     hoplimit: 60
+nodes:
+- name: L1
+  config:
+    localSids:
+    - sid: fc00:ff01:0001::0/48
+      End_MFL:
+        backends:
+        - fc00:0301:0001::0
+        - fc00:0301:0002::0
+    - sid: fc00:ff01:0002::0/48
+      End_MFL:
+        backends:
+        - fc00:0301:0002::0
+        - fc00:0301:0003::0
+    - sid: fc00:ff01:0003::0/48
+      End_MFL:
+        backends:
+        - fc00:0301:0003::0
+        - fc00:0301:0001::0
+- name: L2
+  config:
+    localSids:
+    - sid: fc00:ff01:0001::0/48
+      End_MFL:
+        backends:
+        - fc00:0301:0001::0
+        - fc00:0301:0002::0
+        - fc00:0301:0003::0
+    - sid: fc00:ff01:0002::0/48
+      End_MFL:
+        backends:
+        - fc00:0301:0001::0
+        - fc00:0301:0002::0
+        - fc00:0301:0003::0
+- name: N1
+  config:
+    localSids:
+    - sid: fc00:0301:0001::/48
+      End_MFN:
+        vip: 142.0.0.1
+    - sid: fc00:0301:0002::/48
+      End_MFN:
+        vip: 142.0.0.2
+- name: N2
+  config:
+    localSids:
+    - sid: fc00:0302:0002::/48
+      End_MFN:
+        vip: 142.0.0.2
+    - sid: fc00:0302:0003::/48
+      End_MFN:
+        vip: 142.0.0.3
+- name: N3
+  config:
+    localSids:
+    - sid: fc00:0303:0003::/48
+      End_MFN:
+        vip: 142.0.0.3
+    - sid: fc00:0303:0001::/48
+      End_MFN:
+        vip: 142.0.0.1
