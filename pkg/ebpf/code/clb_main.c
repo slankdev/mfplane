@@ -58,12 +58,34 @@ __u8 srv6_local_sid[16] = {
 };
 
 struct {
-	//__uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-	__uint(type, BPF_MAP_TYPE_ARRAY);
-	__type(key, __u32);
-	__type(value, struct flow_processor);
-	__uint(max_entries, RING_SIZE);
+  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+  __type(key, __u32);
+  __type(value, struct flow_processor);
+  __uint(max_entries, RING_SIZE);
 } GLUE(NAME, procs) SEC(".maps");
+
+struct trie_key {
+  __u32 prefixlen;
+  __u8 addr[16];
+};
+
+struct trie_val {
+  __u8 action;
+  // __u8 backend_offset;
+  // union {
+  //   struct {
+  //     __u8 dynamic_bit_len;
+  //   } end_mfl;
+  // } args;
+};
+
+struct {
+  __uint(type, BPF_MAP_TYPE_LPM_TRIE);
+  __uint(key_size, sizeof(struct trie_key));
+  __uint(value_size, sizeof(struct trie_val));
+  __uint(max_entries, 50);
+  __uint(map_flags, BPF_F_NO_PREALLOC);
+} GLUE(NAME, fib6) SEC(".maps");
 
 static inline int
 process_nat_return(struct xdp_md *ctx)
@@ -235,6 +257,25 @@ process_ipv6(struct xdp_md *ctx)
   assert_len(eh, data_end);
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
+
+  // Lookup SRv6 SID
+  struct trie_key key = {0};
+  key.prefixlen = 128;
+  memcpy(&key.addr, &oh->ip6.daddr, sizeof(struct in6_addr));
+  struct trie_val *val;
+  val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
+  if (!val) {
+#ifdef DEBUG
+    char tmp[128] = {0};
+    BPF_SNPRINTF(tmp, sizeof(tmp), "fib6 lookup miss=[%pi6]", &oh->ip6.daddr);
+    bpf_printk(STR(NAME)"%s", tmp);
+#endif
+    //return ignore_packet(ctx);
+    bpf_printk("no");
+  } else {
+    bpf_printk("yes %d", val->action);
+  }
+
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
