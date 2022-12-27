@@ -16,6 +16,7 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
+#define MAX_RULES 1
 #ifndef RING_SIZE
 #define RING_SIZE 17
 //#define RING_SIZE 65537
@@ -61,7 +62,7 @@ struct {
   __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
   __type(key, __u32);
   __type(value, struct flow_processor);
-  __uint(max_entries, RING_SIZE);
+  __uint(max_entries, RING_SIZE * MAX_RULES);
 } GLUE(NAME, procs) SEC(".maps");
 
 struct trie_key {
