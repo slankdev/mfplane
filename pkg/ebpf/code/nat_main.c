@@ -188,106 +188,96 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
+  // Prepare Headers
   struct ethhdr *eh = (struct ethhdr *)data;
   assert_len(eh, data_end);
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
-
-  if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
-      oh->srh.type != 4 ||
-      oh->srh.hdrlen != 2 ||
-      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) { // TODO(slankdev)
-    return ignore_packet(ctx);
-  }
-
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   __u8 in_ih_len = in_ih->ihl * 4;
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
+  // NAT out
   __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
   __u32 saddrupdate = val->vip;
-  if (in_ih->saddr == saddrmatch) {
-    __u32 hash = 0;
-    hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
-    hash = jhash_2words(in_th->dest, in_th->source, hash);
-    hash = jhash_2words(in_ih->protocol, 0, hash);
-    __u32 sourceport = hash & 0xffff;
 
-    struct nat_ret_table_key key = {
-      .addr = saddrupdate,
-      .port = sourceport,
-    };
-    struct nat_ret_table_val val = {
-      .addr = in_ih->saddr,
-      .port = in_th->source,
-    };
-    bpf_map_update_elem(&GLUE(NAME, nat_ret_table), &key, &val, BPF_ANY);
+  __u32 hash = 0;
+  hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
+  hash = jhash_2words(in_th->dest, in_th->source, hash);
+  hash = jhash_2words(in_ih->protocol, 0, hash);
+  __u32 sourceport = hash & 0xffff;
+
+  struct nat_ret_table_key key = {
+    .addr = saddrupdate,
+    .port = sourceport,
+  };
+  struct nat_ret_table_val nval = {
+    .addr = in_ih->saddr,
+    .port = in_th->source,
+  };
+  bpf_map_update_elem(&GLUE(NAME, nat_ret_table), &key, &nval, BPF_ANY);
 
 #ifdef DEBUG
-    char tmp[128] = {0};
-    BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u/%pi4:%u -> %pi4:%u",
-                in_ih->protocol,
-                &in_ih->saddr, bpf_ntohs(in_th->source),
-                &saddrupdate, bpf_ntohs(sourceport),
-                &in_ih->daddr, bpf_ntohs(in_th->dest));
-    bpf_printk(STR(NAME)"nat-out %s", tmp);
+  char tmp[128] = {0};
+  BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u/%pi4:%u -> %pi4:%u",
+              in_ih->protocol,
+              &in_ih->saddr, bpf_ntohs(in_th->source),
+              &saddrupdate, bpf_ntohs(sourceport),
+              &in_ih->daddr, bpf_ntohs(in_th->dest));
+  bpf_printk(STR(NAME)"nat-out %s", tmp);
 #endif
 
-    __u32 oldsource = in_ih->saddr;
-    __u16 oldsourceport = in_th->source;
-    in_ih->saddr = saddrupdate;
-    in_th->source = sourceport;
+  __u32 oldsource = in_ih->saddr;
+  __u16 oldsourceport = in_th->source;
+  in_ih->saddr = saddrupdate;
+  in_th->source = sourceport;
 
-    // Special thanks: kametan0730/curo
-    // https://github.com/kametan0730/curo/blob/master/nat.cpp
+  // Special thanks: kametan0730/curo
+  // https://github.com/kametan0730/curo/blob/master/nat.cpp
 
-    // update ip checksum
-    __u32 check;
-    check = in_ih->check;
-    check = ~check;
-    check -= oldsource & 0xffff;
-    check -= oldsource >> 16;
-    check += in_ih->saddr & 0xffff;
-    check += in_ih->saddr >> 16;
-    check = ~check;
-    if (check > 0xffff)
-      check = (check & 0xffff) + (check >> 16);
-    in_ih->check = check;
+  // update ip checksum
+  __u32 check;
+  check = in_ih->check;
+  check = ~check;
+  check -= oldsource & 0xffff;
+  check -= oldsource >> 16;
+  check += in_ih->saddr & 0xffff;
+  check += in_ih->saddr >> 16;
+  check = ~check;
+  if (check > 0xffff)
+    check = (check & 0xffff) + (check >> 16);
+  in_ih->check = check;
 
-    // update tcp checksum
-    check = in_th->check;
-    check = ~check;
-    check -= oldsource & 0xffff;
-    check -= oldsource >> 16;
-    check -= oldsourceport;
-    check += in_ih->saddr & 0xffff;
-    check += in_ih->saddr >> 16;
-    check += in_th->source;
-    check = ~check;
-    if (check > 0xffff)
-      check = (check & 0xffff) + (check >> 16);
-    in_th->check = check;
+  // update tcp checksum
+  check = in_th->check;
+  check = ~check;
+  check -= oldsource & 0xffff;
+  check -= oldsource >> 16;
+  check -= oldsourceport;
+  check += in_ih->saddr & 0xffff;
+  check += in_ih->saddr >> 16;
+  check += in_th->source;
+  check = ~check;
+  if (check > 0xffff)
+    check = (check & 0xffff) + (check >> 16);
+  in_th->check = check;
 
-    // mac addr swap
-    struct ethhdr *old_eh = (struct ethhdr *)data;
-    struct ethhdr *new_eh = (struct ethhdr *)(data + sizeof(struct outer_header));
-    assert_len(new_eh, data_end);
-    assert_len(old_eh, data_end);
-    new_eh->h_proto = bpf_htons(ETH_P_IP);
-    memcpy(new_eh->h_source, old_eh->h_dest, 6);
-    memcpy(new_eh->h_dest, old_eh->h_source, 6);
+  // mac addr swap
+  struct ethhdr *old_eh = (struct ethhdr *)data;
+  struct ethhdr *new_eh = (struct ethhdr *)(data + sizeof(struct outer_header));
+  assert_len(new_eh, data_end);
+  assert_len(old_eh, data_end);
+  new_eh->h_proto = bpf_htons(ETH_P_IP);
+  memcpy(new_eh->h_source, old_eh->h_dest, 6);
+  memcpy(new_eh->h_dest, old_eh->h_source, 6);
 
-    // decap and TX
-    if (bpf_xdp_adjust_head(ctx, 0 + (int)sizeof(struct outer_header))) {
-      return error_packet(ctx);
-    }
-    return XDP_TX;
-  } else {
-    bpf_printk("nat no match");
-    return ignore_packet(ctx);
+  // decap and TX
+  if (bpf_xdp_adjust_head(ctx, 0 + (int)sizeof(struct outer_header))) {
+    return error_packet(ctx);
   }
+  return XDP_TX;
   return 0;
 }
 
