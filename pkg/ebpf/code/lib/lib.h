@@ -33,6 +33,14 @@
       return XDP_ABORTED;                    \
   })
 
+// TODO(slankdev); no support multiple sids in sid-list
+struct outer_header {
+  struct ipv6hdr ip6;
+  struct ipv6_rt_hdr srh;
+  __u8 padding[4];
+  struct in6_addr seg;
+} __attribute__ ((packed));
+
 static inline int
 ignore_packet(struct xdp_md *ctx)
 {

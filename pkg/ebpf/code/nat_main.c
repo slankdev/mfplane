@@ -33,13 +33,6 @@ struct {
   __type(value, struct nat_ret_table_val);
 } GLUE(NAME, nat_ret_table) SEC(".maps");
 
-struct outer_header {
-  struct ipv6hdr ip6;
-  struct ipv6_rt_hdr srh;
-  __u8 padding[4];
-  struct in6_addr seg;
-} __attribute__ ((packed));
-
 struct trie_key {
   __u32 prefixlen;
   __u8 addr[16];
