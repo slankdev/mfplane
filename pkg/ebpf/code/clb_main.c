@@ -72,12 +72,7 @@ struct trie_key {
 
 struct trie_val {
   __u8 action;
-  // __u8 backend_offset;
-  // union {
-  //   struct {
-  //     __u8 dynamic_bit_len;
-  //   } end_mfl;
-  // } args;
+  //__u16 backend_block_idx;
 };
 
 struct {

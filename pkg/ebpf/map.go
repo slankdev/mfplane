@@ -289,3 +289,21 @@ func DeleteAll() error {
 	}
 	return nil
 }
+
+func BatchMapOperation(mapname string, maptype ebpf.MapType,
+	f func(m *ebpf.Map) error) error {
+	ids, err := GetMapIDsByNameType(mapname, maptype)
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		m, err := ebpf.NewMapFromID(id)
+		if err != nil {
+			return err
+		}
+		if err := f(m); err != nil {
+			return err
+		}
+	}
+	return nil
+}
