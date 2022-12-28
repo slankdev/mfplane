@@ -199,16 +199,13 @@ process_ipv6(struct xdp_md *ctx)
   memcpy(&key.addr, &oh->ip6.daddr, sizeof(struct in6_addr));
   struct trie_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
   if (!val) {
-    //return ignore_packet(ctx);
-    bpf_printk(STR(NAME)"no hit nat");
-  } else {
-    bpf_printk(STR(NAME)"hit nat");
+    return ignore_packet(ctx);
   }
 
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
-      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) {
+      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) { // TODO(slankdev)
     return ignore_packet(ctx);
   }
 
@@ -218,11 +215,8 @@ process_ipv6(struct xdp_md *ctx)
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
-  // TODO(slankdev): set from map
   // from-nat check
-  // if (in_ih->daddr == val->vip) {
-  __u32 daddrmatch = bpf_ntohl(0x8e000001); // 142.0.0.1
-  if (in_ih->daddr == daddrmatch) {
+  if (in_ih->daddr == val->vip) {
     return process_nat_return(ctx);
   }
 
@@ -235,7 +229,7 @@ process_ipv6(struct xdp_md *ctx)
   // TODO(slankdev): set from map
   // to-nat check
   __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
-  __u32 saddrupdate = bpf_ntohl(0x8e000001); // 142.0.0.1
+  __u32 saddrupdate = val->vip;
   if (in_ih->saddr == saddrmatch) {
     __u32 hash = 0;
     hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
