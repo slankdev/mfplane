@@ -3,10 +3,12 @@ maxBackends: 7
 localSids:
 - sid: fc00:1:2::/48 # NAT1
   End_MFL:
+    vip: 142.0.0.2
     backends:
     - fc00:12:1::1
     - fc00:13:1::1
 - sid: fc00:1:1::/48 # NAT1
   End_MFL:
+    vip: 142.0.0.2
     backends:
     - fc00:11:1::1
