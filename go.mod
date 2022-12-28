@@ -13,6 +13,7 @@ require (
 )
 
 require (
+	github.com/cilium/ebpf v0.9.3 // indirect
 	github.com/dchest/siphash v1.2.3 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible // indirect
@@ -24,6 +25,6 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
+	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
 	golang.org/x/text v0.3.0 // indirect
 )
