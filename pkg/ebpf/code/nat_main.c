@@ -44,8 +44,9 @@ struct outer_header {
   sizeof(struct iphdr) + offsetof(struct tcphdr, check))
 
 __u8 srv6_local_sid[16] = {
+  // TODO(slankdev): set from map
   // fc00:11:1:::
-  0xfc, 0x00, 0x00, 0x11, 0x00, 0x01, 0x00, 0x00, //TODO(slankdev): set from map
+  0xfc, 0x00, 0x00, 0x11, 0x00, 0x01, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
@@ -57,6 +58,7 @@ struct {
 } GLUE(NAME, encap_source) SEC(".maps");
 
 __u8 srv6_vm_remote_sid[16] = {
+  // TODO(slankdev): set from map
   // fc00:201:1:::
   0xfc, 0x00, 0x02, 0x01, 0x00, 0x01, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -183,6 +185,7 @@ process_ipv6(struct xdp_md *ctx)
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
+  // TODO(slankdev): set from map
   // from-nat check
   __u32 daddrmatch = bpf_ntohl(0x8e000001); // 142.0.0.1
   if (in_ih->daddr == daddrmatch) {
@@ -195,6 +198,7 @@ process_ipv6(struct xdp_md *ctx)
   //   return process_nat_out(ctx);
   // }
 
+  // TODO(slankdev): set from map
   // to-nat check
   __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
   __u32 saddrupdate = bpf_ntohl(0x8e000001); // 142.0.0.1
