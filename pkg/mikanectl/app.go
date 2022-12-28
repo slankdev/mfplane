@@ -58,6 +58,7 @@ type Config struct {
 	LocalSids   []struct {
 		Sid     string `yaml:"sid"`
 		End_MFL *struct {
+			Vip      string   `yaml:"vip"`
 			Backends []string `yaml:"backends"`
 		} `yaml:"End_MFL"`
 	} `yaml:"localSids"`
@@ -86,11 +87,11 @@ func NewCommandMapDump() *cobra.Command {
 			if err := ebpf.BatchMapOperation("l1_vip_table", ciliumebpf.PerCPUHash,
 				func(m *ciliumebpf.Map) error {
 					key := ebpf.VipKey{}
-					val := ebpf.VipVal{}
+					percpuval := []ebpf.VipVal{}
 					entries := m.Iterate()
-					for entries.Next(&key, &val) {
+					for entries.Next(&key, &percpuval) {
 						ip := net.IP(key.Vip[:])
-						fmt.Printf("%s %+v\n", ip, val)
+						fmt.Printf("%s %+v\n", ip, percpuval[0])
 					}
 					return nil
 				}); err != nil {
@@ -174,6 +175,24 @@ func NewCommandMapLoad() *cobra.Command {
 							BackendBlockIndex: uint16(backendBlockIndex),
 						}
 						if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
+							return err
+						}
+						return nil
+					}); err != nil {
+					return err
+				}
+
+				// Install vip_table
+				vipdata := net.ParseIP(localSid.End_MFL.Vip)
+				if err := ebpf.BatchMapOperation("l1_vip_table", ciliumebpf.PerCPUHash,
+					func(m *ciliumebpf.Map) error {
+						key := ebpf.VipKey{}
+						copy(key.Vip[:], vipdata[12:])
+						val := ebpf.VipVal{
+							BackendBlockIndex: uint16(backendBlockIndex),
+						}
+						if err := ebpf.UpdatePerCPUArrayAll(m, key, val,
+							ciliumebpf.UpdateAny); err != nil {
 							return err
 						}
 						return nil
