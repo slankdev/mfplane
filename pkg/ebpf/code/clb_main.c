@@ -50,11 +50,6 @@ struct flow_processor {
   // __u64 bytes;
 } __attribute__ ((packed));
 
-__u8 srv6_local_sid[16] = {
-  0xfc, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-};
-
 struct {
   __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
   __type(key, __u32);
@@ -312,15 +307,10 @@ process_ipv6(struct xdp_md *ctx)
     bpf_printk(STR(NAME)"%s", tmp);
 #endif
     return ignore_packet(ctx);
-    bpf_printk("no");
-  } else {
-    bpf_printk("yes %d", val->action);
   }
 
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
-      oh->srh.type != 4 ||
-      oh->srh.hdrlen != 2 ||
-      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) {
+      oh->srh.type != 4 || oh->srh.hdrlen != 2) {
     return ignore_packet(ctx);
   }
 
