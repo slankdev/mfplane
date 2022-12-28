@@ -33,16 +33,6 @@
       return XDP_ABORTED;                    \
   })
 
-static inline int test_mem(void *a)
-{
-  __u8 *a8 = (__u8 *)a;
-  int v = 0;
-  for (int i = 0; i < 16; i++)
-    if (a8[i] != 0)
-      v++;
-  return 0;
-}
-
 static inline int
 ignore_packet(struct xdp_md *ctx)
 {
