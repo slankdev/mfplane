@@ -33,13 +33,13 @@
       return XDP_ABORTED;                    \
   })
 
-static inline int same_ipv6(void *a, void *b, int prefix_bytes)
+static inline int test_mem(void *a)
 {
   __u8 *a8 = (__u8 *)a;
-  __u8 *b8 = (__u8 *)b;
-  for (int i = 0; (i < prefix_bytes && i < 16); i++)
-    if (a8[i] != b8[i])
-      return a8[i] - b8[i];
+  int v = 0;
+  for (int i = 0; i < 16; i++)
+    if (a8[i] != 0)
+      v++;
   return 0;
 }
 

@@ -62,13 +62,6 @@ struct {
 #define TCP_CSUM_OFF (ETH_HLEN + sizeof(struct outer_header) + \
   sizeof(struct iphdr) + offsetof(struct tcphdr, check))
 
-__u8 srv6_local_sid[16] = {
-  // TODO(slankdev): set from map
-  // fc00:11:1:::
-  0xfc, 0x00, 0x00, 0x11, 0x00, 0x01, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-};
-
 struct {
   __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
   __type(key, __u32);
@@ -97,7 +90,7 @@ process_nat_return(struct xdp_md *ctx)
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
-      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) {
+      test_mem(&oh->ip6.daddr) != 0) { // XXX(slankdev)????...
     return ignore_packet(ctx);
   }
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
