@@ -200,6 +200,32 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Con
 }
 
 func localSid_End_MFN_NAT(backendBlockIndex int, localSid ConfigLocalSid, config Config) error {
+	// Install fib6
+	_, ipnet, err := net.ParseCIDR(localSid.Sid)
+	if err != nil {
+		return err
+	}
+	ipaddr := net.ParseIP(localSid.End_MFN_NAT.Vip)
+	ipaddrb := [4]uint8{}
+	copy(ipaddrb[:], ipaddr)
+
+	if err := ebpf.BatchMapOperation(config.NamePrefix+"_fib6",
+		ciliumebpf.LPMTrie,
+		func(m *ciliumebpf.Map) error {
+			key := ebpf.TrieKey{}
+			copy(key.Addr[:], ipnet.IP)
+			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
+			val := ebpf.TrieVal{
+				Action: 456,
+				Vip:    ipaddrb,
+			}
+			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -65,6 +65,7 @@ struct trie_key {
 struct trie_val {
   __u16 action;
   __u16 backend_block_index;
+  __u32 vip;
 };
 
 struct {
