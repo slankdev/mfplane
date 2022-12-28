@@ -118,15 +118,16 @@ process_nat_return(struct xdp_md *ctx)
   assert_len(th, data_end);
 
   struct vip_key vk = {0};
-  struct vip_key *vv = bpf_map_lookup_elem(&GLUE(NAME, vip_table), &vk);
+  vk.vip = ih->daddr;
+  struct vip_val *vv = bpf_map_lookup_elem(&GLUE(NAME, vip_table), &vk);
   if (!vv) {
-    bpf_printk("nono");
-  } else {
-    bpf_printk("vip hit");
+    bpf_printk(STR(NAME)"nono");
+    return ignore_packet(ctx);
   }
 
   __u16 hash = th->dest;
   __u32 idx = hash % RING_SIZE;
+  idx = RING_SIZE * vv->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
     bpf_printk(STR(NAME)"no entry fatal");
@@ -318,12 +319,8 @@ process_ipv6(struct xdp_md *ctx)
   hash = hash & 0xffff;
 
   __u32 idx = hash % RING_SIZE;
-  __u32 idx2 = RING_SIZE * val->backend_block_index + idx;
-  if (idx2 >= RING_SIZE * MAX_RULES) {
-    bpf_printk("index overflow....");
-    ignore_packet(ctx);
-  }
-  struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx2);
+  idx = RING_SIZE * val->backend_block_index + idx;
+  struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
     bpf_printk(STR(NAME)"no entry fatal");
     return ignore_packet(ctx);
