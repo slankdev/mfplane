@@ -200,9 +200,6 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
   assert_len(in_th, data_end);
 
   // NAT out
-  __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
-  __u32 saddrupdate = val->vip;
-
   __u32 hash = 0;
   hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
   hash = jhash_2words(in_th->dest, in_th->source, hash);
@@ -210,7 +207,7 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
   __u32 sourceport = hash & 0xffff;
 
   struct nat_ret_table_key key = {
-    .addr = saddrupdate,
+    .addr = val->vip,
     .port = sourceport,
   };
   struct nat_ret_table_val nval = {
@@ -224,14 +221,14 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
   BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u/%pi4:%u -> %pi4:%u",
               in_ih->protocol,
               &in_ih->saddr, bpf_ntohs(in_th->source),
-              &saddrupdate, bpf_ntohs(sourceport),
+              &val->vip, bpf_ntohs(sourceport),
               &in_ih->daddr, bpf_ntohs(in_th->dest));
   bpf_printk(STR(NAME)"nat-out %s", tmp);
 #endif
 
   __u32 oldsource = in_ih->saddr;
   __u16 oldsourceport = in_th->source;
-  in_ih->saddr = saddrupdate;
+  in_ih->saddr = val->vip;
   in_th->source = sourceport;
 
   // Special thanks: kametan0730/curo
@@ -278,7 +275,6 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
     return error_packet(ctx);
   }
   return XDP_TX;
-  return 0;
 }
 
 static inline int
@@ -287,10 +283,17 @@ process_ipv6(struct xdp_md *ctx)
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
+  // Check Outer Headers
   struct ethhdr *eh = (struct ethhdr *)data;
   assert_len(eh, data_end);
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
+  if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
+      oh->srh.type != 4 ||
+      oh->srh.hdrlen != 2 ||
+      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) { // TODO(slankdev)
+    return ignore_packet(ctx);
+  }
 
   // Lookup SRv6 SID
   struct trie_key key = {0};
@@ -301,25 +304,17 @@ process_ipv6(struct xdp_md *ctx)
     return ignore_packet(ctx);
   }
 
-  if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
-      oh->srh.type != 4 ||
-      oh->srh.hdrlen != 2 ||
-      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) { // TODO(slankdev)
-    return ignore_packet(ctx);
-  }
-
+  // Parse Inner Headers
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   __u8 in_ih_len = in_ih->ihl * 4;
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
-  // nat check
-  if (in_ih->daddr == val->vip) {
-    return process_nat_return(ctx);
-  } else {
-    return process_nat_out(ctx, val);
-  }
+  // NAT check
+  return in_ih->daddr == val->vip ?
+    process_nat_return(ctx) :
+    process_nat_out(ctx, val);
 }
 
 static inline int
