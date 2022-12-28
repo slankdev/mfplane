@@ -207,7 +207,7 @@ func localSid_End_MFN_NAT(backendBlockIndex int, localSid ConfigLocalSid, config
 	}
 	ipaddr := net.ParseIP(localSid.End_MFN_NAT.Vip)
 	ipaddrb := [4]uint8{}
-	copy(ipaddrb[:], ipaddr)
+	copy(ipaddrb[:], ipaddr[12:])
 
 	if err := ebpf.BatchMapOperation(config.NamePrefix+"_fib6",
 		ciliumebpf.LPMTrie,
