@@ -1,5 +1,6 @@
 maxRules: 2
 maxBackends: 7
+encapSource: fc00:1::0
 localSids:
 - sid: fc00:1:2::/48 # NAT1
   End_MFL:
