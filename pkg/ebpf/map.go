@@ -50,6 +50,15 @@ type FlowProcessor struct {
 	Addr [16]uint8 `json:"addr"`
 }
 
+type VipKey struct {
+	Vip [4]uint8 `json:"vip"`
+}
+
+type VipVal struct {
+	BackendBlockIndex uint16 `json:"backend_block_index"`
+	DynamicBitLength  uint16 `json:"dynamic_bit_length"`
+}
+
 func GetMapIDsByNameType(mapName string, mapType ebpf.MapType) ([]ebpf.MapID, error) {
 	ids := []ebpf.MapID{}
 	for id := ebpf.MapID(0); ; {

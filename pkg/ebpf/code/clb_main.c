@@ -85,6 +85,22 @@ struct {
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib6) SEC(".maps");
 
+struct vip_key {
+  __u32 vip;
+};
+
+struct vip_val {
+  __u16 backend_block_index;
+  __u16 dynamic_bit_length; // defaulting as 16
+};
+
+struct {
+  __uint(type, BPF_MAP_TYPE_PERCPU_HASH);
+  __type(key, struct vip_key);
+  __type(value, struct vip_val);
+  __uint(max_entries, MAX_RULES);
+} GLUE(NAME, vip_table) SEC(".maps");
+
 static inline int
 process_nat_return(struct xdp_md *ctx)
 {
@@ -100,6 +116,14 @@ process_nat_return(struct xdp_md *ctx)
     return ignore_packet(ctx);
   struct tcphdr *th = (struct tcphdr *)((char *)ih + ih->ihl * 4);
   assert_len(th, data_end);
+
+  struct vip_key vk = {0};
+  struct vip_key *vv = bpf_map_lookup_elem(&GLUE(NAME, vip_table), &vk);
+  if (!vv) {
+    bpf_printk("nono");
+  } else {
+    bpf_printk("vip hit");
+  }
 
   __u16 hash = th->dest;
   __u32 idx = hash % RING_SIZE;

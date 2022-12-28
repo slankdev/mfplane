@@ -82,6 +82,21 @@ func NewCommandMapDump() *cobra.Command {
 				return err
 			}
 
+			fmt.Printf("\n[vip]\n")
+			if err := ebpf.BatchMapOperation("l1_vip_table", ciliumebpf.PerCPUHash,
+				func(m *ciliumebpf.Map) error {
+					key := ebpf.VipKey{}
+					val := ebpf.VipVal{}
+					entries := m.Iterate()
+					for entries.Next(&key, &val) {
+						ip := net.IP(key.Vip[:])
+						fmt.Printf("%s %+v\n", ip, val)
+					}
+					return nil
+				}); err != nil {
+				return err
+			}
+
 			fmt.Printf("\n[procs]\n")
 			if err := ebpf.BatchMapOperation("l1_procs", ciliumebpf.PerCPUArray,
 				func(m *ciliumebpf.Map) error {
