@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"runtime"
 
 	ciliumebpf "github.com/cilium/ebpf"
 	"github.com/spf13/cobra"
@@ -133,14 +132,9 @@ func NewCommandMapLoad() *cobra.Command {
 							procIndex := uint32(procIndexMin + idx)
 							backendAddr := localSid.End_MFL.Backends[mhTable[idx]]
 							ipaddr := net.ParseIP(backendAddr)
-							ipaddrB := [][16]uint8{}
-							nCPU := runtime.NumCPU()
-							for j := 0; j < nCPU; j++ {
-								b := [16]uint8{}
-								copy(b[:], ipaddr)
-								ipaddrB = append(ipaddrB, b)
-							}
-							if err := m.Update(&procIndex, ipaddrB,
+							ipaddrb := [16]uint8{}
+							copy(ipaddrb[:], ipaddr)
+							if err := ebpf.UpdatePerCPUArrayAll(m, &procIndex, ipaddrb,
 								ciliumebpf.UpdateAny); err != nil {
 								return err
 							}
