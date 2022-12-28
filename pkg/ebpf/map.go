@@ -19,8 +19,6 @@ limitations under the License.
 package ebpf
 
 import (
-	"math"
-
 	"github.com/cilium/ebpf"
 )
 
@@ -40,6 +38,14 @@ type TrieKey struct {
 type TrieVal struct {
 	Action            uint16 `json:"action"`
 	BackendBlockIndex uint16 `json:"backend_block_index"`
+}
+
+type FlowKey struct {
+	Hash uint32 `json:"hash"`
+}
+
+type FlowProcessor struct {
+	Addr [16]uint8 `json:"addr"`
 }
 
 func GetMapIDsByNameType(mapName string, mapType ebpf.MapType) ([]ebpf.MapID, error) {
@@ -115,157 +121,6 @@ func GetStats() (map[StatsMetricsKey]StatsMetricsVal, error) {
 	}
 
 	return ret, nil
-}
-
-type FlowKey struct {
-	IngressIfindex uint32
-	EgressIfindex  uint32
-	Saddr          uint32
-	Daddr          uint32
-	Sport          uint16
-	Dport          uint16
-	Proto          uint8
-	Mark           uint32
-}
-
-type FlowVal struct {
-	FlowPkts             uint32 `json:"cnt"`
-	FlowBytes            uint32 `json:"data_bytes"`
-	FlowStartMilliSecond uint64 `json:"flow_start_msec"`
-	FlowEndMilliSecond   uint64 `json:"flow_end_msec"`
-	Finished             uint8  `json:"finished"`
-}
-
-type Flow struct {
-	Key FlowKey
-	Val FlowVal
-}
-
-func (v *FlowVal) Merge(src FlowVal) {
-	v.FlowPkts += src.FlowPkts
-	v.FlowBytes += src.FlowBytes
-	if v.FlowStartMilliSecond == 0 {
-		v.FlowStartMilliSecond = math.MaxUint64
-	}
-	if src.FlowStartMilliSecond != 0 &&
-		src.FlowStartMilliSecond <= v.FlowStartMilliSecond {
-		v.FlowStartMilliSecond = src.FlowStartMilliSecond
-	}
-	if src.FlowEndMilliSecond != 0 &&
-		src.FlowEndMilliSecond >= v.FlowEndMilliSecond {
-		v.FlowEndMilliSecond = src.FlowEndMilliSecond
-	}
-	if src.Finished != 0 {
-		v.Finished = 1
-	}
-}
-
-func Dump() ([]Flow, error) {
-	ids, err := GetMapIDsByNameType(mapName, mapType)
-	if err != nil {
-		return nil, err
-	}
-
-	flows := []Flow{}
-	for _, id := range ids {
-		m, err := ebpf.NewMapFromID(id)
-		if err != nil {
-			return nil, err
-		}
-
-		key := FlowKey{}
-		perCpuVals := []FlowVal{}
-		entries := m.Iterate()
-		for entries.Next(&key, &perCpuVals) {
-			val := FlowVal{}
-			for _, perCpuVal := range perCpuVals {
-				val.Merge(perCpuVal)
-			}
-			flows = append(flows, Flow{key, val})
-		}
-		if err := entries.Err(); err != nil {
-			return nil, err
-		}
-		if err := m.Close(); err != nil {
-			return nil, err
-		}
-	}
-	return flows, nil
-}
-
-func Delete(key FlowKey) error {
-	ids, err := GetMapIDsByNameType(mapName, mapType)
-	if err != nil {
-		return err
-	}
-	for _, id := range ids {
-		m, err := ebpf.NewMapFromID(id)
-		if err != nil {
-			return err
-		}
-		if err := m.Delete(key); err != nil {
-			return err
-		}
-		if err := m.Close(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func DeleteFinished() error {
-	ids, err := GetMapIDsByNameType(mapName, mapType)
-	if err != nil {
-		return err
-	}
-	for _, id := range ids {
-		m, err := ebpf.NewMapFromID(id)
-		if err != nil {
-			return err
-		}
-		key := FlowKey{}
-		perCpuVals := []FlowVal{}
-		entries := m.Iterate()
-		for entries.Next(&key, &perCpuVals) {
-			for _, perCpuVal := range perCpuVals {
-				if perCpuVal.Finished > 0 {
-					if err := m.Delete(key); err != nil {
-						return err
-					}
-					break
-				}
-			}
-		}
-		if err := m.Close(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func DeleteAll() error {
-	ids, err := GetMapIDsByNameType(mapName, mapType)
-	if err != nil {
-		return err
-	}
-	for _, id := range ids {
-		m, err := ebpf.NewMapFromID(id)
-		if err != nil {
-			return err
-		}
-		key := FlowKey{}
-		perCpuVals := []FlowVal{}
-		entries := m.Iterate()
-		for entries.Next(&key, &perCpuVals) {
-			if err := m.Delete(key); err != nil {
-				return err
-			}
-		}
-		if err := m.Close(); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func BatchMapOperation(mapname string, maptype ebpf.MapType,
