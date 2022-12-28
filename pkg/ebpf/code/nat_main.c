@@ -40,6 +40,25 @@ struct outer_header {
   struct in6_addr seg;
 } __attribute__ ((packed));
 
+struct trie_key {
+  __u32 prefixlen;
+  __u8 addr[16];
+};
+
+struct trie_val {
+  __u16 action;
+  __u16 backend_block_index;
+  __u32 vip;
+};
+
+struct {
+  __uint(type, BPF_MAP_TYPE_LPM_TRIE);
+  __uint(key_size, sizeof(struct trie_key));
+  __uint(value_size, sizeof(struct trie_val));
+  __uint(max_entries, 50);
+  __uint(map_flags, BPF_F_NO_PREALLOC);
+} GLUE(NAME, fib6) SEC(".maps");
+
 #define TCP_CSUM_OFF (ETH_HLEN + sizeof(struct outer_header) + \
   sizeof(struct iphdr) + offsetof(struct tcphdr, check))
 
@@ -173,12 +192,26 @@ process_ipv6(struct xdp_md *ctx)
   assert_len(eh, data_end);
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
+
+  // Lookup SRv6 SID
+  struct trie_key key = {0};
+  key.prefixlen = 128;
+  memcpy(&key.addr, &oh->ip6.daddr, sizeof(struct in6_addr));
+  struct trie_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
+  if (!val) {
+    //return ignore_packet(ctx);
+    bpf_printk(STR(NAME)"no");
+  } else {
+    bpf_printk(STR(NAME)"hit nat");
+  }
+
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
       same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) {
     return ignore_packet(ctx);
   }
+
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   __u8 in_ih_len = in_ih->ihl * 4;
@@ -187,6 +220,7 @@ process_ipv6(struct xdp_md *ctx)
 
   // TODO(slankdev): set from map
   // from-nat check
+  // if (in_ih->daddr == val->vip) {
   __u32 daddrmatch = bpf_ntohl(0x8e000001); // 142.0.0.1
   if (in_ih->daddr == daddrmatch) {
     return process_nat_return(ctx);

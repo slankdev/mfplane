@@ -307,11 +307,6 @@ process_ipv6(struct xdp_md *ctx)
   struct trie_val *val;
   val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
   if (!val) {
-#ifdef DEBUG
-    char tmp[128] = {0};
-    BPF_SNPRINTF(tmp, sizeof(tmp), "fib6 lookup miss=[%pi6]", &oh->ip6.daddr);
-    bpf_printk(STR(NAME)"%s", tmp);
-#endif
     return ignore_packet(ctx);
   }
 
