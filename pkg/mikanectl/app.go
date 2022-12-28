@@ -105,7 +105,35 @@ func NewCommandMapLoad() *cobra.Command {
 				return err
 			}
 
-			pp.Println(config)
+			// TODO(slankdev): implement me
+			// load backend_block
+
+			// load fib6
+			for _, localSid := range config.LocalSids {
+				pp.Println(localSid.Sid)
+				_, ipnet, err := net.ParseCIDR(localSid.Sid)
+				if err != nil {
+					return err
+				}
+
+				if err := ebpf.BatchMapOperation("l1_fib6", ciliumebpf.LPMTrie,
+					func(m *ciliumebpf.Map) error {
+						key := ebpf.TrieKey{}
+						copy(key.Addr[:], ipnet.IP)
+						key.Prefixlen = uint32(util.Plen(ipnet.Mask))
+						val := ebpf.TrieVal{
+							Action: 123,
+						}
+						// TODO
+						if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
+							return err
+						}
+						return nil
+					}); err != nil {
+					return err
+				}
+			}
+
 			return nil
 		},
 	}
