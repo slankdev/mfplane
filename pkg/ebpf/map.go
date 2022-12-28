@@ -38,31 +38,9 @@ type TrieKey struct {
 }
 
 type TrieVal struct {
-	Action uint8 `json:"action"`
+	Action            uint16 `json:"action"`
+	BackendBlockIndex uint16 `json:"backend_block_index"`
 }
-
-type Fib6 struct {
-	Val FlowVal
-}
-
-// func (v *FlowVal) Merge(src FlowVal) {
-// 	v.FlowPkts += src.FlowPkts
-// 	v.FlowBytes += src.FlowBytes
-// 	if v.FlowStartMilliSecond == 0 {
-// 		v.FlowStartMilliSecond = math.MaxUint64
-// 	}
-// 	if src.FlowStartMilliSecond != 0 &&
-// 		src.FlowStartMilliSecond <= v.FlowStartMilliSecond {
-// 		v.FlowStartMilliSecond = src.FlowStartMilliSecond
-// 	}
-// 	if src.FlowEndMilliSecond != 0 &&
-// 		src.FlowEndMilliSecond >= v.FlowEndMilliSecond {
-// 		v.FlowEndMilliSecond = src.FlowEndMilliSecond
-// 	}
-// 	if src.Finished != 0 {
-// 		v.Finished = 1
-// 	}
-// }
 
 func GetMapIDsByNameType(mapName string, mapType ebpf.MapType) ([]ebpf.MapID, error) {
 	ids := []ebpf.MapID{}

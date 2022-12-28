@@ -71,8 +71,8 @@ struct trie_key {
 };
 
 struct trie_val {
-  __u8 action;
-  //__u16 backend_block_idx;
+  __u16 action;
+  __u16 backend_block_index;
 };
 
 struct {
