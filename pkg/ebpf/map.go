@@ -38,8 +38,9 @@ type TrieKey struct {
 }
 
 type TrieVal struct {
-	Action            uint16 `json:"action"`
-	BackendBlockIndex uint16 `json:"backend_block_index"`
+	Action            uint16   `json:"action"`
+	BackendBlockIndex uint16   `json:"backend_block_index"`
+	Vip               [4]uint8 `json:"vip"`
 }
 
 type FlowKey struct {
