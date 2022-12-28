@@ -93,6 +93,7 @@ process_nat_return(struct xdp_md *ctx)
   assert_len(eh, data_end);
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
+  // TODO(slankdev)
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
       oh->srh.hdrlen != 2 ||
@@ -290,8 +291,7 @@ process_ipv6(struct xdp_md *ctx)
   assert_len(oh, data_end);
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
-      oh->srh.hdrlen != 2 ||
-      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) { // TODO(slankdev)
+      oh->srh.hdrlen != 2) {
     return ignore_packet(ctx);
   }
 
