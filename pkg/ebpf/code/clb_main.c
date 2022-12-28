@@ -46,6 +46,8 @@ struct flow_key {
 
 struct flow_processor {
   struct in6_addr addr;
+  // __u64 pkts;
+  // __u64 bytes;
 } __attribute__ ((packed));
 
 __u8 srv6_tunsrc[16] = {

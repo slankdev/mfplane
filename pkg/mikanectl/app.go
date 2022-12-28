@@ -83,6 +83,20 @@ func NewCommandMapDump() *cobra.Command {
 			}
 
 			fmt.Printf("\n[procs]\n")
+			if err := ebpf.BatchMapOperation("l1_procs", ciliumebpf.PerCPUArray,
+				func(m *ciliumebpf.Map) error {
+					var key uint32
+					percpuval := []ebpf.FlowProcessor{}
+					entries := m.Iterate()
+					for entries.Next(&key, &percpuval) {
+						ip := net.IP(percpuval[0].Addr[:])
+						fmt.Printf("%d %s\n", key, ip)
+					}
+					return nil
+				}); err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}
