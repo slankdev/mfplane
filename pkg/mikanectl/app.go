@@ -17,7 +17,11 @@ limitations under the License.
 package mikanectl
 
 import (
+	"io/ioutil"
+
+	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 
 	"github.com/slankdev/hyperplane/pkg/ebpf"
 	"github.com/slankdev/hyperplane/pkg/util"
@@ -29,6 +33,8 @@ func NewCommand() *cobra.Command {
 	}
 	cmd.AddCommand(NewCommandHash())
 	cmd.AddCommand(NewCommandBpf())
+	cmd.AddCommand(NewCommandMapLoad())
+	cmd.AddCommand(NewCommandMapDump())
 	cmd.AddCommand(util.NewCommandVersion())
 	cmd.AddCommand(util.NewCmdCompletion(cmd))
 	return cmd
@@ -40,5 +46,49 @@ func NewCommandBpf() *cobra.Command {
 	}
 	cmd.AddCommand(ebpf.NewCommandXdp("nat", "nat_main.c", "xdp-ingress"))
 	cmd.AddCommand(ebpf.NewCommandXdp("clb", "clb_main.c", "xdp-ingress"))
+	return cmd
+}
+
+type Config struct {
+	MaxRules    int `yaml:"maxRules"`
+	MaxBackends int `yaml:"maxBackends"`
+	LocalSids   []struct {
+		Sid     string `yaml:"sid"`
+		End_MFL *struct {
+			Backends []string `yaml:"backends"`
+		} `yaml:"End_MFL"`
+	} `yaml:"localSids"`
+}
+
+func NewCommandMapDump() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "map-dump",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	return cmd
+}
+
+func NewCommandMapLoad() *cobra.Command {
+	var clioptFile string
+	cmd := &cobra.Command{
+		Use: "map-load",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			bdata, err := ioutil.ReadFile(clioptFile)
+			if err != nil {
+				return err
+			}
+
+			config := Config{}
+			if err := yaml.Unmarshal(bdata, &config); err != nil {
+				return err
+			}
+
+			pp.Println(config)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptFile, "file", "f", "", "")
 	return cmd
 }
