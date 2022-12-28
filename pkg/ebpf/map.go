@@ -19,6 +19,8 @@ limitations under the License.
 package ebpf
 
 import (
+	"runtime"
+
 	"github.com/cilium/ebpf"
 )
 
@@ -139,4 +141,13 @@ func BatchMapOperation(mapname string, maptype ebpf.MapType,
 		}
 	}
 	return nil
+}
+
+func UpdatePerCPUArrayAll(m *ebpf.Map, key interface{}, value interface{},
+	flags ebpf.MapUpdateFlags) error {
+	percpuval := []interface{}{}
+	for i := 0; i < runtime.NumCPU(); i++ {
+		percpuval = append(percpuval, value)
+	}
+	return m.Update(key, percpuval, flags)
 }
