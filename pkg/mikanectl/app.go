@@ -52,20 +52,6 @@ func NewCommandBpf() *cobra.Command {
 	return cmd
 }
 
-type Config struct {
-	NamePrefix  string `yaml:"namePrefix"`
-	MaxRules    int    `yaml:"maxRules"`
-	MaxBackends int    `yaml:"maxBackends"`
-	EncapSource string `yaml:"encapSource"`
-	LocalSids   []struct {
-		Sid     string `yaml:"sid"`
-		End_MFL *struct {
-			Vip      string   `yaml:"vip"`
-			Backends []string `yaml:"backends"`
-		} `yaml:"End_MFL"`
-	} `yaml:"localSids"`
-}
-
 func NewCommandMapDump() *cobra.Command {
 	var clioptNamePrefix string
 	cmd := &cobra.Command{
@@ -141,6 +127,35 @@ func NewCommandMapDump() *cobra.Command {
 	return cmd
 }
 
+func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Config) error {
+	return nil
+}
+
+func localSid_End_MFN_NAT(backendBlockIndex int, localSid ConfigLocalSid, config Config) error {
+	return nil
+}
+
+func ensureLocalSid(backendBlockIndex int, localSid ConfigLocalSid, config Config) error {
+	cnt := 0
+	if localSid.End_MFL != nil {
+		cnt++
+	}
+	if localSid.End_MFN_NAT != nil {
+		cnt++
+	}
+	if cnt != 1 {
+		return fmt.Errorf("invalid sid config (%s)", localSid.Sid)
+	}
+
+	switch {
+	case localSid.End_MFL != nil:
+		return localSid_End_MFL(backendBlockIndex, localSid, config)
+	case localSid.End_MFN_NAT != nil:
+		return localSid_End_MFN_NAT(backendBlockIndex, localSid, config)
+	}
+	return nil
+}
+
 func NewCommandMapLoad() *cobra.Command {
 	var clioptFile string
 	cmd := &cobra.Command{
@@ -158,6 +173,10 @@ func NewCommandMapLoad() *cobra.Command {
 
 			// Install backend-block
 			for backendBlockIndex, localSid := range config.LocalSids {
+				if err := ensureLocalSid(backendBlockIndex, localSid, config); err != nil {
+					return err
+				}
+
 				if err := ebpf.BatchMapOperation(config.NamePrefix+"_procs",
 					ciliumebpf.PerCPUArray,
 					func(m *ciliumebpf.Map) error {
