@@ -200,7 +200,7 @@ process_ipv6(struct xdp_md *ctx)
   struct trie_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
   if (!val) {
     //return ignore_packet(ctx);
-    bpf_printk(STR(NAME)"no");
+    bpf_printk(STR(NAME)"no hit nat");
   } else {
     bpf_printk(STR(NAME)"hit nat");
   }
