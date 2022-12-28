@@ -53,8 +53,9 @@ func NewCommandBpf() *cobra.Command {
 }
 
 type Config struct {
-	MaxRules    int `yaml:"maxRules"`
-	MaxBackends int `yaml:"maxBackends"`
+	MaxRules    int    `yaml:"maxRules"`
+	MaxBackends int    `yaml:"maxBackends"`
+	EncapSource string `yaml:"encapSource"`
 	LocalSids   []struct {
 		Sid     string `yaml:"sid"`
 		End_MFL *struct {
@@ -68,7 +69,23 @@ func NewCommandMapDump() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "map-dump",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("[fib6]\n")
+			fmt.Printf("[encapSrouce]\n")
+			if err := ebpf.BatchMapOperation("l1_encap_source",
+				ciliumebpf.PerCPUArray,
+				func(m *ciliumebpf.Map) error {
+					key := uint32(0)
+					percpuval := [][16]uint8{}
+					entries := m.Iterate()
+					for entries.Next(&key, &percpuval) {
+						ip := net.IP(percpuval[0][:])
+						fmt.Printf("%s\n", ip)
+					}
+					return nil
+				}); err != nil {
+				return err
+			}
+
+			fmt.Printf("\n[fib6]\n")
 			if err := ebpf.BatchMapOperation("l1_fib6", ciliumebpf.LPMTrie,
 				func(m *ciliumebpf.Map) error {
 					key := ebpf.TrieKey{}
@@ -201,6 +218,22 @@ func NewCommandMapLoad() *cobra.Command {
 				}
 			}
 
+			// Set tunsrc
+			if err := ebpf.BatchMapOperation("l1_encap_source",
+				ciliumebpf.PerCPUArray, func(m *ciliumebpf.Map) error {
+					key := uint32(0)
+					ipaddr := net.ParseIP(config.EncapSource)
+					ipaddrb := [16]uint8{}
+					copy(ipaddrb[:], ipaddr)
+					if err := ebpf.UpdatePerCPUArrayAll(m, &key, &ipaddrb,
+						ciliumebpf.UpdateAny); err != nil {
+						return err
+					}
+					return nil
+				},
+			); err != nil {
+				return nil
+			}
 			return nil
 		},
 	}

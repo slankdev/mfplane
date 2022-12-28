@@ -50,11 +50,6 @@ struct flow_processor {
   // __u64 bytes;
 } __attribute__ ((packed));
 
-__u8 srv6_tunsrc[16] = {
-  0xfc, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-};
-
 __u8 srv6_local_sid[16] = {
   0xfc, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -100,6 +95,13 @@ struct {
   __type(value, struct vip_val);
   __uint(max_entries, MAX_RULES);
 } GLUE(NAME, vip_table) SEC(".maps");
+
+struct {
+  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+  __type(key, __u32);
+  __type(value, struct in6_addr);
+  __uint(max_entries, 1);
+} GLUE(NAME, encap_source) SEC(".maps");
 
 static inline int
 process_nat_return(struct xdp_md *ctx)
@@ -151,6 +153,14 @@ process_nat_return(struct xdp_md *ctx)
   data = ctx->data;
   data_end = ctx->data_end;
 
+  // Resolve tunsrc
+  __u32 z = 0;
+  struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
+  if (!tunsrc) {
+    bpf_printk(STR(NAME)"no tunsrc is set");
+    return ignore_packet(ctx);
+  }
+
   // Craft new ether header
   struct ethhdr *new_eh = (struct ethhdr *)data;
   struct ethhdr *old_eh = (struct ethhdr *)(data + sizeof(struct outer_header));
@@ -169,7 +179,7 @@ process_nat_return(struct xdp_md *ctx)
     sizeof(struct ipv6_rt_hdr) + 4 + sizeof(struct in6_addr));
   oh->ip6.nexthdr = 43; // SR header
   oh->ip6.hop_limit = 64;
-  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.saddr, tunsrc, sizeof(struct in6_addr));
   memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
   oh->srh.hdrlen = 2;
   oh->srh.nexthdr = 4;
@@ -246,6 +256,14 @@ process_ipv4_tcp(struct xdp_md *ctx)
   memcpy(new_eh->h_source, old_eh->h_dest, 6);
   new_eh->h_proto = bpf_htons(ETH_P_IPV6);
 
+  // Resolve tunsrc
+  __u32 z = 0;
+  struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
+  if (!tunsrc) {
+    bpf_printk("no tunsrc is set");
+    return ignore_packet(ctx);
+  }
+
   // Craft outer IP6 SRv6 header
   struct outer_header *oh = (struct outer_header *)(new_eh + 1);
   assert_len(oh, data_end);
@@ -255,7 +273,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
     sizeof(struct ipv6_rt_hdr) + 4 + sizeof(struct in6_addr));
   oh->ip6.nexthdr = 43; // SR header
   oh->ip6.hop_limit = 64;
-  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.saddr, tunsrc, sizeof(struct in6_addr));
   memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
   oh->srh.hdrlen = 2;
   oh->srh.nexthdr = 4;
@@ -346,8 +364,16 @@ process_ipv6(struct xdp_md *ctx)
   memcpy(eh->h_dest, eh->h_source, 6);
   memcpy(eh->h_source, tmp, 6);
 
+  // Resolve tunsrc
+  __u32 z = 0;
+  struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
+  if (!tunsrc) {
+    bpf_printk("no tunsrc is set");
+    return ignore_packet(ctx);
+  }
+
   // Craft new ipv6 header
-  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.saddr, tunsrc, sizeof(*tunsrc));
   memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
   memcpy(&oh->seg, &p->addr, sizeof(struct in6_addr));
 
