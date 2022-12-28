@@ -82,22 +82,19 @@ process_nat_return(struct xdp_md *ctx)
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
+  // Prepare Headers
   struct ethhdr *eh = (struct ethhdr *)data;
   assert_len(eh, data_end);
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
-  // TODO(slankdev)
-  if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
-      oh->srh.type != 4 ||
-      oh->srh.hdrlen != 2 ||
-      test_mem(&oh->ip6.daddr) != 0) { // XXX(slankdev)????...
-    return ignore_packet(ctx);
-  }
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   __u8 in_ih_len = in_ih->ihl * 4;
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
+
+  // XXX(slankdev): If we delete following if block, memcpy doesn't work...
+  __u8 *dummy_ptr = (__u8 *)&oh->ip6.daddr;
 
   // lookup
   struct nat_ret_table_val *val = NULL;
