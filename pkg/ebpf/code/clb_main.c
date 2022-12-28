@@ -204,6 +204,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
     return process_nat_return(ctx);
   }
 
+#if 0 // This is End.MFL.R mode
   __u32 vip = bpf_ntohl(0x0afe000a); // 10.254.0.10
   if (ih->daddr != vip) {
     return ignore_packet(ctx);
@@ -283,6 +284,9 @@ process_ipv4_tcp(struct xdp_md *ctx)
   ///////////////////////////////////////////////////
 
   return XDP_TX;
+#endif
+
+  return ignore_packet(ctx);
 }
 
 static inline int
