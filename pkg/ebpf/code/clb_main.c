@@ -197,8 +197,10 @@ process_ipv4_tcp(struct xdp_md *ctx)
   struct iphdr *ih = (struct iphdr *)(eh + 1);
   assert_len(ih, data_end);
 
-  __u32 natvip = bpf_ntohl(0x8e000001); // 142.0.0.1
-  if (ih->daddr == natvip) {
+  struct vip_key vk = {0};
+  vk.vip = ih->daddr;
+  struct vip_val *vv = bpf_map_lookup_elem(&GLUE(NAME, vip_table), &vk);
+  if (vv) {
     return process_nat_return(ctx);
   }
 

@@ -1,0 +1,16 @@
+namePrefix: n1
+maxRules: 2
+maxBackends: 7
+encapSource: fc00:1::0
+localSids:
+- sid: fc00:1:2::/48 # NAT1
+  End_MFL:
+    vip: 142.0.0.2
+    backends:
+    - fc00:12:1::1
+    - fc00:13:1::1
+- sid: fc00:1:1::/48 # NAT1
+  End_MFL:
+    vip: 142.0.0.1
+    backends:
+    - fc00:11:1::1
