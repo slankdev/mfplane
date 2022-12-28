@@ -183,7 +183,7 @@ process_nat_return(struct xdp_md *ctx)
 }
 
 static inline int
-process_ipv6(struct xdp_md *ctx)
+process_nat_out(struct xdp_md *ctx, struct trie_val *val)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
@@ -192,15 +192,6 @@ process_ipv6(struct xdp_md *ctx)
   assert_len(eh, data_end);
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
-
-  // Lookup SRv6 SID
-  struct trie_key key = {0};
-  key.prefixlen = 128;
-  memcpy(&key.addr, &oh->ip6.daddr, sizeof(struct in6_addr));
-  struct trie_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
-  if (!val) {
-    return ignore_packet(ctx);
-  }
 
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 ||
@@ -215,19 +206,6 @@ process_ipv6(struct xdp_md *ctx)
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
-  // from-nat check
-  if (in_ih->daddr == val->vip) {
-    return process_nat_return(ctx);
-  }
-
-  // to-nat check
-  // __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
-  // if (in_ih->saddr == saddrmatch) {
-  //   return process_nat_out(ctx);
-  // }
-
-  // TODO(slankdev): set from map
-  // to-nat check
   __u32 saddrmatch = bpf_ntohl(0x0afe000a); // 10.254.0.10
   __u32 saddrupdate = val->vip;
   if (in_ih->saddr == saddrmatch) {
@@ -309,6 +287,48 @@ process_ipv6(struct xdp_md *ctx)
   } else {
     bpf_printk("nat no match");
     return ignore_packet(ctx);
+  }
+  return 0;
+}
+
+static inline int
+process_ipv6(struct xdp_md *ctx)
+{
+  __u64 data = ctx->data;
+  __u64 data_end = ctx->data_end;
+
+  struct ethhdr *eh = (struct ethhdr *)data;
+  assert_len(eh, data_end);
+  struct outer_header *oh = (struct outer_header *)(eh + 1);
+  assert_len(oh, data_end);
+
+  // Lookup SRv6 SID
+  struct trie_key key = {0};
+  key.prefixlen = 128;
+  memcpy(&key.addr, &oh->ip6.daddr, sizeof(struct in6_addr));
+  struct trie_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
+  if (!val) {
+    return ignore_packet(ctx);
+  }
+
+  if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
+      oh->srh.type != 4 ||
+      oh->srh.hdrlen != 2 ||
+      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) { // TODO(slankdev)
+    return ignore_packet(ctx);
+  }
+
+  struct iphdr *in_ih = (struct iphdr *)(oh + 1);
+  assert_len(in_ih, data_end);
+  __u8 in_ih_len = in_ih->ihl * 4;
+  struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
+  assert_len(in_th, data_end);
+
+  // nat check
+  if (in_ih->daddr == val->vip) {
+    return process_nat_return(ctx);
+  } else {
+    return process_nat_out(ctx, val);
   }
 }
 
