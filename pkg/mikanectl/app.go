@@ -167,7 +167,7 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Con
 			copy(key.Addr[:], ipnet.IP)
 			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
 			val := ebpf.TrieVal{
-				Action:            123,
+				Action:            123, // TODO(slankdev)
 				BackendBlockIndex: uint16(backendBlockIndex),
 			}
 			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
@@ -216,7 +216,7 @@ func localSid_End_MFN_NAT(backendBlockIndex int, localSid ConfigLocalSid, config
 			copy(key.Addr[:], ipnet.IP)
 			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
 			val := ebpf.TrieVal{
-				Action: 456,
+				Action: 456, // TODO(slankdev)
 				Vip:    ipaddrb,
 			}
 			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
