@@ -20,13 +20,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"runtime"
 
 	ciliumebpf "github.com/cilium/ebpf"
-	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
 	"github.com/slankdev/hyperplane/pkg/ebpf"
+	"github.com/slankdev/hyperplane/pkg/maglev"
 	"github.com/slankdev/hyperplane/pkg/util"
 )
 
@@ -89,8 +90,7 @@ func NewCommandMapDump() *cobra.Command {
 					percpuval := []ebpf.FlowProcessor{}
 					entries := m.Iterate()
 					for entries.Next(&key, &percpuval) {
-						ip := net.IP(percpuval[0].Addr[:])
-						fmt.Printf("%d %s\n", key, ip)
+						fmt.Printf("%d %s\n", key, net.IP(percpuval[0].Addr[:]))
 					}
 					return nil
 				}); err != nil {
@@ -118,17 +118,43 @@ func NewCommandMapLoad() *cobra.Command {
 				return err
 			}
 
-			// TODO(slankdev): implement me
-			// load backend_block
-
-			// load fib6
+			// Install backend-block
 			for backendBlockIndex, localSid := range config.LocalSids {
-				pp.Println(localSid.Sid)
+				if err := ebpf.BatchMapOperation("l1_procs", ciliumebpf.PerCPUArray,
+					func(m *ciliumebpf.Map) error {
+						mh, err := maglev.NewMaglev(localSid.End_MFL.Backends,
+							uint64(config.MaxBackends))
+						if err != nil {
+							return err
+						}
+						mhTable := mh.GetRawTable()
+						for idx := 0; idx < len(mhTable); idx++ {
+							procIndexMin := config.MaxBackends * backendBlockIndex
+							procIndex := uint32(procIndexMin + idx)
+							backendAddr := localSid.End_MFL.Backends[mhTable[idx]]
+							ipaddr := net.ParseIP(backendAddr)
+							ipaddrB := [][16]uint8{}
+							nCPU := runtime.NumCPU()
+							for j := 0; j < nCPU; j++ {
+								b := [16]uint8{}
+								copy(b[:], ipaddr)
+								ipaddrB = append(ipaddrB, b)
+							}
+							if err := m.Update(&procIndex, ipaddrB,
+								ciliumebpf.UpdateAny); err != nil {
+								return err
+							}
+						}
+						return nil
+					}); err != nil {
+					return err
+				}
+
+				// Install fib6
 				_, ipnet, err := net.ParseCIDR(localSid.Sid)
 				if err != nil {
 					return err
 				}
-
 				if err := ebpf.BatchMapOperation("l1_fib6", ciliumebpf.LPMTrie,
 					func(m *ciliumebpf.Map) error {
 						key := ebpf.TrieKey{}
@@ -138,7 +164,6 @@ func NewCommandMapLoad() *cobra.Command {
 							Action:            123,
 							BackendBlockIndex: uint16(backendBlockIndex),
 						}
-						// TODO
 						if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
 							return err
 						}
