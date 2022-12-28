@@ -128,6 +128,74 @@ func NewCommandMapDump() *cobra.Command {
 }
 
 func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Config) error {
+	// Install backend-block
+	if err := ebpf.BatchMapOperation(config.NamePrefix+"_procs",
+		ciliumebpf.PerCPUArray,
+		func(m *ciliumebpf.Map) error {
+			mh, err := maglev.NewMaglev(localSid.End_MFL.Backends,
+				uint64(config.MaxBackends))
+			if err != nil {
+				return err
+			}
+			mhTable := mh.GetRawTable()
+			for idx := 0; idx < len(mhTable); idx++ {
+				procIndexMin := config.MaxBackends * backendBlockIndex
+				procIndex := uint32(procIndexMin + idx)
+				backendAddr := localSid.End_MFL.Backends[mhTable[idx]]
+				ipaddr := net.ParseIP(backendAddr)
+				ipaddrb := [16]uint8{}
+				copy(ipaddrb[:], ipaddr)
+				if err := ebpf.UpdatePerCPUArrayAll(m, &procIndex, ipaddrb,
+					ciliumebpf.UpdateAny); err != nil {
+					return err
+				}
+			}
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	// Install fib6
+	_, ipnet, err := net.ParseCIDR(localSid.Sid)
+	if err != nil {
+		return err
+	}
+	if err := ebpf.BatchMapOperation(config.NamePrefix+"_fib6",
+		ciliumebpf.LPMTrie,
+		func(m *ciliumebpf.Map) error {
+			key := ebpf.TrieKey{}
+			copy(key.Addr[:], ipnet.IP)
+			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
+			val := ebpf.TrieVal{
+				Action:            123,
+				BackendBlockIndex: uint16(backendBlockIndex),
+			}
+			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	// Install vip_table
+	vipdata := net.ParseIP(localSid.End_MFL.Vip)
+	if err := ebpf.BatchMapOperation(config.NamePrefix+"_vip_table",
+		ciliumebpf.PerCPUHash,
+		func(m *ciliumebpf.Map) error {
+			key := ebpf.VipKey{}
+			copy(key.Vip[:], vipdata[12:])
+			val := ebpf.VipVal{
+				BackendBlockIndex: uint16(backendBlockIndex),
+			}
+			if err := ebpf.UpdatePerCPUArrayAll(m, key, val,
+				ciliumebpf.UpdateAny); err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -171,77 +239,9 @@ func NewCommandMapLoad() *cobra.Command {
 				return err
 			}
 
-			// Install backend-block
 			for backendBlockIndex, localSid := range config.LocalSids {
-				if err := ensureLocalSid(backendBlockIndex, localSid, config); err != nil {
-					return err
-				}
-
-				if err := ebpf.BatchMapOperation(config.NamePrefix+"_procs",
-					ciliumebpf.PerCPUArray,
-					func(m *ciliumebpf.Map) error {
-						mh, err := maglev.NewMaglev(localSid.End_MFL.Backends,
-							uint64(config.MaxBackends))
-						if err != nil {
-							return err
-						}
-						mhTable := mh.GetRawTable()
-						for idx := 0; idx < len(mhTable); idx++ {
-							procIndexMin := config.MaxBackends * backendBlockIndex
-							procIndex := uint32(procIndexMin + idx)
-							backendAddr := localSid.End_MFL.Backends[mhTable[idx]]
-							ipaddr := net.ParseIP(backendAddr)
-							ipaddrb := [16]uint8{}
-							copy(ipaddrb[:], ipaddr)
-							if err := ebpf.UpdatePerCPUArrayAll(m, &procIndex, ipaddrb,
-								ciliumebpf.UpdateAny); err != nil {
-								return err
-							}
-						}
-						return nil
-					}); err != nil {
-					return err
-				}
-
-				// Install fib6
-				_, ipnet, err := net.ParseCIDR(localSid.Sid)
-				if err != nil {
-					return err
-				}
-				if err := ebpf.BatchMapOperation(config.NamePrefix+"_fib6",
-					ciliumebpf.LPMTrie,
-					func(m *ciliumebpf.Map) error {
-						key := ebpf.TrieKey{}
-						copy(key.Addr[:], ipnet.IP)
-						key.Prefixlen = uint32(util.Plen(ipnet.Mask))
-						val := ebpf.TrieVal{
-							Action:            123,
-							BackendBlockIndex: uint16(backendBlockIndex),
-						}
-						if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
-							return err
-						}
-						return nil
-					}); err != nil {
-					return err
-				}
-
-				// Install vip_table
-				vipdata := net.ParseIP(localSid.End_MFL.Vip)
-				if err := ebpf.BatchMapOperation(config.NamePrefix+"_vip_table",
-					ciliumebpf.PerCPUHash,
-					func(m *ciliumebpf.Map) error {
-						key := ebpf.VipKey{}
-						copy(key.Vip[:], vipdata[12:])
-						val := ebpf.VipVal{
-							BackendBlockIndex: uint16(backendBlockIndex),
-						}
-						if err := ebpf.UpdatePerCPUArrayAll(m, key, val,
-							ciliumebpf.UpdateAny); err != nil {
-							return err
-						}
-						return nil
-					}); err != nil {
+				if err := ensureLocalSid(backendBlockIndex, localSid,
+					config); err != nil {
 					return err
 				}
 			}
