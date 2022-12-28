@@ -67,23 +67,22 @@ func NewCommandMapDump() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "map-dump",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ids, err := ebpf.GetMapIDsByNameType("l1_fib6", ciliumebpf.LPMTrie)
-			if err != nil {
+			fmt.Printf("[fib6]\n")
+			if err := ebpf.BatchMapOperation("l1_fib6", ciliumebpf.LPMTrie,
+				func(m *ciliumebpf.Map) error {
+					key := ebpf.TrieKey{}
+					val := ebpf.TrieVal{}
+					entries := m.Iterate()
+					for entries.Next(&key, &val) {
+						ip := net.IP(key.Addr[:])
+						fmt.Printf("%s/%d %+v\n", ip, key.Prefixlen, val)
+					}
+					return nil
+				}); err != nil {
 				return err
 			}
-			for _, id := range ids {
-				m, err := ciliumebpf.NewMapFromID(id)
-				if err != nil {
-					return err
-				}
-				key := ebpf.TrieKey{}
-				val := ebpf.TrieVal{}
-				entries := m.Iterate()
-				for entries.Next(&key, &val) {
-					ip := net.IP(key.Addr[:])
-					fmt.Printf("%s/%d %+v\n", ip, key.Prefixlen, val)
-				}
-			}
+
+			fmt.Printf("\n[procs]\n")
 			return nil
 		},
 	}
