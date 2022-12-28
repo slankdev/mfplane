@@ -81,7 +81,7 @@ func NewCommandMapDump() *cobra.Command {
 				entries := m.Iterate()
 				for entries.Next(&key, &val) {
 					ip := net.IP(key.Addr[:])
-					fmt.Printf("%s/%d %d\n", ip, key.Prefixlen, val.Action)
+					fmt.Printf("%s/%d %+v\n", ip, key.Prefixlen, val)
 				}
 			}
 			return nil
@@ -109,7 +109,7 @@ func NewCommandMapLoad() *cobra.Command {
 			// load backend_block
 
 			// load fib6
-			for _, localSid := range config.LocalSids {
+			for backendBlockIndex, localSid := range config.LocalSids {
 				pp.Println(localSid.Sid)
 				_, ipnet, err := net.ParseCIDR(localSid.Sid)
 				if err != nil {
@@ -122,7 +122,8 @@ func NewCommandMapLoad() *cobra.Command {
 						copy(key.Addr[:], ipnet.IP)
 						key.Prefixlen = uint32(util.Plen(ipnet.Mask))
 						val := ebpf.TrieVal{
-							Action: 123,
+							Action:            123,
+							BackendBlockIndex: uint16(backendBlockIndex),
 						}
 						// TODO
 						if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
