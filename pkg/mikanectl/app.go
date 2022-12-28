@@ -53,6 +53,7 @@ func NewCommandBpf() *cobra.Command {
 }
 
 type Config struct {
+	NamePrefix  string `yaml:"namePrefix"`
 	MaxRules    int    `yaml:"maxRules"`
 	MaxBackends int    `yaml:"maxBackends"`
 	EncapSource string `yaml:"encapSource"`
@@ -66,11 +67,12 @@ type Config struct {
 }
 
 func NewCommandMapDump() *cobra.Command {
+	var clioptNamePrefix string
 	cmd := &cobra.Command{
 		Use: "map-dump",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("[encapSrouce]\n")
-			if err := ebpf.BatchMapOperation("l1_encap_source",
+			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_encap_source",
 				ciliumebpf.PerCPUArray,
 				func(m *ciliumebpf.Map) error {
 					key := uint32(0)
@@ -86,7 +88,8 @@ func NewCommandMapDump() *cobra.Command {
 			}
 
 			fmt.Printf("\n[fib6]\n")
-			if err := ebpf.BatchMapOperation("l1_fib6", ciliumebpf.LPMTrie,
+			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_fib6",
+				ciliumebpf.LPMTrie,
 				func(m *ciliumebpf.Map) error {
 					key := ebpf.TrieKey{}
 					val := ebpf.TrieVal{}
@@ -101,7 +104,8 @@ func NewCommandMapDump() *cobra.Command {
 			}
 
 			fmt.Printf("\n[vip]\n")
-			if err := ebpf.BatchMapOperation("l1_vip_table", ciliumebpf.PerCPUHash,
+			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_vip_table",
+				ciliumebpf.PerCPUHash,
 				func(m *ciliumebpf.Map) error {
 					key := ebpf.VipKey{}
 					percpuval := []ebpf.VipVal{}
@@ -116,7 +120,8 @@ func NewCommandMapDump() *cobra.Command {
 			}
 
 			fmt.Printf("\n[procs]\n")
-			if err := ebpf.BatchMapOperation("l1_procs", ciliumebpf.PerCPUArray,
+			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_procs",
+				ciliumebpf.PerCPUArray,
 				func(m *ciliumebpf.Map) error {
 					var key uint32
 					percpuval := []ebpf.FlowProcessor{}
@@ -132,6 +137,7 @@ func NewCommandMapDump() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
 	return cmd
 }
 
@@ -152,7 +158,8 @@ func NewCommandMapLoad() *cobra.Command {
 
 			// Install backend-block
 			for backendBlockIndex, localSid := range config.LocalSids {
-				if err := ebpf.BatchMapOperation("l1_procs", ciliumebpf.PerCPUArray,
+				if err := ebpf.BatchMapOperation(config.NamePrefix+"_procs",
+					ciliumebpf.PerCPUArray,
 					func(m *ciliumebpf.Map) error {
 						mh, err := maglev.NewMaglev(localSid.End_MFL.Backends,
 							uint64(config.MaxBackends))
@@ -182,7 +189,8 @@ func NewCommandMapLoad() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				if err := ebpf.BatchMapOperation("l1_fib6", ciliumebpf.LPMTrie,
+				if err := ebpf.BatchMapOperation(config.NamePrefix+"_fib6",
+					ciliumebpf.LPMTrie,
 					func(m *ciliumebpf.Map) error {
 						key := ebpf.TrieKey{}
 						copy(key.Addr[:], ipnet.IP)
@@ -201,7 +209,8 @@ func NewCommandMapLoad() *cobra.Command {
 
 				// Install vip_table
 				vipdata := net.ParseIP(localSid.End_MFL.Vip)
-				if err := ebpf.BatchMapOperation("l1_vip_table", ciliumebpf.PerCPUHash,
+				if err := ebpf.BatchMapOperation(config.NamePrefix+"_vip_table",
+					ciliumebpf.PerCPUHash,
 					func(m *ciliumebpf.Map) error {
 						key := ebpf.VipKey{}
 						copy(key.Vip[:], vipdata[12:])
@@ -219,8 +228,9 @@ func NewCommandMapLoad() *cobra.Command {
 			}
 
 			// Set tunsrc
-			if err := ebpf.BatchMapOperation("l1_encap_source",
-				ciliumebpf.PerCPUArray, func(m *ciliumebpf.Map) error {
+			if err := ebpf.BatchMapOperation(config.NamePrefix+"_encap_source",
+				ciliumebpf.PerCPUArray,
+				func(m *ciliumebpf.Map) error {
 					key := uint32(0)
 					ipaddr := net.ParseIP(config.EncapSource)
 					ipaddrb := [16]uint8{}

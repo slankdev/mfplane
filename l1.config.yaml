@@ -1,3 +1,4 @@
+namePrefix: l1
 maxRules: 2
 maxBackends: 7
 encapSource: fc00:1::0
