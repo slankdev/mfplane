@@ -268,7 +268,7 @@ process_ipv6(struct xdp_md *ctx)
     BPF_SNPRINTF(tmp, sizeof(tmp), "fib6 lookup miss=[%pi6]", &oh->ip6.daddr);
     bpf_printk(STR(NAME)"%s", tmp);
 #endif
-    //return ignore_packet(ctx);
+    return ignore_packet(ctx);
     bpf_printk("no");
   } else {
     bpf_printk("yes %d", val->action);
@@ -280,6 +280,7 @@ process_ipv6(struct xdp_md *ctx)
       same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) {
     return ignore_packet(ctx);
   }
+
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   __u8 in_ih_len = in_ih->ihl * 4;
@@ -293,7 +294,12 @@ process_ipv6(struct xdp_md *ctx)
   hash = hash & 0xffff;
 
   __u32 idx = hash % RING_SIZE;
-  struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
+  __u32 idx2 = RING_SIZE * val->backend_block_index + idx;
+  if (idx2 >= RING_SIZE * MAX_RULES) {
+    bpf_printk("index overflow....");
+    ignore_packet(ctx);
+  }
+  struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx2);
   if (!p) {
     bpf_printk(STR(NAME)"no entry fatal");
     return ignore_packet(ctx);
