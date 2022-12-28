@@ -43,16 +43,18 @@ struct outer_header {
 #define TCP_CSUM_OFF (ETH_HLEN + sizeof(struct outer_header) + \
   sizeof(struct iphdr) + offsetof(struct tcphdr, check))
 
-__u8 srv6_tunsrc[16] = {
-  0xfc, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, //TODO(slankdev): set from map
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-};
-
 __u8 srv6_local_sid[16] = {
   // fc00:11:1:::
   0xfc, 0x00, 0x00, 0x11, 0x00, 0x01, 0x00, 0x00, //TODO(slankdev): set from map
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
+
+struct {
+  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+  __type(key, __u32);
+  __type(value, struct in6_addr);
+  __uint(max_entries, 1);
+} GLUE(NAME, encap_source) SEC(".maps");
 
 __u8 srv6_vm_remote_sid[16] = {
   // fc00:201:1:::
@@ -143,8 +145,16 @@ process_nat_return(struct xdp_md *ctx)
   memcpy(eh->h_dest, eh->h_source, 6);
   memcpy(eh->h_source, tmpmac, 6);
 
+  // Resolve tunsrc
+  __u32 z = 0;
+  struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
+  if (!tunsrc) {
+    bpf_printk(STR(NAME)"no tunsrc is set");
+    return ignore_packet(ctx);
+  }
+
   // Craft new ipv6 header
-  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.saddr, tunsrc, sizeof(struct in6_addr));
   memcpy(&oh->ip6.daddr, srv6_vm_remote_sid, sizeof(struct in6_addr));
   memcpy(&oh->seg, srv6_vm_remote_sid, sizeof(struct in6_addr));
 

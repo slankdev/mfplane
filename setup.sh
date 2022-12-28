@@ -5,6 +5,7 @@ set -xe
 # mikanectl hash bpftoolcli -t 7 -b fc00:11:1::1 -n l1 | sudo sh -xe
 
 sudo mikanectl map-load -f l1.config.yaml
+sudo mikanectl map-load -f n1.config.yaml
 
 ## THIS WILL BE DELETED
 # # fc00:1:1::/128 -> 0x80
