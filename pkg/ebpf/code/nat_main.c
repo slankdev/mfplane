@@ -269,32 +269,10 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
   // Special thanks: kametan0730/curo
   // https://github.com/kametan0730/curo/blob/master/nat.cpp
 
-  // update ip checksum
-  __u32 check;
-  check = in_ih->check;
-  check = ~check;
-  check -= oldsource & 0xffff;
-  check -= oldsource >> 16;
-  check += in_ih->saddr & 0xffff;
-  check += in_ih->saddr >> 16;
-  check = ~check;
-  if (check > 0xffff)
-    check = (check & 0xffff) + (check >> 16);
-  in_ih->check = check;
-
-  // update tcp checksum
-  check = in_th->check;
-  check = ~check;
-  check -= oldsource & 0xffff;
-  check -= oldsource >> 16;
-  check -= oldsourceport;
-  check += in_ih->saddr & 0xffff;
-  check += in_ih->saddr >> 16;
-  check += in_th->source;
-  check = ~check;
-  if (check > 0xffff)
-    check = (check & 0xffff) + (check >> 16);
-  in_th->check = check;
+  // update checksum
+  in_ih->check = checksum_recalc_addr(oldsource, in_ih->saddr, in_ih->check);
+  in_th->check = checksum_recalc_addrport(oldsource, in_ih->saddr,
+    oldsourceport, in_th->source, in_th->check);
 
   // mac addr swap
   struct ethhdr *old_eh = (struct ethhdr *)data;
