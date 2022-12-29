@@ -32,3 +32,5 @@ compiler flags
 	- 16-bytes x3-times data copy
 
 We are suspecting compiler optimization...?
+
+![](./asm_diff.png)
