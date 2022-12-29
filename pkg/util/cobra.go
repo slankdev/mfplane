@@ -42,7 +42,7 @@ func NewCmdCompletion(rootCmd *cobra.Command) *cobra.Command {
 			for _, arg := range os.Args {
 				cli += arg + " "
 			}
-			fmt.Printf("#### \". <(%s)\" in your bashrc¥n", cli)
+			fmt.Printf("#### \". <(%s)\" in your bashrc\n", cli)
 		},
 		SilenceUsage: true,
 	})

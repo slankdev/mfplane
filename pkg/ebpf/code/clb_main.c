@@ -16,9 +16,9 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
+#define MAX_RULES 1
 #ifndef RING_SIZE
-#define RING_SIZE 17
-//#define RING_SIZE 65537
+#define RING_SIZE 7
 #endif
 #define IP_MF     0x2000
 #define IP_OFFSET 0x1FFF
@@ -26,14 +26,6 @@
 #define INTERFACE_MAX_FLOW_LIMIT 8
 #endif
 #define MAX_INTERFACES 512
-
-// TODO(slankdev); no support multiple sids in sid-list
-struct outer_header {
-  struct ipv6hdr ip6;
-  struct ipv6_rt_hdr srh;
-  __u8 padding[4];
-  struct in6_addr seg;
-} __attribute__ ((packed));
 
 struct flow_key {
 	__u32 src4;
@@ -45,25 +37,59 @@ struct flow_key {
 
 struct flow_processor {
   struct in6_addr addr;
+  // TODO(slankdev): support loadbalancing stats
+  // __u64 pkts;
+  // __u64 bytes;
 } __attribute__ ((packed));
 
-__u8 srv6_tunsrc[16] = {
-  0xfc, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+struct {
+  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+  __type(key, __u32);
+  __type(value, struct flow_processor);
+  __uint(max_entries, RING_SIZE * MAX_RULES);
+} GLUE(NAME, procs) SEC(".maps");
+
+struct trie_key {
+  __u32 prefixlen;
+  __u8 addr[16];
 };
 
-__u8 srv6_local_sid[16] = {
-  0xfc, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+struct trie_val {
+  __u16 action;
+  __u16 backend_block_index;
+  __u32 vip;
 };
 
 struct {
-	//__uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-	__uint(type, BPF_MAP_TYPE_ARRAY);
-	__type(key, __u32);
-	__type(value, struct flow_processor);
-	__uint(max_entries, RING_SIZE);
-} GLUE(NAME, procs) SEC(".maps");
+  __uint(type, BPF_MAP_TYPE_LPM_TRIE);
+  __uint(key_size, sizeof(struct trie_key));
+  __uint(value_size, sizeof(struct trie_val));
+  __uint(max_entries, 50);
+  __uint(map_flags, BPF_F_NO_PREALLOC);
+} GLUE(NAME, fib6) SEC(".maps");
+
+struct vip_key {
+  __u32 vip;
+};
+
+struct vip_val {
+  __u16 backend_block_index;
+  __u16 dynamic_bit_length; // defaulting as 16
+};
+
+struct {
+  __uint(type, BPF_MAP_TYPE_PERCPU_HASH);
+  __type(key, struct vip_key);
+  __type(value, struct vip_val);
+  __uint(max_entries, MAX_RULES);
+} GLUE(NAME, vip_table) SEC(".maps");
+
+struct {
+  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+  __type(key, __u32);
+  __type(value, struct in6_addr);
+  __uint(max_entries, 1);
+} GLUE(NAME, encap_source) SEC(".maps");
 
 static inline int
 process_nat_return(struct xdp_md *ctx)
@@ -81,8 +107,17 @@ process_nat_return(struct xdp_md *ctx)
   struct tcphdr *th = (struct tcphdr *)((char *)ih + ih->ihl * 4);
   assert_len(th, data_end);
 
+  struct vip_key vk = {0};
+  vk.vip = ih->daddr;
+  struct vip_val *vv = bpf_map_lookup_elem(&GLUE(NAME, vip_table), &vk);
+  if (!vv) {
+    bpf_printk(STR(NAME)"nono");
+    return ignore_packet(ctx);
+  }
+
   __u16 hash = th->dest;
   __u32 idx = hash % RING_SIZE;
+  idx = RING_SIZE * vv->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
     bpf_printk(STR(NAME)"no entry fatal");
@@ -106,6 +141,14 @@ process_nat_return(struct xdp_md *ctx)
   data = ctx->data;
   data_end = ctx->data_end;
 
+  // Resolve tunsrc
+  __u32 z = 0;
+  struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
+  if (!tunsrc) {
+    bpf_printk(STR(NAME)"no tunsrc is set");
+    return ignore_packet(ctx);
+  }
+
   // Craft new ether header
   struct ethhdr *new_eh = (struct ethhdr *)data;
   struct ethhdr *old_eh = (struct ethhdr *)(data + sizeof(struct outer_header));
@@ -124,7 +167,7 @@ process_nat_return(struct xdp_md *ctx)
     sizeof(struct ipv6_rt_hdr) + 4 + sizeof(struct in6_addr));
   oh->ip6.nexthdr = 43; // SR header
   oh->ip6.hop_limit = 64;
-  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.saddr, tunsrc, sizeof(struct in6_addr));
   memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
   oh->srh.hdrlen = 2;
   oh->srh.nexthdr = 4;
@@ -147,11 +190,14 @@ process_ipv4_tcp(struct xdp_md *ctx)
   struct iphdr *ih = (struct iphdr *)(eh + 1);
   assert_len(ih, data_end);
 
-  __u32 natvip = bpf_ntohl(0x8e000001); // 142.0.0.1
-  if (ih->daddr == natvip) {
+  struct vip_key vk = {0};
+  vk.vip = ih->daddr;
+  struct vip_val *vv = bpf_map_lookup_elem(&GLUE(NAME, vip_table), &vk);
+  if (vv) {
     return process_nat_return(ctx);
   }
 
+#if 0 // This is End.MFL.R mode
   __u32 vip = bpf_ntohl(0x0afe000a); // 10.254.0.10
   if (ih->daddr != vip) {
     return ignore_packet(ctx);
@@ -201,6 +247,14 @@ process_ipv4_tcp(struct xdp_md *ctx)
   memcpy(new_eh->h_source, old_eh->h_dest, 6);
   new_eh->h_proto = bpf_htons(ETH_P_IPV6);
 
+  // Resolve tunsrc
+  __u32 z = 0;
+  struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
+  if (!tunsrc) {
+    bpf_printk("no tunsrc is set");
+    return ignore_packet(ctx);
+  }
+
   // Craft outer IP6 SRv6 header
   struct outer_header *oh = (struct outer_header *)(new_eh + 1);
   assert_len(oh, data_end);
@@ -210,7 +264,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
     sizeof(struct ipv6_rt_hdr) + 4 + sizeof(struct in6_addr));
   oh->ip6.nexthdr = 43; // SR header
   oh->ip6.hop_limit = 64;
-  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.saddr, tunsrc, sizeof(struct in6_addr));
   memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
   oh->srh.hdrlen = 2;
   oh->srh.nexthdr = 4;
@@ -223,6 +277,9 @@ process_ipv4_tcp(struct xdp_md *ctx)
   ///////////////////////////////////////////////////
 
   return XDP_TX;
+#endif
+
+  return ignore_packet(ctx);
 }
 
 static inline int
@@ -235,12 +292,22 @@ process_ipv6(struct xdp_md *ctx)
   assert_len(eh, data_end);
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
-  if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
-      oh->srh.type != 4 ||
-      oh->srh.hdrlen != 2 ||
-      same_ipv6(&oh->ip6.daddr, srv6_local_sid, 6) != 0) {
+
+  // Lookup SRv6 SID
+  struct trie_key key = {0};
+  key.prefixlen = 128;
+  memcpy(&key.addr, &oh->ip6.daddr, sizeof(struct in6_addr));
+  struct trie_val *val;
+  val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
+  if (!val) {
     return ignore_packet(ctx);
   }
+
+  if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
+      oh->srh.type != 4 || oh->srh.hdrlen != 2) {
+    return ignore_packet(ctx);
+  }
+
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   __u8 in_ih_len = in_ih->ihl * 4;
@@ -254,6 +321,7 @@ process_ipv6(struct xdp_md *ctx)
   hash = hash & 0xffff;
 
   __u32 idx = hash % RING_SIZE;
+  idx = RING_SIZE * val->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
     bpf_printk(STR(NAME)"no entry fatal");
@@ -280,8 +348,16 @@ process_ipv6(struct xdp_md *ctx)
   memcpy(eh->h_dest, eh->h_source, 6);
   memcpy(eh->h_source, tmp, 6);
 
+  // Resolve tunsrc
+  __u32 z = 0;
+  struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
+  if (!tunsrc) {
+    bpf_printk("no tunsrc is set");
+    return ignore_packet(ctx);
+  }
+
   // Craft new ipv6 header
-  memcpy(&oh->ip6.saddr, srv6_tunsrc, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.saddr, tunsrc, sizeof(*tunsrc));
   memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
   memcpy(&oh->seg, &p->addr, sizeof(struct in6_addr));
 

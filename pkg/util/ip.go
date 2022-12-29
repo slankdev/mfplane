@@ -21,6 +21,7 @@ package util
 import (
 	"bytes"
 	"encoding/binary"
+	"math/bits"
 	"net"
 )
 
@@ -54,4 +55,12 @@ func UdpTransmit(local, remote string, buf *bytes.Buffer) error {
 		return err
 	}
 	return nil
+}
+
+func Plen(mask net.IPMask) int {
+	l := 0
+	for _, m := range mask {
+		l += bits.OnesCount8(uint8(m))
+	}
+	return l
 }

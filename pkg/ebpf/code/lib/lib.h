@@ -33,15 +33,13 @@
       return XDP_ABORTED;                    \
   })
 
-static inline int same_ipv6(void *a, void *b, int prefix_bytes)
-{
-  __u8 *a8 = (__u8 *)a;
-  __u8 *b8 = (__u8 *)b;
-  for (int i = 0; (i < prefix_bytes && i < 16); i++)
-    if (a8[i] != b8[i])
-      return a8[i] - b8[i];
-  return 0;
-}
+// TODO(slankdev); no support multiple sids in sid-list
+struct outer_header {
+  struct ipv6hdr ip6;
+  struct ipv6_rt_hdr srh;
+  __u8 padding[4];
+  struct in6_addr seg;
+} __attribute__ ((packed));
 
 static inline int
 ignore_packet(struct xdp_md *ctx)

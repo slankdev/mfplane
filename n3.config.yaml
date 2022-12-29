@@ -1,0 +1,8 @@
+namePrefix: n3
+encapSource: fc00:13::0
+localSids:
+- sid: fc00:13:1::/48 # NAT1
+  End_MFN_NAT:
+    vip: 142.0.0.1
+    sources:
+    - 10.254.0.10/32
