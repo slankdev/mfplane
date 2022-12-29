@@ -77,11 +77,53 @@ __u8 srv6_vm_remote_sid[16] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+static inline void shift8(__u8 *addr)
+{
+  for (int i = 2; i < 16; i++) {
+    if (i < 15)
+      addr[i] = addr[i+1];
+    else
+      addr[i] = 0;
+  }
+}
+
+static inline int finished(__u8 *addr)
+{
+  return (addr[2] == 0x00 && addr[3] == 0x00);
+}
+
 static inline int
 process_mf_redirect(struct xdp_md *ctx)
 {
   bpf_printk(STR(NAME)"try mf_redirect");
-  return XDP_DROP;
+
+  __u64 data = ctx->data;
+  __u64 data_end = ctx->data_end;
+
+  // Prepare Headers
+  struct ethhdr *eh = (struct ethhdr *)data;
+  assert_len(eh, data_end);
+  struct outer_header *oh = (struct outer_header *)(eh + 1);
+  assert_len(oh, data_end);
+
+  if (finished(&oh->ip6.daddr)) {
+    bpf_printk(STR(NAME)"mf_redirect finished");
+    return XDP_DROP;
+  }
+
+  // shitt 32
+  shift8(&oh->ip6.daddr);
+  shift8(&oh->ip6.daddr);
+  shift8(&oh->ip6.daddr);
+  shift8(&oh->ip6.daddr);
+
+  // mac addr swap
+  __u8 tmpmac[6] = {0};
+  memcpy(tmpmac, eh->h_dest, 6);
+  memcpy(eh->h_dest, eh->h_source, 6);
+  memcpy(eh->h_source, tmpmac, 6);
+
+  return XDP_TX;
 }
 
 static inline int
