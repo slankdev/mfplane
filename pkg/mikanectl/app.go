@@ -38,6 +38,7 @@ func NewCommand() *cobra.Command {
 	cmd.AddCommand(NewCommandBpf())
 	cmd.AddCommand(NewCommandMapLoad())
 	cmd.AddCommand(NewCommandMapDump())
+	cmd.AddCommand(NewCommandMapDumpNat())
 	cmd.AddCommand(util.NewCommandVersion())
 	cmd.AddCommand(util.NewCmdCompletion(cmd))
 	return cmd
@@ -293,5 +294,37 @@ func NewCommandMapLoad() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&clioptFile, "file", "f", "", "")
+	return cmd
+}
+
+func NewCommandMapDumpNat() *cobra.Command {
+	var clioptMapName string
+	cmd := &cobra.Command{
+		Use: "map-dump-nat",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("%s\n", clioptMapName)
+
+			if err := ebpf.BatchMapOperation(clioptMapName,
+				ciliumebpf.LRUHash,
+				func(m *ciliumebpf.Map) error {
+					key := ebpf.AddrPort{}
+					val := ebpf.AddrPort{}
+					entries := m.Iterate()
+					for entries.Next(&key, &val) {
+						keyAddr := net.IP(key.Addr[:])
+						valAddr := net.IP(val.Addr[:])
+						fmt.Printf("%s:%d -> %s:%d\n",
+							keyAddr, key.Port,
+							valAddr, val.Port)
+					}
+					return nil
+				}); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptMapName, "map", "m", "n1_nat_out_table", "")
 	return cmd
 }

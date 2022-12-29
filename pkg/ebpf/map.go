@@ -32,6 +32,11 @@ const (
 	metricsMapType = ebpf.PerCPUHash
 )
 
+type AddrPort struct {
+	Addr [4]uint8 `json:"addr"`
+	Port uint16   `json:"port"`
+}
+
 type TrieKey struct {
 	Prefixlen uint32    `json:"prefixlen"`
 	Addr      [16]uint8 `json:"addr"`
