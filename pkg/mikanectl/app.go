@@ -222,8 +222,7 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Con
 			// Print uSID MF-hash
 			for idx := range slots {
 				fmt.Printf("%03d  %s\n", idx, FullIPv6(slots[idx]))
-
-				key := uint32(idx)
+				key := uint32(config.MaxBackends*backendBlockIndex + idx)
 				ipaddrb := [16]uint8{}
 				copy(ipaddrb[:], slots[idx])
 
