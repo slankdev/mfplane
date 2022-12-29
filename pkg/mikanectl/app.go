@@ -26,7 +26,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/slankdev/hyperplane/pkg/ebpf"
-	"github.com/slankdev/hyperplane/pkg/maglev"
 	"github.com/slankdev/hyperplane/pkg/util"
 )
 
@@ -134,24 +133,25 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Con
 	if err := ebpf.BatchMapOperation(config.NamePrefix+"_procs",
 		ciliumebpf.PerCPUArray,
 		func(m *ciliumebpf.Map) error {
-			mh, err := maglev.NewMaglev(localSid.End_MFL.Backends,
-				uint64(config.MaxBackends))
-			if err != nil {
-				return err
-			}
-			mhTable := mh.GetRawTable()
-			for idx := 0; idx < len(mhTable); idx++ {
-				procIndexMin := config.MaxBackends * backendBlockIndex
-				procIndex := uint32(procIndexMin + idx)
-				backendAddr := localSid.End_MFL.Backends[mhTable[idx]]
-				ipaddr := net.ParseIP(backendAddr)
-				ipaddrb := [16]uint8{}
-				copy(ipaddrb[:], ipaddr)
-				if err := ebpf.UpdatePerCPUArrayAll(m, &procIndex, ipaddrb,
-					ciliumebpf.UpdateAny); err != nil {
-					return err
-				}
-			}
+			print("TODO\n")
+			// mh, err := maglev.NewMaglev(localSid.End_MFL.Backends,
+			// 	uint64(config.MaxBackends))
+			// if err != nil {
+			// 	return err
+			// }
+			// mhTable := mh.GetRawTable()
+			// for idx := 0; idx < len(mhTable); idx++ {
+			// 	procIndexMin := config.MaxBackends * backendBlockIndex
+			// 	procIndex := uint32(procIndexMin + idx)
+			// 	backendAddr := localSid.End_MFL.Backends[mhTable[idx]]
+			// 	ipaddr := net.ParseIP(backendAddr)
+			// 	ipaddrb := [16]uint8{}
+			// 	copy(ipaddrb[:], ipaddr)
+			// 	if err := ebpf.UpdatePerCPUArrayAll(m, &procIndex, ipaddrb,
+			// 		ciliumebpf.UpdateAny); err != nil {
+			// 		return err
+			// 	}
+			// }
 			return nil
 		}); err != nil {
 		return err

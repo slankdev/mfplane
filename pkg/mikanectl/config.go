@@ -17,7 +17,14 @@ limitations under the License.
 package mikanectl
 
 type ConfigLocalSid_End_MFL struct {
-	Vip      string   `yaml:"vip"`
+	Vip                   string             `yaml:"vip"`
+	USidBlock             string             `yaml:"uSidBlock"`
+	USidBlockLength       int                `yaml:"uSidBlockLength"`
+	USidFunctionLength    int                `yaml:"uSidFunctionLength"`
+	USidFunctionRevisions []FunctionRevision `yaml:"uSidFunctionRevisions"`
+}
+
+type FunctionRevision struct {
 	Backends []string `yaml:"backends"`
 }
 
