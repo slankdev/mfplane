@@ -165,4 +165,3 @@ listening on any, link-type LINUX_SLL2 (Linux cooked v2), snapshot length 262144
 12:25:12.055789 n2    In  IP6 fc00:12:: > fc00:201:1::: RT6 (len=2, type=4, segleft=0, last-entry=0, tag=0, [0]fc00:201:1::) IP 10.255.100.1.7777 > 10.254.0.10.48418: Flags [.], ack 36, win 509, options [nop,nop,TS val 1107790081 ecr 3648668875], length 0
 12:25:12.055794 hv1   Out IP6 fc00:12:: > fc00:201:1::: RT6 (len=2, type=4, segleft=0, last-entry=0, tag=0, [0]fc00:201:1::) IP 10.255.100.1.7777 > 10.254.0.10.48418: Flags [.], ack 36, win 509, options [nop,nop,TS val 1107790081 ecr 3648668875], length 0
 ```
-
