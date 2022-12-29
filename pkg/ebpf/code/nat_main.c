@@ -173,32 +173,10 @@ process_nat_ret(struct xdp_md *ctx)
   in_ih->daddr = val->addr;
   in_th->dest = val->port;
 
-  // update ip checksum
-  __u32 check;
-  check = in_ih->check;
-  check = ~check;
-  check -= olddest & 0xffff;
-  check -= olddest >> 16;
-  check += in_ih->daddr & 0xffff;
-  check += in_ih->daddr >> 16;
-  check = ~check;
-  if (check > 0xffff)
-    check = (check & 0xffff) + (check >> 16);
-  in_ih->check = check;
-
-  // update tcp checksum
-  check = in_th->check;
-  check = ~check;
-  check -= olddest & 0xffff;
-  check -= olddest >> 16;
-  check -= olddestport;
-  check += in_ih->daddr & 0xffff;
-  check += in_ih->daddr >> 16;
-  check += in_th->dest;
-  check = ~check;
-  if (check > 0xffff)
-    check = (check & 0xffff) + (check >> 16);
-  in_th->check = check;
+  // update checksum
+  in_ih->check = checksum_recalc_addr(olddest, in_ih->daddr, in_ih->check);
+  in_th->check = checksum_recalc_addrport(olddest, in_ih->daddr,
+    olddestport, in_th->dest, in_th->check);
 
   // mac addr swap
   __u8 tmpmac[6] = {0};

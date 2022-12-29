@@ -59,4 +59,39 @@ error_packet(struct xdp_md *ctx)
   return XDP_DROP;
 }
 
+static inline __u32
+checksum_recalc_addr(__u32 old_addr, __u32 new_addr,
+                     __u32 old_checksum)
+{
+  __u32 check = old_checksum;
+  check = ~check;
+  check -= old_addr & 0xffff;
+  check -= old_addr >> 16;
+  check += new_addr & 0xffff;
+  check += new_addr >> 16;
+  check = ~check;
+  if (check > 0xffff)
+    check = (check & 0xffff) + (check >> 16);
+  return check;
+}
+
+static inline __u32
+checksum_recalc_addrport(__u32 old_addr, __u32 new_addr,
+                         __u16 old_port, __u16 new_port,
+                         __u32 old_checksum)
+{
+  __u32 check = old_checksum;
+  check = ~check;
+  check -= old_addr & 0xffff;
+  check -= old_addr >> 16;
+  check -= old_port;
+  check += new_addr & 0xffff;
+  check += new_addr >> 16;
+  check += new_port;
+  check = ~check;
+  if (check > 0xffff)
+    check = (check & 0xffff) + (check >> 16);
+  return check;
+}
+
 #endif /* _LIB_H_ */
