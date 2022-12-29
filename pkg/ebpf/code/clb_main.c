@@ -38,6 +38,7 @@ struct flow_key {
 
 struct flow_processor {
   struct in6_addr addr;
+  // TODO(slankdev): support loadbalancing stats
   // __u64 pkts;
   // __u64 bytes;
 } __attribute__ ((packed));
