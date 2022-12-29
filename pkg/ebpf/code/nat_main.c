@@ -78,7 +78,7 @@ __u8 srv6_vm_remote_sid[16] = {
 };
 
 static inline int
-process_nat_return(struct xdp_md *ctx)
+process_nat_ret(struct xdp_md *ctx)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
@@ -321,7 +321,7 @@ process_ipv6(struct xdp_md *ctx)
 
   // NAT check
   return in_ih->daddr == val->vip ?
-    process_nat_return(ctx) :
+    process_nat_ret(ctx) :
     process_nat_out(ctx, val);
 }
 
