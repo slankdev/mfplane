@@ -166,58 +166,65 @@ func CopyFromTo(dst, src *net.IP, octFrom, octTo int) {
 	copy(*dst, dst8[:])
 }
 
+func compute(end_MFL ConfigLocalSid_End_MFL, nBackends int) ([]net.IP, error) {
+	slots := make([]net.IP, nBackends)
+	for idx := range slots {
+		slots[idx] = net.ParseIP(end_MFL.USidBlock)
+	}
+
+	// Fill uSID Function Blocks
+	for revIdx := range end_MFL.USidFunctionRevisions {
+		backends := end_MFL.USidFunctionRevisions[revIdx].Backends
+		mh, err := maglev.NewMaglev(backends,
+			uint64(nBackends))
+		if err != nil {
+			return nil, err
+		}
+		mhTable := mh.GetRawTable()
+		for idx := 0; idx < len(mhTable); idx++ {
+			backendip := net.ParseIP(backends[mhTable[idx]])
+			u8 := [16]uint8{}
+			copy(u8[:], backendip)
+
+			// TODO(slankdev):
+			// uSidBlockLength expects 16
+			u8 = BitShiftRight8(u8)
+			u8 = BitShiftRight8(u8)
+
+			for i := 0; i < revIdx; i++ {
+				// TODO(slankdev):
+				// uSidFunctionLength expects 32
+				u8 = BitShiftRight8(u8)
+				u8 = BitShiftRight8(u8)
+				u8 = BitShiftRight8(u8)
+				u8 = BitShiftRight8(u8)
+			}
+			copy(backendip, u8[:])
+
+			// TODO(slankdev):
+			// uSidBlockLength expects 16
+			// uSidFunctionLength expects 32
+			uSidBlockOctedOffset := 2
+			uSidBlockOctedSize := 4
+			CopyFromTo(&slots[idx], &backendip,
+				uSidBlockOctedOffset+uSidBlockOctedSize*revIdx,
+				uSidBlockOctedOffset+uSidBlockOctedSize-1+uSidBlockOctedSize*revIdx,
+			)
+		}
+	}
+	return slots, nil
+}
+
 func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Config) error {
 	// Install backend-block
 	if err := ebpf.BatchMapOperation(config.NamePrefix+"_procs",
 		ciliumebpf.PerCPUArray,
 		func(m *ciliumebpf.Map) error {
 			// Fill uSID Block Bits
-			slots := make([]net.IP, config.MaxBackends)
-			for idx := range slots {
-				slots[idx] = net.ParseIP(localSid.End_MFL.USidBlock)
+			slots, err := compute(*localSid.End_MFL, config.MaxBackends)
+			if err != nil {
+				return err
 			}
-
-			// Fill uSID Function Blocks
-			for revIdx := range localSid.End_MFL.USidFunctionRevisions {
-				backends := localSid.End_MFL.USidFunctionRevisions[revIdx].Backends
-				mh, err := maglev.NewMaglev(backends,
-					uint64(config.MaxBackends))
-				if err != nil {
-					return err
-				}
-				mhTable := mh.GetRawTable()
-				for idx := 0; idx < len(mhTable); idx++ {
-					backendip := net.ParseIP(backends[mhTable[idx]])
-					u8 := [16]uint8{}
-					copy(u8[:], backendip)
-
-					// TODO(slankdev):
-					// uSidBlockLength expects 16
-					u8 = BitShiftRight8(u8)
-					u8 = BitShiftRight8(u8)
-
-					for i := 0; i < revIdx; i++ {
-						// TODO(slankdev):
-						// uSidFunctionLength expects 32
-						u8 = BitShiftRight8(u8)
-						u8 = BitShiftRight8(u8)
-						u8 = BitShiftRight8(u8)
-						u8 = BitShiftRight8(u8)
-					}
-					copy(backendip, u8[:])
-
-					// TODO(slankdev):
-					// uSidBlockLength expects 16
-					// uSidFunctionLength expects 32
-					uSidBlockOctedOffset := 2
-					uSidBlockOctedSize := 4
-					CopyFromTo(&slots[idx], &backendip,
-						uSidBlockOctedOffset+uSidBlockOctedSize*revIdx,
-						uSidBlockOctedOffset+uSidBlockOctedSize-1+uSidBlockOctedSize*revIdx,
-					)
-				}
-			}
-			//////////////////
 
 			// Print uSID MF-hash
 			for idx := range slots {
