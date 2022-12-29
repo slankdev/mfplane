@@ -426,7 +426,7 @@ node_configs:
   - cmd: ip addr add 10.254.0.1/24 noprefixroute dev vm1
   - cmd: ip route add 10.254.0.10/32 dev vm1 vrf vrf1
   - cmd: ip -6 route replace fc00:201:1::/48 encap seg6local action End.DT4 vrftable 1 dev net0
-  - cmd: ip -4 route add default encap seg6 mode encap segs fc00:1:1::0 dev net0 vrf vrf1
+  - cmd: ip -4 route add default encap seg6 mode encap segs fc00:ff:1::0 dev net0 vrf vrf1
 
   - cmd: ip link add vrf2 type vrf table 2
   - cmd: ip link set vrf2 up
@@ -476,6 +476,7 @@ node_configs:
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.1 65001
   - cmd: ip route add blackhole 10.254.0.0/24
   - cmd: ip route add blackhole fc00:1::/32
+  - cmd: ip route add blackhole fc00:ff:1::/48
   - cmd: >-
       vtysh -c 'conf te'
       -c 'ip route 142.0.0.1/32 Null0'
@@ -490,14 +491,47 @@ node_configs:
       -c '  redistribute kernel'
       -c ' exit-address-family'
 
-# - name: L2
-#   cmds:
-#   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.2 65002
-#   - cmd: ip route add blackhole 10.254.0.0/24
-# - name: L3
-#   cmds:
-#   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
-#   - cmd: ip route add blackhole 10.254.0.0/24
+- name: L2
+  cmds:
+  - cmd: ip link set net0 mtu 9000
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.2 65002
+  - cmd: ip route add blackhole 10.254.0.0/24
+  - cmd: ip route add blackhole fc00:2::/32
+  - cmd: ip route add blackhole fc00:ff:1::/48
+  - cmd: >-
+      vtysh -c 'conf te'
+      -c 'ip route 142.0.0.1/32 Null0'
+      -c '!'
+      -c 'router bgp'
+      -c ' address-family ipv4 unicast'
+      -c ' network 142.0.0.1/32'
+      -c ' exit-address-family'
+      -c ' !'
+      -c ' address-family ipv6 unicast'
+      -c '  neighbor PEER activate'
+      -c '  redistribute kernel'
+      -c ' exit-address-family'
+
+- name: L3
+  cmds:
+  - cmd: ip link set net0 mtu 9000
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
+  - cmd: ip route add blackhole 10.254.0.0/24
+  - cmd: ip route add blackhole fc00:3::/32
+  - cmd: ip route add blackhole fc00:ff:1::/48
+  - cmd: >-
+      vtysh -c 'conf te'
+      -c 'ip route 142.0.0.1/32 Null0'
+      -c '!'
+      -c 'router bgp'
+      -c ' address-family ipv4 unicast'
+      -c ' network 142.0.0.1/32'
+      -c ' exit-address-family'
+      -c ' !'
+      -c ' address-family ipv6 unicast'
+      -c '  neighbor PEER activate'
+      -c '  redistribute kernel'
+      -c ' exit-address-family'
 
 - name: N1
   cmds:
