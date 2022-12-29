@@ -1,5 +1,5 @@
 namePrefix: l1
-maxRules: 2
+maxRules: 1
 maxBackends: 7
 encapSource: fc00:1::0
 localSids:
@@ -10,3 +10,23 @@ localSids:
     - fc00:0011:0001:0000:0000:0000:0000:0000
     - fc00:0012:0001:0000:0000:0000:0000:0000
     - fc00:0013:0001:0000:0000:0000:0000:0000
+# - sid: fc00:ff:1::/48 # NAT1
+#   End_MFL_2:
+#     vip: 142.0.0.1
+#     uSidBlock: fc00::0
+#     uSidBlockLength: 16
+#     uSidLength: 32
+#     uSidRevisions:
+#     - backends:
+#       - 0012:0001::0
+#       - 0013:0001::0
+#       - 0014:0001::0
+#     - backends:
+#       - 0011:0001::0
+#       - 0012:0001::0
+#       - 0013:0001::0
+#       - 0014:0001::0
+#     - backends:
+#       - 0011:0001::0
+#       - 0012:0001::0
+#       - 0013:0001::0

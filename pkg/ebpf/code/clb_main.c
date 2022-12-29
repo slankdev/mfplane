@@ -16,7 +16,7 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-#define MAX_RULES 2
+#define MAX_RULES 1
 #ifndef RING_SIZE
 #define RING_SIZE 7
 //#define RING_SIZE 65537
