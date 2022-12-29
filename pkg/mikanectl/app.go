@@ -155,6 +155,17 @@ func BitShiftRight8(u8 [16]uint8) [16]uint8 {
 	return ret
 }
 
+func CopyFromTo(dst, src *net.IP, octFrom, octTo int) {
+	dst8 := [16]uint8{}
+	src8 := [16]uint8{}
+	copy(dst8[:], *dst)
+	copy(src8[:], *src)
+	for i := octFrom; i <= octTo; i++ {
+		dst8[i] = src8[i]
+	}
+	copy(*dst, dst8[:])
+}
+
 func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Config) error {
 	// Install backend-block
 	if err := ebpf.BatchMapOperation(config.NamePrefix+"_procs",
@@ -177,47 +188,49 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Con
 				mhTable := mh.GetRawTable()
 				for idx := 0; idx < len(mhTable); idx++ {
 					backendip := net.ParseIP(backends[mhTable[idx]])
-
 					u8 := [16]uint8{}
 					copy(u8[:], backendip)
+
+					// TODO(slankdev):
+					// uSidBlockLength expects 16
 					u8 = BitShiftRight8(u8)
 					u8 = BitShiftRight8(u8)
+
 					for i := 0; i < revIdx; i++ {
+						// TODO(slankdev):
+						// uSidFunctionLength expects 32
 						u8 = BitShiftRight8(u8)
 						u8 = BitShiftRight8(u8)
 						u8 = BitShiftRight8(u8)
 						u8 = BitShiftRight8(u8)
 					}
 					copy(backendip, u8[:])
-					fmt.Printf("%s\n", FullIPv6(backendip))
+
+					// TODO(slankdev):
+					// uSidBlockLength expects 16
+					// uSidFunctionLength expects 32
+					uSidBlockOctedOffset := 2
+					uSidBlockOctedSize := 4
+					CopyFromTo(&slots[idx], &backendip,
+						uSidBlockOctedOffset+uSidBlockOctedSize*revIdx,
+						uSidBlockOctedOffset+uSidBlockOctedSize-1+uSidBlockOctedSize*revIdx,
+					)
 				}
-				println("-------------")
 			}
-
-			println("=======")
-
-			// mh, err := maglev.NewMaglev(localSid.End_MFL.Backends,
-			// 	uint64(config.MaxBackends))
-			// if err != nil {
-			// 	return err
-			// }
-			// mhTable := mh.GetRawTable()
-			// for idx := 0; idx < len(mhTable); idx++ {
-			// 	procIndexMin := config.MaxBackends * backendBlockIndex
-			// 	procIndex := uint32(procIndexMin + idx)
-			// 	backendAddr := localSid.End_MFL.Backends[mhTable[idx]]
-			// 	ipaddr := net.ParseIP(backendAddr)
-			// 	ipaddrb := [16]uint8{}
-			// 	copy(ipaddrb[:], ipaddr)
-			// 	if err := ebpf.UpdatePerCPUArrayAll(m, &procIndex, ipaddrb,
-			// 		ciliumebpf.UpdateAny); err != nil {
-			// 		return err
-			// 	}
-			// }
+			//////////////////
 
 			// Print uSID MF-hash
 			for idx := range slots {
-				fmt.Printf("%03d  %s\n", idx, slots[idx])
+				fmt.Printf("%03d  %s\n", idx, FullIPv6(slots[idx]))
+
+				key := uint32(idx)
+				ipaddrb := [16]uint8{}
+				copy(ipaddrb[:], slots[idx])
+
+				if err := ebpf.UpdatePerCPUArrayAll(m, &key, ipaddrb,
+					ciliumebpf.UpdateAny); err != nil {
+					return err
+				}
 			}
 
 			return nil
