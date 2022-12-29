@@ -215,7 +215,8 @@ func compute(end_MFL ConfigLocalSid_End_MFL, nBackends int) ([]net.IP, error) {
 	return slots, nil
 }
 
-func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Config) error {
+func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
+	config Config) error {
 	// Install backend-block
 	if err := ebpf.BatchMapOperation(config.NamePrefix+"_procs",
 		ciliumebpf.PerCPUArray,
