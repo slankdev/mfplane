@@ -11,15 +11,11 @@ localSids:
     uSidFunctionLength: 32
     uSidFunctionRevisions:
     - backends:
-      - 0012:0001::0
       - 0013:0001::0
-      - 0014:0001::0
     - backends:
       - 0011:0001::0
       - 0012:0001::0
       - 0013:0001::0
-      - 0014:0001::0
     - backends:
       - 0011:0001::0
       - 0012:0001::0
-      - 0013:0001::0
