@@ -511,6 +511,7 @@ node_configs:
       -c '  neighbor PEER activate'
       -c '  redistribute kernel'
       -c ' exit-address-family'
+  - cmd: ip link set net0 down
 
 - name: L3
   cmds:
@@ -532,6 +533,7 @@ node_configs:
       -c '  neighbor PEER activate'
       -c '  redistribute kernel'
       -c ' exit-address-family'
+  - cmd: ip link set net0 down
 
 - name: N1
   cmds:
