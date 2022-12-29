@@ -11,7 +11,9 @@ import (
 )
 
 const (
-	BigM uint64 = 65537
+	BigM           uint64 = 65537
+	OffsetHashSeed uint64 = 0xdeadbabe
+	SkipHashSeed   uint64 = 0xdeadbeef
 )
 
 //Maglev :
@@ -154,7 +156,7 @@ func (m *Maglev) GetOrDie(obj string) string {
 }
 
 func (m *Maglev) hashKey(obj string) uint64 {
-	return siphash.Hash(0xdeadbabe, 0, []byte(obj))
+	return siphash.Hash(OffsetHashSeed, 0, []byte(obj))
 }
 
 func (m *Maglev) generatePopulation() {
@@ -168,8 +170,8 @@ func (m *Maglev) generatePopulation() {
 	for i := 0; i < len(m.nodeList); i++ {
 		bData := []byte(m.nodeList[i])
 
-		offset := siphash.Hash(0xdeadbabe, 0, bData) % m.m
-		skip := (siphash.Hash(0xdeadbeef, 0, bData) % (m.m - 1)) + 1
+		offset := siphash.Hash(OffsetHashSeed, 0, bData) % m.m
+		skip := (siphash.Hash(SkipHashSeed, 0, bData) % (m.m - 1)) + 1
 
 		iRow := make([]uint64, m.m)
 		var j uint64
