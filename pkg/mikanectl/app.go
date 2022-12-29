@@ -17,6 +17,7 @@ limitations under the License.
 package mikanectl
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -26,6 +27,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/slankdev/hyperplane/pkg/ebpf"
+	"github.com/slankdev/hyperplane/pkg/maglev"
 	"github.com/slankdev/hyperplane/pkg/util"
 )
 
@@ -128,6 +130,31 @@ func NewCommandMapDump() *cobra.Command {
 	return cmd
 }
 
+func FullIPv6(ip net.IP) string {
+	dst := make([]byte, hex.EncodedLen(len(ip)))
+	_ = hex.Encode(dst, ip)
+	return string(dst[0:4]) + ":" +
+		string(dst[4:8]) + ":" +
+		string(dst[8:12]) + ":" +
+		string(dst[12:16]) + ":" +
+		string(dst[16:20]) + ":" +
+		string(dst[20:24]) + ":" +
+		string(dst[24:28]) + ":" +
+		string(dst[28:])
+}
+
+func BitShiftRight8(u8 [16]uint8) [16]uint8 {
+	ret := [16]uint8{}
+	for i := 15; i >= 0; i-- {
+		if i == 0 {
+			ret[i] = 0
+		} else {
+			ret[i] = u8[i-1]
+		}
+	}
+	return ret
+}
+
 func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Config) error {
 	// Install backend-block
 	if err := ebpf.BatchMapOperation(config.NamePrefix+"_procs",
@@ -138,6 +165,36 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Con
 			for idx := range slots {
 				slots[idx] = net.ParseIP(localSid.End_MFL.USidBlock)
 			}
+
+			// Fill uSID Function Blocks
+			for revIdx := range localSid.End_MFL.USidFunctionRevisions {
+				backends := localSid.End_MFL.USidFunctionRevisions[revIdx].Backends
+				mh, err := maglev.NewMaglev(backends,
+					uint64(config.MaxBackends))
+				if err != nil {
+					return err
+				}
+				mhTable := mh.GetRawTable()
+				for idx := 0; idx < len(mhTable); idx++ {
+					backendip := net.ParseIP(backends[mhTable[idx]])
+
+					u8 := [16]uint8{}
+					copy(u8[:], backendip)
+					u8 = BitShiftRight8(u8)
+					u8 = BitShiftRight8(u8)
+					for i := 0; i < revIdx; i++ {
+						u8 = BitShiftRight8(u8)
+						u8 = BitShiftRight8(u8)
+						u8 = BitShiftRight8(u8)
+						u8 = BitShiftRight8(u8)
+					}
+					copy(backendip, u8[:])
+					fmt.Printf("%s\n", FullIPv6(backendip))
+				}
+				println("-------------")
+			}
+
+			println("=======")
 
 			// mh, err := maglev.NewMaglev(localSid.End_MFL.Backends,
 			// 	uint64(config.MaxBackends))
