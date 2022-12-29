@@ -40,6 +40,7 @@ func NewCommand() *cobra.Command {
 	cmd.AddCommand(NewCommandMapLoad())
 	cmd.AddCommand(NewCommandMapDump())
 	cmd.AddCommand(NewCommandMapDumpNat())
+	cmd.AddCommand(NewCommandMapClearNat())
 	cmd.AddCommand(util.NewCommandVersion())
 	cmd.AddCommand(util.NewCmdCompletion(cmd))
 	cmd.AddCommand(util.NewCmdIfconfigHTTPServer())
@@ -405,6 +406,41 @@ func NewCommandMapDumpNat() *cobra.Command {
 						fmt.Printf("%s:%d -> %s:%d %d\n",
 							keyAddr, key.Port,
 							valAddr, val.Port, val.Pkts)
+					}
+					return nil
+				}); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptMapName, "map", "m", "n0_nat_out_table", "")
+	return cmd
+}
+
+func NewCommandMapClearNat() *cobra.Command {
+	var clioptMapName string
+	cmd := &cobra.Command{
+		Use: "map-clear-nat",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := ebpf.BatchMapOperation(clioptMapName,
+				ciliumebpf.LRUHash,
+				func(m *ciliumebpf.Map) error {
+					// resolve keys
+					keys := []ebpf.AddrPort{}
+					key := ebpf.AddrPort{}
+					val := ebpf.AddrPortStats{}
+					entries := m.Iterate()
+					for entries.Next(&key, &val) {
+						keys = append(keys, key)
+					}
+
+					// delete all keys
+					for _, key := range keys {
+						if err := m.Delete(key); err != nil {
+							return err
+						}
 					}
 					return nil
 				}); err != nil {
