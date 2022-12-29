@@ -21,18 +21,24 @@ struct addr_port {
   __u16 port;
 }  __attribute__ ((packed));
 
+struct addr_port_stats {
+  __u32 addr;
+  __u16 port;
+  __u64 pkts;
+}  __attribute__ ((packed));
+
 struct {
   __uint(type, BPF_MAP_TYPE_LRU_HASH);
   __uint(max_entries, 160);
   __type(key, struct addr_port);
-  __type(value, struct addr_port);
+  __type(value, struct addr_port_stats);
 } GLUE(NAME, nat_out_table) SEC(".maps");
 
 struct {
   __uint(type, BPF_MAP_TYPE_LRU_HASH);
   __uint(max_entries, 160);
   __type(key, struct addr_port);
-  __type(value, struct addr_port);
+  __type(value, struct addr_port_stats);
 } GLUE(NAME, nat_ret_table) SEC(".maps");
 
 struct trie_key {
@@ -185,23 +191,39 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
-  // NAT out
-  __u32 hash = 0;
-  hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
-  hash = jhash_2words(in_th->dest, in_th->source, hash);
-  hash = jhash_2words(in_ih->protocol, 0, hash);
-  __u32 sourceport = hash & 0xffff;
+  __u32 sourceport = 0;
+  if (in_th->syn == 0) {
+    struct addr_port key = {
+      .addr = in_ih->saddr,
+      .port = in_th->source,
+    };
+    struct addr_port_stats *val = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
+    if (!val) {
+      bpf_printk(STR(NAME)"lookup fail");
+      return XDP_DROP;
+    }
+    val->pkts++;
+    sourceport = val->port;
+  } else {
+    __u32 hash = 0;
+    hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
+    hash = jhash_2words(in_th->dest, in_th->source, hash);
+    hash = jhash_2words(in_ih->protocol, 0, hash);
+    sourceport = hash & 0xffff;
 
-  struct addr_port natval = {
-    .addr = val->vip,
-    .port = sourceport,
-  };
-  struct addr_port orgval = {
-    .addr = in_ih->saddr,
-    .port = in_th->source,
-  };
-  bpf_map_update_elem(&GLUE(NAME, nat_ret_table), &natval, &orgval, BPF_ANY);
-  bpf_map_update_elem(&GLUE(NAME, nat_out_table), &orgval, &natval, BPF_ANY);
+    struct addr_port_stats natval = {
+      .addr = val->vip,
+      .port = sourceport,
+      .pkts = 1,
+    };
+    struct addr_port_stats orgval = {
+      .addr = in_ih->saddr,
+      .port = in_th->source,
+      .pkts = 1,
+    };
+    bpf_map_update_elem(&GLUE(NAME, nat_ret_table), &natval, &orgval, BPF_ANY);
+    bpf_map_update_elem(&GLUE(NAME, nat_out_table), &orgval, &natval, BPF_ANY);
+  }
 
 #ifdef DEBUG
   char tmp[128] = {0};

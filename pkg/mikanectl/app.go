@@ -308,14 +308,14 @@ func NewCommandMapDumpNat() *cobra.Command {
 				ciliumebpf.LRUHash,
 				func(m *ciliumebpf.Map) error {
 					key := ebpf.AddrPort{}
-					val := ebpf.AddrPort{}
+					val := ebpf.AddrPortStats{}
 					entries := m.Iterate()
 					for entries.Next(&key, &val) {
 						keyAddr := net.IP(key.Addr[:])
 						valAddr := net.IP(val.Addr[:])
-						fmt.Printf("%s:%d -> %s:%d\n",
+						fmt.Printf("%s:%d -> %s:%d %d\n",
 							keyAddr, key.Port,
-							valAddr, val.Port)
+							valAddr, val.Port, val.Pkts)
 					}
 					return nil
 				}); err != nil {

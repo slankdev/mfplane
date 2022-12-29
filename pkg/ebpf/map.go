@@ -37,6 +37,12 @@ type AddrPort struct {
 	Port uint16   `json:"port"`
 }
 
+type AddrPortStats struct {
+	Addr [4]uint8 `json:"addr"`
+	Port uint16   `json:"port"`
+	Pkts uint64   `json:"pkts"`
+}
+
 type TrieKey struct {
 	Prefixlen uint32    `json:"prefixlen"`
 	Addr      [16]uint8 `json:"addr"`
