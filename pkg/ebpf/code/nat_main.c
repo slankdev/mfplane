@@ -16,12 +16,7 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-struct nat_ret_table_key {
-  __u32 addr;
-  __u16 port;
-}  __attribute__ ((packed));
-
-struct nat_ret_table_val {
+struct addr_port {
   __u32 addr;
   __u16 port;
 }  __attribute__ ((packed));
@@ -29,8 +24,15 @@ struct nat_ret_table_val {
 struct {
   __uint(type, BPF_MAP_TYPE_LRU_HASH);
   __uint(max_entries, 160);
-  __type(key, struct nat_ret_table_key);
-  __type(value, struct nat_ret_table_val);
+  __type(key, struct addr_port);
+  __type(value, struct addr_port);
+} GLUE(NAME, nat_out_table) SEC(".maps");
+
+struct {
+  __uint(type, BPF_MAP_TYPE_LRU_HASH);
+  __uint(max_entries, 160);
+  __type(key, struct addr_port);
+  __type(value, struct addr_port);
 } GLUE(NAME, nat_ret_table) SEC(".maps");
 
 struct trie_key {
@@ -90,8 +92,8 @@ process_nat_return(struct xdp_md *ctx)
   __u8 *dummy_ptr = (__u8 *)&oh->ip6.daddr;
 
   // lookup
-  struct nat_ret_table_val *val = NULL;
-  struct nat_ret_table_key key = {
+  struct addr_port *val = NULL;
+  struct addr_port key = {
     .addr = in_ih->daddr,
     .port = in_th->dest,
   };
@@ -190,15 +192,16 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
   hash = jhash_2words(in_ih->protocol, 0, hash);
   __u32 sourceport = hash & 0xffff;
 
-  struct nat_ret_table_key key = {
+  struct addr_port natval = {
     .addr = val->vip,
     .port = sourceport,
   };
-  struct nat_ret_table_val nval = {
+  struct addr_port orgval = {
     .addr = in_ih->saddr,
     .port = in_th->source,
   };
-  bpf_map_update_elem(&GLUE(NAME, nat_ret_table), &key, &nval, BPF_ANY);
+  bpf_map_update_elem(&GLUE(NAME, nat_ret_table), &natval, &orgval, BPF_ANY);
+  bpf_map_update_elem(&GLUE(NAME, nat_out_table), &orgval, &natval, BPF_ANY);
 
 #ifdef DEBUG
   char tmp[128] = {0};
