@@ -133,7 +133,12 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Con
 	if err := ebpf.BatchMapOperation(config.NamePrefix+"_procs",
 		ciliumebpf.PerCPUArray,
 		func(m *ciliumebpf.Map) error {
-			print("TODO\n")
+			// Fill uSID Block Bits
+			slots := make([]net.IP, config.MaxBackends)
+			for idx := range slots {
+				slots[idx] = net.ParseIP(localSid.End_MFL.USidBlock)
+			}
+
 			// mh, err := maglev.NewMaglev(localSid.End_MFL.Backends,
 			// 	uint64(config.MaxBackends))
 			// if err != nil {
@@ -152,6 +157,12 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid, config Con
 			// 		return err
 			// 	}
 			// }
+
+			// Print uSID MF-hash
+			for idx := range slots {
+				fmt.Printf("%03d  %s\n", idx, slots[idx])
+			}
+
 			return nil
 		}); err != nil {
 		return err
