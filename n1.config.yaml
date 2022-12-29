@@ -6,3 +6,10 @@ localSids:
     vip: 142.0.0.1
     sources:
     - 10.254.0.10/32
+fib4:
+- prefix: 10.254.0.10/24
+  action:
+    encapSeg6:
+      mode: encap
+      segs:
+      - fc00:201:1::0
