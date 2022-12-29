@@ -78,6 +78,13 @@ __u8 srv6_vm_remote_sid[16] = {
 };
 
 static inline int
+process_mf_redirect(struct xdp_md *ctx)
+{
+  bpf_printk(STR(NAME)"try mf_redirect");
+  return XDP_DROP;
+}
+
+static inline int
 process_nat_ret(struct xdp_md *ctx)
 {
   __u64 data = ctx->data;
@@ -105,8 +112,7 @@ process_nat_ret(struct xdp_md *ctx)
   };
   val = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
   if (!val) {
-    bpf_printk(STR(NAME)"lookup fail");
-    return XDP_DROP;
+    return process_mf_redirect(ctx);
   }
 
 #ifdef DEBUG
@@ -199,9 +205,9 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
     };
     struct addr_port_stats *val = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
     if (!val) {
-      bpf_printk(STR(NAME)"lookup fail");
-      return XDP_DROP;
+      return process_mf_redirect(ctx);
     }
+
     val->pkts++;
     sourceport = val->port;
   } else {
