@@ -57,14 +57,6 @@ func UdpTransmit(local, remote string, buf *bytes.Buffer) error {
 	return nil
 }
 
-// Example
-// func ConvertIPToByte16(ip net.IP) [16]byte {
-// 	b := [16]byte{}
-// 	bIP := []byte(ip)
-// 	copy(b[:], bIP)
-// 	return b
-// }
-
 func Plen(mask net.IPMask) int {
 	l := 0
 	for _, m := range mask {
