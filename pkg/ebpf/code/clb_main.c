@@ -19,7 +19,6 @@
 #define MAX_RULES 1
 #ifndef RING_SIZE
 #define RING_SIZE 7
-//#define RING_SIZE 65537
 #endif
 #define IP_MF     0x2000
 #define IP_OFFSET 0x1FFF
