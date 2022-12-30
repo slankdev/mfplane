@@ -77,6 +77,25 @@ __u8 srv6_vm_remote_sid[16] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+struct trie4_key {
+  __u32 prefixlen;
+  __u32 addr;
+};
+
+struct trie4_val {
+  __u16 action;
+  __u16 backend_block_index;
+  __u32 vip;
+};
+
+struct {
+  __uint(type, BPF_MAP_TYPE_LPM_TRIE);
+  __uint(key_size, sizeof(struct trie4_key));
+  __uint(value_size, sizeof(struct trie4_val));
+  __uint(max_entries, 50);
+  __uint(map_flags, BPF_F_NO_PREALLOC);
+} GLUE(NAME, fib4) SEC(".maps");
+
 static inline void shift8(__u8 *addr)
 {
   for (int i = 2; i < 16; i++) {
@@ -190,6 +209,16 @@ process_nat_ret(struct xdp_md *ctx)
   if (!tunsrc) {
     bpf_printk(STR(NAME)"no tunsrc is set");
     return ignore_packet(ctx);
+  }
+
+  // Resolve next hypervisor
+  __u32 daddr = in_ih->daddr;
+  struct trie4_val *t4v = bpf_map_lookup_elem(&GLUE(NAME, fib4), &daddr);
+  if (!t4v) {
+    bpf_printk(STR(NAME)"fib4 lookup failed");
+    return ignore_packet(ctx);
+  } else {
+    bpf_printk(STR(NAME)"fib4 lookup match");
   }
 
   // Craft new ipv6 header
