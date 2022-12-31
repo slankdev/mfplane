@@ -17,6 +17,8 @@
 #define STR(x) STR_HELPER(x) " "
 #define GLUE_HELPER(x, y) x##_##y
 #define GLUE(x, y) GLUE_HELPER(x, y)
+#define IP_MF     0x2000
+#define IP_OFFSET 0x1FFF
 
 #ifndef NAME
 #error "please define NAME"

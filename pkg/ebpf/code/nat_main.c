@@ -16,9 +16,6 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-#define TCP_CSUM_OFF (ETH_HLEN + sizeof(struct outer_header) + \
-  sizeof(struct iphdr) + offsetof(struct tcphdr, check))
-
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
   __uint(key_size, sizeof(struct trie4_key));
@@ -56,23 +53,30 @@ struct {
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib6) SEC(".maps");
 
-static inline void shift8(__u8 *addr)
+static inline void shift8(int oct_offset, struct in6_addr *a)
 {
-  for (int i = 2; i < 16; i++) {
-    if (i < 15)
-      addr[i] = addr[i+1];
-    else
-      addr[i] = 0;
+  __u8 *addr = a->in6_u.u6_addr8;
+  for (__u8 i = 0; i < sizeof(struct in6_addr); i++) {
+    if (i >= oct_offset) {
+      if (i < sizeof(struct in6_addr) - 1)
+        addr[i] = addr[i+1];
+      else
+        addr[i] = 0;
+    }
   }
 }
 
-static inline int finished(__u8 *addr)
+static inline int finished(struct in6_addr *addr, int oct_offset, int n_shifts)
 {
-  return (addr[2] == 0x00 && addr[3] == 0x00);
+  for (int i = 0; i < oct_offset + n_shifts & i < sizeof(struct in6_addr); i++)
+    if (i >= oct_offset)
+      if (addr->in6_u.u6_addr8[i] != 0)
+        return 0;
+  return 1;
 }
 
 static inline int
-process_mf_redirect(struct xdp_md *ctx)
+process_mf_redirect(struct xdp_md *ctx, struct trie_val *val)
 {
   bpf_printk(STR(NAME)"try mf_redirect");
 
@@ -85,16 +89,22 @@ process_mf_redirect(struct xdp_md *ctx)
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
 
-  if (finished(&oh->ip6.daddr)) {
+  if (!val) {
+    bpf_printk(STR(NAME)"failed");
+    return XDP_DROP;
+  }
+
+  int oct_offset = val->usid_block_length / 8;
+  int n_shifts = val->usid_function_length / 8;
+  if (finished(&oh->ip6.daddr, oct_offset, n_shifts)) {
     bpf_printk(STR(NAME)"mf_redirect finished");
     return XDP_DROP;
   }
 
-  // shitt 32
-  shift8(&oh->ip6.daddr);
-  shift8(&oh->ip6.daddr);
-  shift8(&oh->ip6.daddr);
-  shift8(&oh->ip6.daddr);
+  // bit shitt
+  for (int j = 0; j < n_shifts & j < 4; j++) {
+    shift8(oct_offset, &oh->ip6.daddr);
+  }
 
   // mac addr swap
   __u8 tmpmac[6] = {0};
@@ -106,7 +116,7 @@ process_mf_redirect(struct xdp_md *ctx)
 }
 
 static inline int
-process_nat_ret(struct xdp_md *ctx)
+process_nat_ret(struct xdp_md *ctx, struct trie_val *val)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
@@ -126,14 +136,14 @@ process_nat_ret(struct xdp_md *ctx)
   __u8 *dummy_ptr = (__u8 *)&oh->ip6.daddr;
 
   // lookup
-  struct addr_port *val = NULL;
+  struct addr_port *nval = NULL;
   struct addr_port key = {
     .addr = in_ih->daddr,
     .port = in_th->dest,
   };
-  val = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
-  if (!val) {
-    return process_mf_redirect(ctx);
+  nval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
+  if (!nval) {
+    return process_mf_redirect(ctx, val);
   }
 
 #ifdef DEBUG
@@ -142,15 +152,15 @@ process_nat_ret(struct xdp_md *ctx)
                 in_ih->protocol,
                 &in_ih->saddr, bpf_ntohs(in_th->source),
                 &in_ih->daddr, bpf_ntohs(in_th->dest),
-                &val->addr, bpf_ntohs(val->port));
+                &nval->addr, bpf_ntohs(nval->port));
     bpf_printk(STR(NAME)"nat-ret %s", tmp);
 #endif
 
   // reverse nat
   __u32 olddest = in_ih->daddr;
   __u16 olddestport = in_th->dest;
-  in_ih->daddr = val->addr;
-  in_th->dest = val->port;
+  in_ih->daddr = nval->addr;
+  in_th->dest = nval->port;
 
   // update checksum
   in_ih->check = checksum_recalc_addr(olddest, in_ih->daddr, in_ih->check);
@@ -212,13 +222,13 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
       .addr = in_ih->saddr,
       .port = in_th->source,
     };
-    struct addr_port_stats *val = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
-    if (!val) {
-      return process_mf_redirect(ctx);
+    struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
+    if (!asval) {
+      return process_mf_redirect(ctx, val);
     }
 
-    val->pkts++;
-    sourceport = val->port;
+    asval->pkts++;
+    sourceport = asval->port;
   } else {
     __u32 hash = 0;
     hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
@@ -322,7 +332,7 @@ process_ipv6(struct xdp_md *ctx)
 
   // NAT check
   return in_ih->daddr == val->vip ?
-    process_nat_ret(ctx) :
+    process_nat_ret(ctx, val) :
     process_nat_out(ctx, val);
 }
 

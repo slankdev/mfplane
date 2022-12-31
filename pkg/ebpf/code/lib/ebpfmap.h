@@ -35,13 +35,15 @@ struct trie4_val {
 struct trie_key {
   __u32 prefixlen;
   __u8 addr[16];
-};
+}  __attribute__ ((packed));
 
 struct trie_val {
   __u16 action;
   __u16 backend_block_index;
   __u32 vip;
   __u16 nat_port_hash_bit;
+  __u16 usid_block_length;
+  __u16 usid_function_length;
 } __attribute__ ((packed));
 
 struct vip_key {
