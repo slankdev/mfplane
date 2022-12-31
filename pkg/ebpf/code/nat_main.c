@@ -66,9 +66,13 @@ static inline void shift8(int oct_offset, struct in6_addr *a)
   }
 }
 
-static inline int finished(struct in6_addr *addr)
+static inline int finished(struct in6_addr *addr, int oct_offset, int n_shifts)
 {
-  return (addr->in6_u.u6_addr8[2] == 0x00 && addr->in6_u.u6_addr8[3] == 0x00);
+  for (int i = 0; i < oct_offset + n_shifts & i < sizeof(struct in6_addr); i++)
+    if (i >= oct_offset)
+      if (addr->in6_u.u6_addr8[i] != 0)
+        return 0;
+  return 1;
 }
 
 static inline int
@@ -85,19 +89,19 @@ process_mf_redirect(struct xdp_md *ctx, struct trie_val *val)
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
 
-  if (finished(&oh->ip6.daddr)) {
-    bpf_printk(STR(NAME)"mf_redirect finished");
-    return XDP_DROP;
-  }
-
   if (!val) {
     bpf_printk(STR(NAME)"failed");
     return XDP_DROP;
   }
 
-  // bit shitt
   int oct_offset = val->usid_block_length / 8;
   int n_shifts = val->usid_function_length / 8;
+  if (finished(&oh->ip6.daddr, oct_offset, n_shifts)) {
+    bpf_printk(STR(NAME)"mf_redirect finished");
+    return XDP_DROP;
+  }
+
+  // bit shitt
   for (int j = 0; j < n_shifts & j < 4; j++) {
     shift8(oct_offset, &oh->ip6.daddr);
   }
