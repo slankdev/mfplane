@@ -322,6 +322,8 @@ process_ipv6(struct xdp_md *ctx)
   if (!val) {
     return ignore_packet(ctx);
   }
+  val->stats_bytes += data_end - data;
+  val->stats_pkts++;
 
   // Parse Inner Headers
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);

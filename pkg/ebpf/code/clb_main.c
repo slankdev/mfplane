@@ -262,11 +262,12 @@ process_ipv6(struct xdp_md *ctx)
   struct trie6_key key = {0};
   key.prefixlen = 128;
   memcpy(&key.addr, &oh->ip6.daddr, sizeof(struct in6_addr));
-  struct trie6_val *val;
-  val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
+  struct trie6_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
   if (!val) {
     return ignore_packet(ctx);
   }
+  val->stats_bytes += data_end - data;
+  val->stats_pkts++;
 
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 || oh->srh.hdrlen != 2) {
