@@ -55,14 +55,6 @@ struct vip_val {
   __u16 nat_port_hash_bit;
 } __attribute__ ((packed));
 
-struct flow_key {
-	__u32 src4;
-	__u32 src6;
-	__u8 proto;
-	__u16 sport;
-	__u16 dport;
-} __attribute__ ((packed));
-
 struct flow_processor {
   struct in6_addr addr;
   // TODO(slankdev): support loadbalancing stats

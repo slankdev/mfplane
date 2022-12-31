@@ -17,10 +17,6 @@ limitations under the License.
 
 package ebpf
 
-import (
-	"github.com/cilium/ebpf"
-)
-
 type AddrPort struct {
 	Addr [4]uint8 `json:"addr"`
 	Port uint16   `json:"port"`
@@ -30,20 +26,6 @@ type AddrPortStats struct {
 	Addr [4]uint8 `json:"addr"`
 	Port uint16   `json:"port"`
 	Pkts uint64   `json:"pkts"`
-}
-
-type TrieKey struct {
-	Prefixlen uint32    `json:"prefixlen"`
-	Addr      [16]uint8 `json:"addr"`
-}
-
-type TrieVal struct {
-	Action             uint16   `json:"action"`
-	BackendBlockIndex  uint16   `json:"backend_block_index"`
-	Vip                [4]uint8 `json:"vip"`
-	NatPortBashBit     uint16   `json:"nat_port_hash_bit"`
-	UsidBlockLength    uint16   `json:"usid_block_length"`
-	UsidFunctionLength uint16   `json:"usid_function_length"`
 }
 
 type Trie4Key struct {
@@ -56,12 +38,18 @@ type Trie4Val struct {
 	Segs   [6][16]uint8 `json:"segs"`
 }
 
-type FlowKey struct {
-	Hash uint32 `json:"hash"`
+type Trie6Key struct {
+	Prefixlen uint32    `json:"prefixlen"`
+	Addr      [16]uint8 `json:"addr"`
 }
 
-type FlowProcessor struct {
-	Addr [16]uint8 `json:"addr"`
+type Trie6Val struct {
+	Action             uint16   `json:"action"`
+	BackendBlockIndex  uint16   `json:"backend_block_index"`
+	Vip                [4]uint8 `json:"vip"`
+	NatPortBashBit     uint16   `json:"nat_port_hash_bit"`
+	UsidBlockLength    uint16   `json:"usid_block_length"`
+	UsidFunctionLength uint16   `json:"usid_function_length"`
 }
 
 type VipKey struct {
@@ -73,30 +61,6 @@ type VipVal struct {
 	NatPortHashBit    uint16 `json:"nat_port_hash_bit"`
 }
 
-func GetMapIDsByNameType(mapName string, mapType ebpf.MapType) ([]ebpf.MapID, error) {
-	ids := []ebpf.MapID{}
-	for id := ebpf.MapID(0); ; {
-		var err error
-		id, err = ebpf.MapGetNextID(ebpf.MapID(id))
-		if err != nil {
-			break
-		}
-		m, err := ebpf.NewMapFromID(id)
-		if err != nil {
-			return nil, err
-		}
-		info, err := m.Info()
-		if err != nil {
-			return nil, err
-		}
-		if err := m.Close(); err != nil {
-			return nil, err
-		}
-
-		if info.Name != mapName || info.Type != mapType {
-			continue
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
+type FlowProcessor struct {
+	Addr [16]uint8 `json:"addr"`
 }

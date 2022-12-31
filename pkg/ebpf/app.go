@@ -225,3 +225,31 @@ func UpdatePerCPUArrayAll(m *ebpf.Map, key interface{}, value interface{},
 	}
 	return m.Update(key, percpuval, flags)
 }
+
+func GetMapIDsByNameType(mapName string, mapType ebpf.MapType) ([]ebpf.MapID, error) {
+	ids := []ebpf.MapID{}
+	for id := ebpf.MapID(0); ; {
+		var err error
+		id, err = ebpf.MapGetNextID(ebpf.MapID(id))
+		if err != nil {
+			break
+		}
+		m, err := ebpf.NewMapFromID(id)
+		if err != nil {
+			return nil, err
+		}
+		info, err := m.Info()
+		if err != nil {
+			return nil, err
+		}
+		if err := m.Close(); err != nil {
+			return nil, err
+		}
+
+		if info.Name != mapName || info.Type != mapType {
+			continue
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
