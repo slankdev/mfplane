@@ -16,9 +16,6 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-#define TCP_CSUM_OFF (ETH_HLEN + sizeof(struct outer_header) + \
-  sizeof(struct iphdr) + offsetof(struct tcphdr, check))
-
 #define FUNCTION_BIT_LEN 16
 #ifndef FUNCTION_BIT_LEN
 #error "please define FUNCTION_BIT_LEN"
