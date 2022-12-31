@@ -54,6 +54,16 @@ type TrieVal struct {
 	Vip               [4]uint8 `json:"vip"`
 }
 
+type Trie4Key struct {
+	Prefixlen uint32   `json:"prefixlen"`
+	Addr      [4]uint8 `json:"addr"`
+}
+
+type Trie4Val struct {
+	Action uint16       `json:"action"`
+	Segs   [6][16]uint8 `json:"segs"`
+}
+
 type FlowKey struct {
 	Hash uint32 `json:"hash"`
 }

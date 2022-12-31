@@ -39,10 +39,23 @@ type ConfigLocalSid struct {
 	End_MFN_NAT *ConfigLocalSid_End_MFN_NAT `yaml:"End_MFN_NAT"`
 }
 
+type ConfigFib4EncapSeg6 struct {
+	Mode string   `yaml:"mode"`
+	Segs []string `yaml:"segs"`
+}
+
+type ConfigFib4 struct {
+	Prefix string `yaml:"prefix"`
+	Action struct {
+		EncapSeg6 *ConfigFib4EncapSeg6 `yaml:"encapSeg6"`
+	} `yaml:"action"`
+}
+
 type Config struct {
 	NamePrefix  string           `yaml:"namePrefix"`
 	MaxRules    int              `yaml:"maxRules"`
 	MaxBackends int              `yaml:"maxBackends"`
 	EncapSource string           `yaml:"encapSource"`
 	LocalSids   []ConfigLocalSid `yaml:"localSids"`
+	Fib4        []ConfigFib4     `yaml:"fib4"`
 }

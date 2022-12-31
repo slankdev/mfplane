@@ -70,23 +70,15 @@ struct {
   __uint(max_entries, 1);
 } GLUE(NAME, encap_source) SEC(".maps");
 
-__u8 srv6_vm_remote_sid[16] = {
-  // TODO(slankdev): set from map
-  // fc00:201:1:::
-  0xfc, 0x00, 0x02, 0x01, 0x00, 0x01, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-};
-
 struct trie4_key {
   __u32 prefixlen;
   __u32 addr;
-};
+}  __attribute__ ((packed));
 
 struct trie4_val {
   __u16 action;
-  __u16 backend_block_index;
-  __u32 vip;
-};
+  struct in6_addr segs[6];
+}  __attribute__ ((packed));
 
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
@@ -212,19 +204,19 @@ process_nat_ret(struct xdp_md *ctx)
   }
 
   // Resolve next hypervisor
-  __u32 daddr = in_ih->daddr;
-  struct trie4_val *t4v = bpf_map_lookup_elem(&GLUE(NAME, fib4), &daddr);
-  if (!t4v) {
+  struct trie4_key key4 = {0};
+  key4.addr = in_ih->daddr;
+  key4.prefixlen = 32;
+  struct trie4_val *val4 = bpf_map_lookup_elem(&GLUE(NAME, fib4), &key4);
+  if (!val4) {
     bpf_printk(STR(NAME)"fib4 lookup failed");
     return ignore_packet(ctx);
-  } else {
-    bpf_printk(STR(NAME)"fib4 lookup match");
   }
 
   // Craft new ipv6 header
   memcpy(&oh->ip6.saddr, tunsrc, sizeof(struct in6_addr));
-  memcpy(&oh->ip6.daddr, srv6_vm_remote_sid, sizeof(struct in6_addr));
-  memcpy(&oh->seg, srv6_vm_remote_sid, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.daddr, &val4->segs[0], sizeof(struct in6_addr));
+  memcpy(&oh->seg, &val4->segs[0], sizeof(struct in6_addr));
 
   return XDP_TX;
 }
