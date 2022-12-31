@@ -16,11 +16,6 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-#define FUNCTION_BIT_LEN 16
-#ifndef FUNCTION_BIT_LEN
-#error "please define FUNCTION_BIT_LEN"
-#endif
-
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
   __uint(key_size, sizeof(struct trie4_key));
@@ -74,7 +69,7 @@ static inline int finished(__u8 *addr)
 }
 
 static inline int
-process_mf_redirect(struct xdp_md *ctx)
+process_mf_redirect(struct xdp_md *ctx, struct trie_val *val)
 {
   bpf_printk(STR(NAME)"try mf_redirect");
 
@@ -92,8 +87,14 @@ process_mf_redirect(struct xdp_md *ctx)
     return XDP_DROP;
   }
 
+  if (!val) {
+    bpf_printk(STR(NAME)"failed");
+    return XDP_DROP;
+  }
+
   // bit shitt
-  for (int i = 0; i < FUNCTION_BIT_LEN/8; i++)
+  int n_shifts = val->usid_function_length / 8;
+  for (int i = 0; i < n_shifts & i < 16; i++)
     shift8(&oh->ip6.daddr);
 
   // mac addr swap
@@ -106,7 +107,7 @@ process_mf_redirect(struct xdp_md *ctx)
 }
 
 static inline int
-process_nat_ret(struct xdp_md *ctx)
+process_nat_ret(struct xdp_md *ctx, struct trie_val *val)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
@@ -126,14 +127,14 @@ process_nat_ret(struct xdp_md *ctx)
   __u8 *dummy_ptr = (__u8 *)&oh->ip6.daddr;
 
   // lookup
-  struct addr_port *val = NULL;
+  struct addr_port *nval = NULL;
   struct addr_port key = {
     .addr = in_ih->daddr,
     .port = in_th->dest,
   };
-  val = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
-  if (!val) {
-    return process_mf_redirect(ctx);
+  nval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
+  if (!nval) {
+    return process_mf_redirect(ctx, val);
   }
 
 #ifdef DEBUG
@@ -142,15 +143,15 @@ process_nat_ret(struct xdp_md *ctx)
                 in_ih->protocol,
                 &in_ih->saddr, bpf_ntohs(in_th->source),
                 &in_ih->daddr, bpf_ntohs(in_th->dest),
-                &val->addr, bpf_ntohs(val->port));
+                &nval->addr, bpf_ntohs(nval->port));
     bpf_printk(STR(NAME)"nat-ret %s", tmp);
 #endif
 
   // reverse nat
   __u32 olddest = in_ih->daddr;
   __u16 olddestport = in_th->dest;
-  in_ih->daddr = val->addr;
-  in_th->dest = val->port;
+  in_ih->daddr = nval->addr;
+  in_th->dest = nval->port;
 
   // update checksum
   in_ih->check = checksum_recalc_addr(olddest, in_ih->daddr, in_ih->check);
@@ -214,7 +215,7 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
     };
     struct addr_port_stats *val = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
     if (!val) {
-      return process_mf_redirect(ctx);
+      return process_mf_redirect(ctx, val);
     }
 
     val->pkts++;
@@ -322,7 +323,7 @@ process_ipv6(struct xdp_md *ctx)
 
   // NAT check
   return in_ih->daddr == val->vip ?
-    process_nat_ret(ctx) :
+    process_nat_ret(ctx, val) :
     process_nat_out(ctx, val);
 }
 

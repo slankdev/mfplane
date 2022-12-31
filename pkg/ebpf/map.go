@@ -49,10 +49,12 @@ type TrieKey struct {
 }
 
 type TrieVal struct {
-	Action            uint16   `json:"action"`
-	BackendBlockIndex uint16   `json:"backend_block_index"`
-	Vip               [4]uint8 `json:"vip"`
-	NatPortBashBit    uint16   `json:"nat_port_hash_bit"`
+	Action             uint16   `json:"action"`
+	BackendBlockIndex  uint16   `json:"backend_block_index"`
+	Vip                [4]uint8 `json:"vip"`
+	NatPortBashBit     uint16   `json:"nat_port_hash_bit"`
+	UsidBlockLength    uint16   `json:"usid_block_length"`
+	UsidFunctionLength uint16   `json:"usid_function_length"`
 }
 
 type Trie4Key struct {

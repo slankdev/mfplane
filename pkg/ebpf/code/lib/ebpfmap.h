@@ -42,6 +42,8 @@ struct trie_val {
   __u16 backend_block_index;
   __u32 vip;
   __u16 nat_port_hash_bit;
+  __u16 usid_block_length;
+  __u16 usid_function_length;
 } __attribute__ ((packed));
 
 struct vip_key {

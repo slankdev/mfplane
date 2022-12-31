@@ -260,9 +260,11 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 			copy(key.Addr[:], ipnet.IP)
 			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
 			val := ebpf.TrieVal{
-				Action:            123, // TODO(slankdev)
-				BackendBlockIndex: uint16(backendBlockIndex),
-				NatPortBashBit:    localSid.End_MFL.NatPortHashBit,
+				Action:             123, // TODO(slankdev)
+				BackendBlockIndex:  uint16(backendBlockIndex),
+				NatPortBashBit:     localSid.End_MFL.NatPortHashBit,
+				UsidBlockLength:    uint16(localSid.End_MFL.USidBlockLength),
+				UsidFunctionLength: uint16(localSid.End_MFL.USidFunctionLength),
 			}
 			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
 				return err
@@ -311,9 +313,11 @@ func localSid_End_MFN_NAT(backendBlockIndex int, localSid ConfigLocalSid, config
 			copy(key.Addr[:], ipnet.IP)
 			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
 			val := ebpf.TrieVal{
-				Action:         456, // TODO(slankdev)
-				Vip:            ipaddrb,
-				NatPortBashBit: localSid.End_MFN_NAT.NatPortHashBit,
+				Action:             456, // TODO(slankdev)
+				Vip:                ipaddrb,
+				NatPortBashBit:     localSid.End_MFN_NAT.NatPortHashBit,
+				UsidBlockLength:    uint16(localSid.End_MFN_NAT.USidBlockLength),
+				UsidFunctionLength: uint16(localSid.End_MFN_NAT.USidFunctionLength),
 			}
 			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
 				return err
