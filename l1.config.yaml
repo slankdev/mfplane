@@ -9,14 +9,14 @@ localSids:
     natPortHashBit: 0x00ff
     uSidBlock: fc00::0
     uSidBlockLength: 16
-    uSidFunctionLength: 32
+    uSidFunctionLength: 16
     uSidFunctionRevisions:
     # - backends:
-    #   - 0013:0001::0
+    #   - 1301::0
     # - backends:
-    #   - 0011:0001::0
-    #   - 0012:0001::0
-    #   - 0013:0001::0
+    #   - 1101::0
+    #   - 1201::0
+    #   - 1301::0
     - backends:
-      - 0011:0001::0
-      - 0012:0001::0
+      - 1101::0
+      - 1201::0

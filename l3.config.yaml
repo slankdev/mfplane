@@ -3,20 +3,20 @@ maxRules: 2
 maxBackends: 7
 encapSource: fc00:3::0
 localSids:
-- sid: fc00:ff:1::/48 # NAT1
+- sid: fc00:ff01::/32 # NAT1
   End_MFL:
     vip: 142.0.0.1
     natPortHashBit: 0x00ff
     uSidBlock: fc00::0
     uSidBlockLength: 16
-    uSidFunctionLength: 32
+    uSidFunctionLength: 16
     uSidFunctionRevisions:
     # - backends:
-    #   - 0013:0001::0
+    #   - 1301::0
     # - backends:
-    #   - 0011:0001::0
-    #   - 0012:0001::0
-    #   - 0013:0001::0
+    #   - 1101::0
+    #   - 1201::0
+    #   - 1301::0
     - backends:
-      - 0011:0001::0
-      - 0012:0001::0
+      - 1101::0
+      - 1201::0
