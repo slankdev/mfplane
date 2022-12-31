@@ -258,6 +258,7 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
     hash = jhash_2words(in_th->dest, in_th->source, hash);
     hash = jhash_2words(in_ih->protocol, 0, hash);
     sourceport = hash & 0xffff;
+    sourceport = hash & val->nat_port_hash_bit;
 
     struct addr_port_stats natval = {
       .addr = val->vip,

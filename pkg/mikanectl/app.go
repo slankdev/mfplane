@@ -309,8 +309,9 @@ func localSid_End_MFN_NAT(backendBlockIndex int, localSid ConfigLocalSid, config
 			copy(key.Addr[:], ipnet.IP)
 			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
 			val := ebpf.TrieVal{
-				Action: 456, // TODO(slankdev)
-				Vip:    ipaddrb,
+				Action:         456, // TODO(slankdev)
+				Vip:            ipaddrb,
+				NatPortBashBit: localSid.End_MFN_NAT.NatPortHashBit,
 			}
 			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
 				return err

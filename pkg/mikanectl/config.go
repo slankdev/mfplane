@@ -30,8 +30,9 @@ type FunctionRevision struct {
 }
 
 type ConfigLocalSid_End_MFN_NAT struct {
-	Vip     string   `yaml:"vip"`
-	Sources []string `yaml:"sources"`
+	Vip            string   `yaml:"vip"`
+	NatPortHashBit uint16   `yaml:"natPortHashBit"`
+	Sources        []string `yaml:"sources"`
 }
 
 type ConfigLocalSid struct {
