@@ -16,31 +16,6 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-struct addr_port {
-  __u32 addr;
-  __u16 port;
-}  __attribute__ ((packed));
-
-struct addr_port_stats {
-  __u32 addr;
-  __u16 port;
-  __u64 pkts;
-}  __attribute__ ((packed));
-
-struct {
-  __uint(type, BPF_MAP_TYPE_LRU_HASH);
-  __uint(max_entries, 65535);
-  __type(key, struct addr_port);
-  __type(value, struct addr_port_stats);
-} GLUE(NAME, nat_out_table) SEC(".maps");
-
-struct {
-  __uint(type, BPF_MAP_TYPE_LRU_HASH);
-  __uint(max_entries, 65535);
-  __type(key, struct addr_port);
-  __type(value, struct addr_port_stats);
-} GLUE(NAME, nat_ret_table) SEC(".maps");
-
 struct trie_key {
   __u32 prefixlen;
   __u8 addr[16];

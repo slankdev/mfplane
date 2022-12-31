@@ -22,6 +22,8 @@
 #error "please define NAME"
 #endif
 
+#include "ebpfmap.h"
+
 // TODO(slankdev): i'm not sure how to write like follow...
 // #if STR_HELPER(NAME) == ""
 // #error "PLEASE DEFINE \"NAME\""
