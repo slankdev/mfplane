@@ -260,6 +260,7 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 			val := ebpf.TrieVal{
 				Action:            123, // TODO(slankdev)
 				BackendBlockIndex: uint16(backendBlockIndex),
+				NatPortBashBit:    localSid.End_MFL.NatPortHashBit,
 			}
 			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
 				return err
