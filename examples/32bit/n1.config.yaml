@@ -1,0 +1,25 @@
+namePrefix: n1
+encapSource: fc00:1100::0
+localSids:
+# - sid: fc00:1101::/48 # NAT1
+#   End_MFN_NAT:
+#     vip: 142.0.0.1
+#     natPortHashBit: 0x00ff
+#     uSidFunctionLength: 16
+#     sources:
+#     - 10.254.0.10/32
+- sid: fc00:11:1::/48 # NAT1
+  End_MFN_NAT:
+    vip: 142.0.0.1
+    natPortHashBit: 0x00ff
+    uSidBlockLength: 16
+    uSidFunctionLength: 32
+    sources:
+    - 10.254.0.10/32
+fib4:
+- prefix: 10.254.0.10/24
+  action:
+    encapSeg6:
+      mode: encap
+      segs:
+      - fc00:201:1::0
