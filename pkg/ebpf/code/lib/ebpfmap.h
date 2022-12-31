@@ -35,7 +35,7 @@ struct trie4_val {
 struct trie_key {
   __u32 prefixlen;
   __u8 addr[16];
-};
+}  __attribute__ ((packed));
 
 struct trie_val {
   __u16 action;

@@ -53,19 +53,22 @@ struct {
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib6) SEC(".maps");
 
-static inline void shift8(__u8 *addr)
+static inline void shift8(int oct_offset, struct in6_addr *a)
 {
-  for (int i = 2; i < 16; i++) {
-    if (i < 15)
-      addr[i] = addr[i+1];
-    else
-      addr[i] = 0;
+  __u8 *addr = a->in6_u.u6_addr8;
+  for (__u8 i = 0; i < sizeof(struct in6_addr); i++) {
+    if (i >= oct_offset) {
+      if (i < sizeof(struct in6_addr))
+        addr[i] = addr[i+1];
+      else
+        addr[i] = 0;
+    }
   }
 }
 
-static inline int finished(__u8 *addr)
+static inline int finished(struct in6_addr *addr)
 {
-  return (addr[2] == 0x00 && addr[3] == 0x00);
+  return (addr->in6_u.u6_addr8[2] == 0x00 && addr->in6_u.u6_addr8[3] == 0x00);
 }
 
 static inline int
@@ -93,9 +96,11 @@ process_mf_redirect(struct xdp_md *ctx, struct trie_val *val)
   }
 
   // bit shitt
+  int oct_offset = val->usid_block_length / 8;
   int n_shifts = val->usid_function_length / 8;
-  for (int i = 0; i < n_shifts & i < 16; i++)
-    shift8(&oh->ip6.daddr);
+  for (int j = 0; j < n_shifts & j < 4; j++) {
+    shift8(oct_offset, &oh->ip6.daddr);
+  }
 
   // mac addr swap
   __u8 tmpmac[6] = {0};
@@ -213,13 +218,13 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
       .addr = in_ih->saddr,
       .port = in_th->source,
     };
-    struct addr_port_stats *val = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
-    if (!val) {
+    struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
+    if (!asval) {
       return process_mf_redirect(ctx, val);
     }
 
-    val->pkts++;
-    sourceport = val->port;
+    asval->pkts++;
+    sourceport = asval->port;
   } else {
     __u32 hash = 0;
     hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
