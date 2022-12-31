@@ -50,7 +50,8 @@ struct trie_val {
   __u16 action;
   __u16 backend_block_index;
   __u32 vip;
-};
+  __u16 nat_port_hash_bit;
+} __attribute__ ((packed));
 
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);

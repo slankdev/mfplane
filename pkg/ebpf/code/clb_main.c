@@ -59,7 +59,7 @@ struct trie_val {
   __u16 backend_block_index;
   __u32 vip;
   __u16 nat_port_hash_bit;
-};
+} __attribute__ ((packed));
 
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
@@ -332,10 +332,10 @@ process_ipv6(struct xdp_md *ctx)
 #ifdef DEBUG
   char tmpstr[128] = {0};
   BPF_SNPRINTF(tmpstr, sizeof(tmpstr),
-               "up-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u",
+               "up-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u hb=0x%x",
                &in_ih->saddr, bpf_ntohs(in_th->source),
                &in_ih->daddr, bpf_ntohs(in_th->dest),
-               in_ih->protocol, hash, hash, idx);
+               in_ih->protocol, hash, hash, idx, val->nat_port_hash_bit);
   bpf_printk(STR(NAME)"%s", tmpstr);
 #endif
 
