@@ -16,7 +16,7 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-#define MAX_RULES 1
+#define MAX_RULES 2
 #ifndef MAX_RULES
 #error "please define MAX_RULES"
 #endif
