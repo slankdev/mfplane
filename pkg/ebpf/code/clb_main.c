@@ -266,8 +266,8 @@ process_ipv6(struct xdp_md *ctx)
   if (!val) {
     return ignore_packet(ctx);
   }
-  val->stats_bytes += data_end - data;
-  val->stats_pkts++;
+  val->stats_total_bytes += data_end - data;
+  val->stats_total_pkts++;
 
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 || oh->srh.hdrlen != 2) {

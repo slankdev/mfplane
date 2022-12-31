@@ -112,6 +112,8 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val)
   memcpy(eh->h_dest, eh->h_source, 6);
   memcpy(eh->h_source, tmpmac, 6);
 
+  val->stats_redir_bytes += data_end - data;
+  val->stats_redir_pkts++;
   return XDP_TX;
 }
 
@@ -322,8 +324,8 @@ process_ipv6(struct xdp_md *ctx)
   if (!val) {
     return ignore_packet(ctx);
   }
-  val->stats_bytes += data_end - data;
-  val->stats_pkts++;
+  val->stats_total_bytes += data_end - data;
+  val->stats_total_pkts++;
 
   // Parse Inner Headers
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);

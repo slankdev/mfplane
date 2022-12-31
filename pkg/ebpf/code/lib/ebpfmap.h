@@ -44,8 +44,10 @@ struct trie6_val {
   __u16 nat_port_hash_bit;
   __u16 usid_block_length;
   __u16 usid_function_length;
-  __u64 stats_bytes;
-  __u64 stats_pkts;
+  __u64 stats_total_bytes;
+  __u64 stats_total_pkts;
+  __u64 stats_redir_bytes;
+  __u64 stats_redir_pkts;
 } __attribute__ ((packed));
 
 struct vip_key {
@@ -59,8 +61,8 @@ struct vip_val {
 
 struct flow_processor {
   struct in6_addr addr;
-  __u64 stats_bytes;
-  __u64 stats_pkts;
+  __u64 stats_total_bytes;
+  __u64 stats_total_pkts;
 } __attribute__ ((packed));
 
 #endif /* _EBPFMAP_H_ */
