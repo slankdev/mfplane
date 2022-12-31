@@ -58,7 +58,7 @@ static inline void shift8(int oct_offset, struct in6_addr *a)
   __u8 *addr = a->in6_u.u6_addr8;
   for (__u8 i = 0; i < sizeof(struct in6_addr); i++) {
     if (i >= oct_offset) {
-      if (i < sizeof(struct in6_addr))
+      if (i < sizeof(struct in6_addr) - 1)
         addr[i] = addr[i+1];
       else
         addr[i] = 0;
