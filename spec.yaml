@@ -27,39 +27,16 @@ postinit:
       EOF
   - cmd: |
       cat <<EOF > /tmp/n_node_setup.sh
-      LO_ADDR=\$1
-      ASN=\$2
-      LOCATOR=\$3
-      TUNSRC=\$4
-      SID=\$5
-
-      ip link set net0 mtu 9000
-      iptables -t raw -A PREROUTING -j CT
-      iptables -t filter -F FORWARD
-      iptables -t filter -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
-      iptables -t filter -A FORWARD -s 10.254.0.0/24 -p tcp -m tcp --syn -m conntrack --ctstate NEW -j ACCEPT
-      iptables -t filter -A FORWARD -j REJECT
-
-      ip route add blackhole \$LOCATOR
-      ip sr tunsrc set \$TUNSRC
-      ip link add vrf1 type vrf table 1
-      ip link set vrf1 up
-      ip -6 route replace \$SID encap seg6local action End.DT4 vrftable 1 dev net0
-      ip route replace 10.254.0.0/24 encap seg6 mode encap segs fc00:201:1:: dev net0 vrf vrf1
-
-      ## Bandwidth Control
-      tc qdisc add dev net0 root handle 1:0 tbf limit 500kb burst 50kb rate 50mbit
-
       cat <<EOF1 > /etc/frr/frr.conf
       interface lo
-       ip addr \$LO_ADDR/32
+       ip addr \$1/32
       !
       interface net0
        ipv6 nd ra-interval 3
        no ipv6 nd suppress-ra
       !
-      router bgp \$ASN
-       bgp router-id \$LO_ADDR
+      router bgp \$2
+       bgp router-id \$1
        bgp bestpath as-path multipath-relax
        no bgp ebgp-requires-policy
        neighbor PEER peer-group
@@ -77,7 +54,8 @@ postinit:
        exit-address-family
       !
       EOF1
-
+      ip link set net0 mtu 9000
+      ip route add blackhole \$3
       /usr/lib/frr/frrinit.sh start
       EOF
   - cmd: >-
@@ -411,39 +389,34 @@ node_configs:
 
 - name: C1
   cmds:
-  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.100.1 65101
-  - cmd: ip addr add 10.255.100.1/32 dev net0
+  - cmd: sh /usr/bin/bgp_conf_init.sh 20.0.0.1 65101
+  - cmd: ip addr add 20.0.0.1/32 dev net0
   - cmd: nohup mikanectl ifconfig-http -p 80 &
 
 - name: HV1
   cmds:
   - cmd: ip link set net0 mtu 9000
-  - cmd: ip route add blackhole fc00:201::/32
-  - cmd: ip sr tunsrc set fc00:201::0
+  - cmd: ip route add blackhole fc00:1100::/24
+  - cmd: ip sr tunsrc set fc00:1100::0
 
   - cmd: ip link add vrf1 type vrf table 1
   - cmd: ip link set vrf1 up
   - cmd: ip link set vm1 vrf vrf1
-  - cmd: ip addr add 10.254.0.1/24 noprefixroute dev vm1
-  - cmd: ip route add 10.254.0.10/32 dev vm1 vrf vrf1
-  - cmd: ip -6 route replace fc00:201:1::/48 encap seg6local action End.DT4 vrftable 1 dev net0
-  - cmd: ip -4 route add default encap seg6 mode encap segs fc00:ff:1::0 dev net0 vrf vrf1
+  - cmd: ip link set vm2 vrf vrf1
+  - cmd: ip addr add 10.0.1.1/24 noprefixroute dev vm1
+  - cmd: ip addr add 10.0.1.1/24 noprefixroute dev vm2
+  - cmd: ip route add 10.0.1.11/32 dev vm1 vrf vrf1
+  - cmd: ip route add 10.0.1.12/32 dev vm2 vrf vrf1
+  - cmd: ip -6 route replace fc00:1101::/32 encap seg6local action End.DT4 vrftable 1 dev net0
+  - cmd: ip -4 route add default encap seg6 mode encap segs fc00:ff01::0 dev net0 vrf vrf1
 
   - cmd: ip link add vrf2 type vrf table 2
   - cmd: ip link set vrf2 up
   - cmd: ip link set vm2 vrf vrf2
-  - cmd: ip addr add 10.0.2.1/24 noprefixroute dev vm2
-  - cmd: ip route add 10.0.2.10/32 dev vm2 vrf vrf2
-  - cmd: ip -6 route replace fc00:201:2::/48 encap seg6local action End.DT4 vrftable 2 dev net0
-  - cmd: ip -4 route add default encap seg6 mode encap segs fc00:1:1::0 dev net0 vrf vrf2
-
-  - cmd: ip link add vrf3 type vrf table 3
-  - cmd: ip link set vrf3 up
-  - cmd: ip link set vm3 vrf vrf3
-  - cmd: ip addr add 10.0.3.1/24 noprefixroute dev vm3
-  - cmd: ip route add 10.0.3.10/32 dev vm3 vrf vrf3
-  - cmd: ip -6 route replace fc00:201:3::/48 encap seg6local action End.DT4 vrftable 3 dev net0
-  - cmd: ip -4 route add default encap seg6 mode encap segs fc00:1:1::0 dev net0 vrf vrf3
+  - cmd: ip addr add 10.0.2.1/24 noprefixroute dev vm3
+  - cmd: ip route add 10.0.2.13/32 dev vm2 vrf vrf2
+  - cmd: ip -6 route replace fc00:1102::/32 encap seg6local action End.DT4 vrftable 2 dev net0
+  - cmd: ip -4 route add default encap seg6 mode encap segs fc00:ff01::0 dev net0 vrf vrf2
 
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.200.1 65201
   - cmd: >-
@@ -460,31 +433,31 @@ node_configs:
 
 - name: VM1
   cmds:
-  - cmd: ip addr add 10.254.0.10/24 dev net0
-  - cmd: ip route add default via 10.254.0.1
+  - cmd: ip addr add 10.0.1.11/24 dev net0
+  - cmd: ip route add default via 10.0.1.1
 - name: VM2
   cmds:
-  - cmd: ip addr add 10.0.2.10/24 dev net0
-  - cmd: ip route add default via 10.0.2.1
+  - cmd: ip addr add 10.0.1.12/24 dev net0
+  - cmd: ip route add default via 10.0.1.1
 - name: VM3
   cmds:
-  - cmd: ip addr add 10.0.3.10/24 dev net0
-  - cmd: ip route add default via 10.0.3.1
+  - cmd: ip addr add 10.0.2.13/24 dev net0
+  - cmd: ip route add default via 10.0.2.1
 
 - name: L1
   cmds:
   - cmd: ip link set net0 mtu 9000
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.1 65001
-  - cmd: ip route add blackhole 10.254.0.0/24
-  - cmd: ip route add blackhole fc00:1::/32
-  - cmd: ip route add blackhole fc00:ff:1::/48
+  - cmd: ip route add blackhole 10.0.1.0/24
+  - cmd: ip route add blackhole 10.0.2.0/24
+  - cmd: ip route add blackhole fc00:ff00::/24
   - cmd: >-
       vtysh -c 'conf te'
-      -c 'ip route 142.0.0.1/32 Null0'
+      -c 'ip route 142.0.0.1/24 Null0'
       -c '!'
       -c 'router bgp'
       -c ' address-family ipv4 unicast'
-      -c ' network 142.0.0.1/32'
+      -c ' network 142.0.0.1/24'
       -c ' exit-address-family'
       -c ' !'
       -c ' address-family ipv6 unicast'
@@ -496,16 +469,16 @@ node_configs:
   cmds:
   - cmd: ip link set net0 mtu 9000
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.2 65002
-  - cmd: ip route add blackhole 10.254.0.0/24
-  - cmd: ip route add blackhole fc00:2::/32
-  - cmd: ip route add blackhole fc00:ff:1::/48
+  - cmd: ip route add blackhole 10.0.1.0/24
+  - cmd: ip route add blackhole 10.0.2.0/24
+  - cmd: ip route add blackhole fc00:ff00::/24
   - cmd: >-
       vtysh -c 'conf te'
-      -c 'ip route 142.0.0.1/32 Null0'
+      -c 'ip route 142.0.0.1/24 Null0'
       -c '!'
       -c 'router bgp'
       -c ' address-family ipv4 unicast'
-      -c ' network 142.0.0.1/32'
+      -c ' network 142.0.0.1/24'
       -c ' exit-address-family'
       -c ' !'
       -c ' address-family ipv6 unicast'
@@ -518,16 +491,16 @@ node_configs:
   cmds:
   - cmd: ip link set net0 mtu 9000
   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
-  - cmd: ip route add blackhole 10.254.0.0/24
-  - cmd: ip route add blackhole fc00:3::/32
-  - cmd: ip route add blackhole fc00:ff:1::/48
+  - cmd: ip route add blackhole 10.0.1.0/24
+  - cmd: ip route add blackhole 10.0.2.0/24
+  - cmd: ip route add blackhole fc00:ff00::/24
   - cmd: >-
       vtysh -c 'conf te'
-      -c 'ip route 142.0.0.1/32 Null0'
+      -c 'ip route 142.0.0.1/24 Null0'
       -c '!'
       -c 'router bgp'
       -c ' address-family ipv4 unicast'
-      -c ' network 142.0.0.1/32'
+      -c ' network 142.0.0.1/24'
       -c ' exit-address-family'
       -c ' !'
       -c ' address-family ipv6 unicast'
@@ -538,25 +511,13 @@ node_configs:
 
 - name: N1
   cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.11 65011 fc00:11::/32 fc00:11::0 fc00:11:1::/48
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.11 65011 fc00:3100::/24
 - name: N2
   cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.12 65012 fc00:12::/32 fc00:12::0 fc00:12:1::/48
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.12 65012 fc00:3200::/24
 - name: N3
   cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.13 65013 fc00:13::/32 fc00:13::0 fc00:13:1::/48
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.13 65013 fc00:3300::/24
 - name: N4
   cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.14 65014 fc00:14::/32 fc00:14::0 fc00:14:1::/48
-- name: N5
-  cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.15 65015 fc00:15::/32 fc00:15::0 fc00:15:1::/48
-- name: N6
-  cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.16 65016 fc00:16::/32 fc00:16::0 fc00:16:1::/48
-- name: N7
-  cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.17 65017 fc00:17::/32 fc00:17::0 fc00:17:1::/48
-- name: N8
-  cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.18 65018 fc00:18::/32 fc00:18::0 fc00:18:1::/48
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.14 65014 fc00:3400::/24
