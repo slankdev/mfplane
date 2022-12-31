@@ -50,6 +50,8 @@ type Trie6Val struct {
 	NatPortBashBit     uint16   `json:"nat_port_hash_bit"`
 	UsidBlockLength    uint16   `json:"usid_block_length"`
 	UsidFunctionLength uint16   `json:"usid_function_length"`
+	StatsBytes         uint64   `json:"stats_bytes"`
+	StatsPkts          uint64   `json:"stats_pkts"`
 }
 
 type VipKey struct {
@@ -62,5 +64,7 @@ type VipVal struct {
 }
 
 type FlowProcessor struct {
-	Addr [16]uint8 `json:"addr"`
+	Addr       [16]uint8 `json:"addr"`
+	StatsBytes uint64    `json:"stats_bytes"`
+	StatsPkts  uint64    `json:"stats_pkts"`
 }

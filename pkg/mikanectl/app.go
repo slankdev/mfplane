@@ -234,10 +234,10 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 			for idx := range slots {
 				fmt.Printf("%03d  %s\n", idx, FullIPv6(slots[idx]))
 				key := uint32(config.MaxBackends*backendBlockIndex + idx)
-				ipaddrb := [16]uint8{}
-				copy(ipaddrb[:], slots[idx])
+				val := ebpf.FlowProcessor{}
+				copy(val.Addr[:], slots[idx])
 
-				if err := ebpf.UpdatePerCPUArrayAll(m, &key, ipaddrb,
+				if err := ebpf.UpdatePerCPUArrayAll(m, &key, &val,
 					ciliumebpf.UpdateAny); err != nil {
 					return err
 				}
