@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 
+	"github.com/cilium/ebpf"
 	"github.com/slankdev/hyperplane/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -195,4 +197,31 @@ func newCommandXdpDetach(name string) *cobra.Command {
 	cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
 	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	return cmd
+}
+
+func BatchMapOperation(mapname string, maptype ebpf.MapType,
+	f func(m *ebpf.Map) error) error {
+	ids, err := GetMapIDsByNameType(mapname, maptype)
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		m, err := ebpf.NewMapFromID(id)
+		if err != nil {
+			return err
+		}
+		if err := f(m); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func UpdatePerCPUArrayAll(m *ebpf.Map, key interface{}, value interface{},
+	flags ebpf.MapUpdateFlags) error {
+	percpuval := []interface{}{}
+	for i := 0; i < runtime.NumCPU(); i++ {
+		percpuval = append(percpuval, value)
+	}
+	return m.Update(key, percpuval, flags)
 }
