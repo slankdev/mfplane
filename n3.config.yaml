@@ -4,6 +4,7 @@ localSids:
 - sid: fc00:13:1::/48 # NAT1
   End_MFN_NAT:
     vip: 142.0.0.1
+    natPortHashBit: 0x00ff
     sources:
     - 10.254.0.10/32
 fib4:
