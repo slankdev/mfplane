@@ -117,6 +117,7 @@ process_nat_return(struct xdp_md *ctx)
   }
 
   __u16 hash = th->dest;
+  hash = hash & vv->nat_port_hash_bit;
   __u32 idx = hash % RING_SIZE;
   idx = RING_SIZE * vv->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
@@ -320,6 +321,7 @@ process_ipv6(struct xdp_md *ctx)
   hash = jhash_2words(in_th->dest, in_th->source, hash);
   hash = jhash_2words(in_ih->protocol, 0, hash);
   hash = hash & 0xffff;
+  hash = hash & val->nat_port_hash_bit;
 
   __u32 idx = hash % RING_SIZE;
   idx = RING_SIZE * val->backend_block_index + idx;
