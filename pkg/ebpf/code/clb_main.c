@@ -17,15 +17,14 @@
 #include "lib/lib.h"
 
 #define MAX_RULES 1
-#ifndef RING_SIZE
+#ifndef MAX_RULES
+#error "please define MAX_RULES"
+#endif
+
 #define RING_SIZE 7
+#ifndef RING_SIZE
+#error "please define RING_SIZE"
 #endif
-#define IP_MF     0x2000
-#define IP_OFFSET 0x1FFF
-#ifndef INTERFACE_MAX_FLOW_LIMIT
-#define INTERFACE_MAX_FLOW_LIMIT 8
-#endif
-#define MAX_INTERFACES 512
 
 struct {
   __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);

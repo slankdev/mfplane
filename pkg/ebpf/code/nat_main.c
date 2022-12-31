@@ -19,6 +19,11 @@
 #define TCP_CSUM_OFF (ETH_HLEN + sizeof(struct outer_header) + \
   sizeof(struct iphdr) + offsetof(struct tcphdr, check))
 
+#define FUNCTION_BIT_LEN 16
+#ifndef FUNCTION_BIT_LEN
+#error "please define FUNCTION_BIT_LEN"
+#endif
+
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
   __uint(key_size, sizeof(struct trie4_key));
@@ -90,11 +95,9 @@ process_mf_redirect(struct xdp_md *ctx)
     return XDP_DROP;
   }
 
-  // shitt 32
-  shift8(&oh->ip6.daddr);
-  shift8(&oh->ip6.daddr);
-  shift8(&oh->ip6.daddr);
-  shift8(&oh->ip6.daddr);
+  // bit shitt
+  for (int i = 0; i < FUNCTION_BIT_LEN/8; i++)
+    shift8(&oh->ip6.daddr);
 
   // mac addr swap
   __u8 tmpmac[6] = {0};
