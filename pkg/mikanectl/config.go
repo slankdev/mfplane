@@ -18,6 +18,7 @@ package mikanectl
 
 type ConfigLocalSid_End_MFL struct {
 	Vip                   string             `yaml:"vip"`
+	NatPortHashBit        uint16             `yaml:"natPortHashBit"`
 	USidBlock             string             `yaml:"uSidBlock"`
 	USidBlockLength       int                `yaml:"uSidBlockLength"`
 	USidFunctionLength    int                `yaml:"uSidFunctionLength"`
