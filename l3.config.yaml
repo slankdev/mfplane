@@ -1,7 +1,7 @@
 namePrefix: l3
 maxRules: 2
 maxBackends: 7
-encapSource: fc00:3::0
+encapSource: fc00:0300::0
 localSids:
 - sid: fc00:ff01::/32 # NAT1
   End_MFL:
