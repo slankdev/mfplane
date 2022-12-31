@@ -32,12 +32,12 @@ struct trie4_val {
   struct in6_addr segs[6];
 }  __attribute__ ((packed));
 
-struct trie_key {
+struct trie6_key {
   __u32 prefixlen;
   __u8 addr[16];
 }  __attribute__ ((packed));
 
-struct trie_val {
+struct trie6_val {
   __u16 action;
   __u16 backend_block_index;
   __u32 vip;
