@@ -75,7 +75,7 @@ struct vip_key {
 
 struct vip_val {
   __u16 backend_block_index;
-  __u16 dynamic_bit_length; // defaulting as 16
+  __u16 nat_port_hash_bit;
 };
 
 struct {
@@ -128,10 +128,10 @@ process_nat_return(struct xdp_md *ctx)
 #ifdef DEBUG
   char tmp[128] = {0};
   BPF_SNPRINTF(tmp, sizeof(tmp),
-               "dn-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u",
+               "dn-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u hb=0x%x",
                &ih->saddr, bpf_ntohs(th->source),
                &ih->daddr, bpf_ntohs(th->dest),
-               ih->protocol, hash, hash, idx);
+               ih->protocol, hash, hash, idx, vv->nat_port_hash_bit);
   bpf_printk(STR(NAME)"%s", tmp);
 #endif
 

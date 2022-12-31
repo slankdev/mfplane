@@ -79,7 +79,7 @@ type VipKey struct {
 
 type VipVal struct {
 	BackendBlockIndex uint16 `json:"backend_block_index"`
-	DynamicBitLength  uint16 `json:"dynamic_bit_length"`
+	NatPortHashBit    uint16 `json:"nat_port_hash_bit"`
 }
 
 func GetMapIDsByNameType(mapName string, mapType ebpf.MapType) ([]ebpf.MapID, error) {

@@ -279,6 +279,7 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 			copy(key.Vip[:], vipdata[12:])
 			val := ebpf.VipVal{
 				BackendBlockIndex: uint16(backendBlockIndex),
+				NatPortHashBit:    localSid.End_MFL.NatPortHashBit,
 			}
 			if err := ebpf.UpdatePerCPUArrayAll(m, key, val,
 				ciliumebpf.UpdateAny); err != nil {
