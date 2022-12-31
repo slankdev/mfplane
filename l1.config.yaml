@@ -6,6 +6,7 @@ localSids:
 - sid: fc00:ff:1::/48 # NAT1
   End_MFL:
     vip: 142.0.0.1
+    natPortHashBit: 0xff00
     uSidBlock: fc00::0
     uSidBlockLength: 16
     uSidFunctionLength: 32
