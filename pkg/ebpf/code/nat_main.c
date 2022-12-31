@@ -224,8 +224,15 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
     hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
     hash = jhash_2words(in_th->dest, in_th->source, hash);
     hash = jhash_2words(in_ih->protocol, 0, hash);
-    sourceport = hash & 0xffff;
-    sourceport = hash & val->nat_port_hash_bit;
+    hash = hash & 0xffff;
+    hash = hash & val->nat_port_hash_bit;
+
+    // TODO(slankdev): we should search un-used slot instead of rand-val.
+    __u32 rand = bpf_get_prandom_u32();
+    rand = rand & 0xffff;
+    rand = rand & ~val->nat_port_hash_bit;
+
+    sourceport = hash | rand;
 
     struct addr_port_stats natval = {
       .addr = val->vip,
