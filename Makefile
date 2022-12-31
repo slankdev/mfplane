@@ -6,10 +6,5 @@ ifeq ($(shell test -e local.mk && echo -n yes),yes)
 include local.mk
 endif
 
-flush:
-	docker exec N1 conntrack -F
-	docker exec N2 conntrack -F
-	docker exec N3 conntrack -F
-
-r: clb-attach-l1 nat-attach-n1
+r: clb-attach-l1 nat-attach-n1 nat-attach-n2
 	./setup_dev.sh
