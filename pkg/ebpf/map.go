@@ -52,6 +52,17 @@ type TrieVal struct {
 	Action            uint16   `json:"action"`
 	BackendBlockIndex uint16   `json:"backend_block_index"`
 	Vip               [4]uint8 `json:"vip"`
+	NatPortBashBit    uint16   `json:"nat_port_hash_bit"`
+}
+
+type Trie4Key struct {
+	Prefixlen uint32   `json:"prefixlen"`
+	Addr      [4]uint8 `json:"addr"`
+}
+
+type Trie4Val struct {
+	Action uint16       `json:"action"`
+	Segs   [6][16]uint8 `json:"segs"`
 }
 
 type FlowKey struct {
@@ -68,7 +79,7 @@ type VipKey struct {
 
 type VipVal struct {
 	BackendBlockIndex uint16 `json:"backend_block_index"`
-	DynamicBitLength  uint16 `json:"dynamic_bit_length"`
+	NatPortHashBit    uint16 `json:"nat_port_hash_bit"`
 }
 
 func GetMapIDsByNameType(mapName string, mapType ebpf.MapType) ([]ebpf.MapID, error) {

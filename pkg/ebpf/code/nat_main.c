@@ -16,16 +16,16 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-struct addr_port {
-  __u32 addr;
-  __u16 port;
-}  __attribute__ ((packed));
+#define TCP_CSUM_OFF (ETH_HLEN + sizeof(struct outer_header) + \
+  sizeof(struct iphdr) + offsetof(struct tcphdr, check))
 
-struct addr_port_stats {
-  __u32 addr;
-  __u16 port;
-  __u64 pkts;
-}  __attribute__ ((packed));
+struct {
+  __uint(type, BPF_MAP_TYPE_LPM_TRIE);
+  __uint(key_size, sizeof(struct trie4_key));
+  __uint(value_size, sizeof(struct trie4_val));
+  __uint(max_entries, 50);
+  __uint(map_flags, BPF_F_NO_PREALLOC);
+} GLUE(NAME, fib4) SEC(".maps");
 
 struct {
   __uint(type, BPF_MAP_TYPE_LRU_HASH);
@@ -41,16 +41,12 @@ struct {
   __type(value, struct addr_port_stats);
 } GLUE(NAME, nat_ret_table) SEC(".maps");
 
-struct trie_key {
-  __u32 prefixlen;
-  __u8 addr[16];
-};
-
-struct trie_val {
-  __u16 action;
-  __u16 backend_block_index;
-  __u32 vip;
-};
+struct {
+  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+  __type(key, __u32);
+  __type(value, struct in6_addr);
+  __uint(max_entries, 1);
+} GLUE(NAME, encap_source) SEC(".maps");
 
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
@@ -59,23 +55,6 @@ struct {
   __uint(max_entries, 50);
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib6) SEC(".maps");
-
-#define TCP_CSUM_OFF (ETH_HLEN + sizeof(struct outer_header) + \
-  sizeof(struct iphdr) + offsetof(struct tcphdr, check))
-
-struct {
-  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-  __type(key, __u32);
-  __type(value, struct in6_addr);
-  __uint(max_entries, 1);
-} GLUE(NAME, encap_source) SEC(".maps");
-
-__u8 srv6_vm_remote_sid[16] = {
-  // TODO(slankdev): set from map
-  // fc00:201:1:::
-  0xfc, 0x00, 0x02, 0x01, 0x00, 0x01, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-};
 
 static inline void shift8(__u8 *addr)
 {
@@ -173,32 +152,10 @@ process_nat_ret(struct xdp_md *ctx)
   in_ih->daddr = val->addr;
   in_th->dest = val->port;
 
-  // update ip checksum
-  __u32 check;
-  check = in_ih->check;
-  check = ~check;
-  check -= olddest & 0xffff;
-  check -= olddest >> 16;
-  check += in_ih->daddr & 0xffff;
-  check += in_ih->daddr >> 16;
-  check = ~check;
-  if (check > 0xffff)
-    check = (check & 0xffff) + (check >> 16);
-  in_ih->check = check;
-
-  // update tcp checksum
-  check = in_th->check;
-  check = ~check;
-  check -= olddest & 0xffff;
-  check -= olddest >> 16;
-  check -= olddestport;
-  check += in_ih->daddr & 0xffff;
-  check += in_ih->daddr >> 16;
-  check += in_th->dest;
-  check = ~check;
-  if (check > 0xffff)
-    check = (check & 0xffff) + (check >> 16);
-  in_th->check = check;
+  // update checksum
+  in_ih->check = checksum_recalc_addr(olddest, in_ih->daddr, in_ih->check);
+  in_th->check = checksum_recalc_addrport(olddest, in_ih->daddr,
+    olddestport, in_th->dest, in_th->check);
 
   // mac addr swap
   __u8 tmpmac[6] = {0};
@@ -214,10 +171,20 @@ process_nat_ret(struct xdp_md *ctx)
     return ignore_packet(ctx);
   }
 
+  // Resolve next hypervisor
+  struct trie4_key key4 = {0};
+  key4.addr = in_ih->daddr;
+  key4.prefixlen = 32;
+  struct trie4_val *val4 = bpf_map_lookup_elem(&GLUE(NAME, fib4), &key4);
+  if (!val4) {
+    bpf_printk(STR(NAME)"fib4 lookup failed");
+    return ignore_packet(ctx);
+  }
+
   // Craft new ipv6 header
   memcpy(&oh->ip6.saddr, tunsrc, sizeof(struct in6_addr));
-  memcpy(&oh->ip6.daddr, srv6_vm_remote_sid, sizeof(struct in6_addr));
-  memcpy(&oh->seg, srv6_vm_remote_sid, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.daddr, &val4->segs[0], sizeof(struct in6_addr));
+  memcpy(&oh->seg, &val4->segs[0], sizeof(struct in6_addr));
 
   return XDP_TX;
 }
@@ -257,7 +224,15 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
     hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
     hash = jhash_2words(in_th->dest, in_th->source, hash);
     hash = jhash_2words(in_ih->protocol, 0, hash);
-    sourceport = hash & 0xffff;
+    hash = hash & 0xffff;
+    hash = hash & val->nat_port_hash_bit;
+
+    // TODO(slankdev): we should search un-used slot instead of rand-val.
+    __u32 rand = bpf_get_prandom_u32();
+    rand = rand & 0xffff;
+    rand = rand & ~val->nat_port_hash_bit;
+
+    sourceport = hash | rand;
 
     struct addr_port_stats natval = {
       .addr = val->vip,
@@ -291,32 +266,10 @@ process_nat_out(struct xdp_md *ctx, struct trie_val *val)
   // Special thanks: kametan0730/curo
   // https://github.com/kametan0730/curo/blob/master/nat.cpp
 
-  // update ip checksum
-  __u32 check;
-  check = in_ih->check;
-  check = ~check;
-  check -= oldsource & 0xffff;
-  check -= oldsource >> 16;
-  check += in_ih->saddr & 0xffff;
-  check += in_ih->saddr >> 16;
-  check = ~check;
-  if (check > 0xffff)
-    check = (check & 0xffff) + (check >> 16);
-  in_ih->check = check;
-
-  // update tcp checksum
-  check = in_th->check;
-  check = ~check;
-  check -= oldsource & 0xffff;
-  check -= oldsource >> 16;
-  check -= oldsourceport;
-  check += in_ih->saddr & 0xffff;
-  check += in_ih->saddr >> 16;
-  check += in_th->source;
-  check = ~check;
-  if (check > 0xffff)
-    check = (check & 0xffff) + (check >> 16);
-  in_th->check = check;
+  // update checksum
+  in_ih->check = checksum_recalc_addr(oldsource, in_ih->saddr, in_ih->check);
+  in_th->check = checksum_recalc_addrport(oldsource, in_ih->saddr,
+    oldsourceport, in_th->source, in_th->check);
 
   // mac addr swap
   struct ethhdr *old_eh = (struct ethhdr *)data;

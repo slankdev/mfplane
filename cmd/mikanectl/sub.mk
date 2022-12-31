@@ -24,10 +24,10 @@ clb-attach-l1: mikanectl-build
 	docker cp ./bin/mikanectl L1:/usr/bin/mikanectl
 	docker exec L1 mikanectl bpf clb attach -i net0 -f -d -n l1
 clb-attach-l2: mikanectl-build
-	docker cp ./bin/mikanectl N2:/usr/bin/mikanectl
+	docker cp ./bin/mikanectl L2:/usr/bin/mikanectl
 	docker exec L2 mikanectl bpf clb attach -i net0 -f -d -n l2
 clb-attach-l3: mikanectl-build
-	docker cp ./bin/mikanectl N3:/usr/bin/mikanectl
+	docker cp ./bin/mikanectl L3:/usr/bin/mikanectl
 	docker exec L3 mikanectl bpf clb attach -i net0 -f -d -n l3
 clb-attach-all: clb-attach-l1 clb-attach-l2 clb-attach-l3
 clb-detach-all:

@@ -27,38 +27,12 @@
 #endif
 #define MAX_INTERFACES 512
 
-struct flow_key {
-	__u32 src4;
-	__u32 src6;
-	__u8 proto;
-	__u16 sport;
-	__u16 dport;
-} __attribute__ ((packed));
-
-struct flow_processor {
-  struct in6_addr addr;
-  // TODO(slankdev): support loadbalancing stats
-  // __u64 pkts;
-  // __u64 bytes;
-} __attribute__ ((packed));
-
 struct {
   __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
   __type(key, __u32);
   __type(value, struct flow_processor);
   __uint(max_entries, RING_SIZE * MAX_RULES);
 } GLUE(NAME, procs) SEC(".maps");
-
-struct trie_key {
-  __u32 prefixlen;
-  __u8 addr[16];
-};
-
-struct trie_val {
-  __u16 action;
-  __u16 backend_block_index;
-  __u32 vip;
-};
 
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
@@ -67,15 +41,6 @@ struct {
   __uint(max_entries, 50);
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib6) SEC(".maps");
-
-struct vip_key {
-  __u32 vip;
-};
-
-struct vip_val {
-  __u16 backend_block_index;
-  __u16 dynamic_bit_length; // defaulting as 16
-};
 
 struct {
   __uint(type, BPF_MAP_TYPE_PERCPU_HASH);
@@ -116,6 +81,7 @@ process_nat_return(struct xdp_md *ctx)
   }
 
   __u16 hash = th->dest;
+  hash = hash & vv->nat_port_hash_bit;
   __u32 idx = hash % RING_SIZE;
   idx = RING_SIZE * vv->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
@@ -127,10 +93,10 @@ process_nat_return(struct xdp_md *ctx)
 #ifdef DEBUG
   char tmp[128] = {0};
   BPF_SNPRINTF(tmp, sizeof(tmp),
-               "dn-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u",
+               "dn-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u hb=0x%x",
                &ih->saddr, bpf_ntohs(th->source),
                &ih->daddr, bpf_ntohs(th->dest),
-               ih->protocol, hash, hash, idx);
+               ih->protocol, hash, hash, idx, vv->nat_port_hash_bit);
   bpf_printk(STR(NAME)"%s", tmp);
 #endif
 
@@ -319,6 +285,7 @@ process_ipv6(struct xdp_md *ctx)
   hash = jhash_2words(in_th->dest, in_th->source, hash);
   hash = jhash_2words(in_ih->protocol, 0, hash);
   hash = hash & 0xffff;
+  hash = hash & val->nat_port_hash_bit;
 
   __u32 idx = hash % RING_SIZE;
   idx = RING_SIZE * val->backend_block_index + idx;
@@ -331,10 +298,10 @@ process_ipv6(struct xdp_md *ctx)
 #ifdef DEBUG
   char tmpstr[128] = {0};
   BPF_SNPRINTF(tmpstr, sizeof(tmpstr),
-               "up-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u",
+               "up-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u hb=0x%x",
                &in_ih->saddr, bpf_ntohs(in_th->source),
                &in_ih->daddr, bpf_ntohs(in_th->dest),
-               in_ih->protocol, hash, hash, idx);
+               in_ih->protocol, hash, hash, idx, val->nat_port_hash_bit);
   bpf_printk(STR(NAME)"%s", tmpstr);
 #endif
 

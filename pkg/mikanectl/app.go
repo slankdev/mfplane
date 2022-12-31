@@ -260,6 +260,7 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 			val := ebpf.TrieVal{
 				Action:            123, // TODO(slankdev)
 				BackendBlockIndex: uint16(backendBlockIndex),
+				NatPortBashBit:    localSid.End_MFL.NatPortHashBit,
 			}
 			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
 				return err
@@ -278,6 +279,7 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 			copy(key.Vip[:], vipdata[12:])
 			val := ebpf.VipVal{
 				BackendBlockIndex: uint16(backendBlockIndex),
+				NatPortHashBit:    localSid.End_MFL.NatPortHashBit,
 			}
 			if err := ebpf.UpdatePerCPUArrayAll(m, key, val,
 				ciliumebpf.UpdateAny); err != nil {
@@ -307,8 +309,9 @@ func localSid_End_MFN_NAT(backendBlockIndex int, localSid ConfigLocalSid, config
 			copy(key.Addr[:], ipnet.IP)
 			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
 			val := ebpf.TrieVal{
-				Action: 456, // TODO(slankdev)
-				Vip:    ipaddrb,
+				Action:         456, // TODO(slankdev)
+				Vip:            ipaddrb,
+				NatPortBashBit: localSid.End_MFN_NAT.NatPortHashBit,
 			}
 			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
 				return err
@@ -356,11 +359,48 @@ func NewCommandMapLoad() *cobra.Command {
 				return err
 			}
 
+			// set Local SIDs
 			for backendBlockIndex, localSid := range config.LocalSids {
 				if err := ensureLocalSid(backendBlockIndex, localSid,
 					config); err != nil {
 					return err
 				}
+			}
+
+			// set FIB4
+			if err := ebpf.BatchMapOperation(config.NamePrefix+"_fib4",
+				ciliumebpf.LPMTrie,
+				func(m *ciliumebpf.Map) error {
+					for _, fib4 := range config.Fib4 {
+						_, ipnet, err := net.ParseCIDR(fib4.Prefix)
+						if err != nil {
+							return err
+						}
+
+						if len(fib4.Action.EncapSeg6.Segs) > 6 {
+							return fmt.Errorf("segment list too long")
+						}
+						segs := [6][16]uint8{}
+						for idx, seg := range fib4.Action.EncapSeg6.Segs {
+							netip := net.ParseIP(seg)
+							netipb := [16]uint8{}
+							copy(netipb[:], netip)
+							segs[idx] = netipb
+						}
+
+						// Fill key and val
+						key := ebpf.Trie4Key{}
+						key.Prefixlen = uint32(util.Plen(ipnet.Mask))
+						copy(key.Addr[:], ipnet.IP)
+						val := ebpf.Trie4Val{}
+						val.Segs = segs
+						if err := m.Update(&key, &val, ciliumebpf.UpdateAny); err != nil {
+							return err
+						}
+					}
+					return nil
+				}); err != nil {
+				return err
 			}
 
 			// Set tunsrc

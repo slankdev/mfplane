@@ -10,3 +10,6 @@ flush:
 	docker exec N1 conntrack -F
 	docker exec N2 conntrack -F
 	docker exec N3 conntrack -F
+
+r: clb-attach-l1 nat-attach-n1
+	./setup_dev.sh
