@@ -168,6 +168,14 @@ func CopyFromTo(dst, src *net.IP, octFrom, octTo int) {
 }
 
 func compute(end_MFL ConfigLocalSid_End_MFL, nBackends int) ([]net.IP, error) {
+	// Unsupport case
+	if end_MFL.USidBlockLength%8 != 0 {
+		return nil, fmt.Errorf("not supported (uSidBlockLength %% 8 != 0)")
+	}
+	if end_MFL.USidFunctionLength%8 != 0 {
+		return nil, fmt.Errorf("not supported (uSidFunctionLength %% 8 != 0)")
+	}
+
 	slots := make([]net.IP, nBackends)
 	for idx := range slots {
 		slots[idx] = net.ParseIP(end_MFL.USidBlock)
@@ -176,6 +184,8 @@ func compute(end_MFL ConfigLocalSid_End_MFL, nBackends int) ([]net.IP, error) {
 	// Fill uSID Function Blocks
 	for revIdx := range end_MFL.USidFunctionRevisions {
 		backends := end_MFL.USidFunctionRevisions[revIdx].Backends
+		uSidBlockOctedOffset := end_MFL.USidBlockLength / 8
+		uSidBlockOctedSize := end_MFL.USidFunctionLength / 8
 		mh, err := maglev.NewMaglev(backends,
 			uint64(nBackends))
 		if err != nil {
@@ -187,26 +197,18 @@ func compute(end_MFL ConfigLocalSid_End_MFL, nBackends int) ([]net.IP, error) {
 			u8 := [16]uint8{}
 			copy(u8[:], backendip)
 
-			// TODO(slankdev):
-			// uSidBlockLength expects 16
-			u8 = BitShiftRight8(u8)
-			u8 = BitShiftRight8(u8)
-
-			for i := 0; i < revIdx; i++ {
-				// TODO(slankdev):
-				// uSidFunctionLength expects 32
-				u8 = BitShiftRight8(u8)
-				u8 = BitShiftRight8(u8)
-				u8 = BitShiftRight8(u8)
+			// bit shift
+			for j := 0; j < uSidBlockOctedOffset; j++ {
 				u8 = BitShiftRight8(u8)
 			}
-			copy(backendip, u8[:])
+			for i := 0; i < revIdx; i++ {
+				for j := 0; j < uSidBlockOctedSize; j++ {
+					u8 = BitShiftRight8(u8)
+				}
+			}
 
-			// TODO(slankdev):
-			// uSidBlockLength expects 16
-			// uSidFunctionLength expects 32
-			uSidBlockOctedOffset := 2
-			uSidBlockOctedSize := 4
+			// Accumurate resulting bit fields
+			copy(backendip, u8[:])
 			CopyFromTo(&slots[idx], &backendip,
 				uSidBlockOctedOffset+uSidBlockOctedSize*revIdx,
 				uSidBlockOctedOffset+uSidBlockOctedSize-1+uSidBlockOctedSize*revIdx,
