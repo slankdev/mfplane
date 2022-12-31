@@ -16,45 +16,8 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-struct trie_key {
-  __u32 prefixlen;
-  __u8 addr[16];
-};
-
-struct trie_val {
-  __u16 action;
-  __u16 backend_block_index;
-  __u32 vip;
-  __u16 nat_port_hash_bit;
-} __attribute__ ((packed));
-
-struct {
-  __uint(type, BPF_MAP_TYPE_LPM_TRIE);
-  __uint(key_size, sizeof(struct trie_key));
-  __uint(value_size, sizeof(struct trie_val));
-  __uint(max_entries, 50);
-  __uint(map_flags, BPF_F_NO_PREALLOC);
-} GLUE(NAME, fib6) SEC(".maps");
-
 #define TCP_CSUM_OFF (ETH_HLEN + sizeof(struct outer_header) + \
   sizeof(struct iphdr) + offsetof(struct tcphdr, check))
-
-struct {
-  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-  __type(key, __u32);
-  __type(value, struct in6_addr);
-  __uint(max_entries, 1);
-} GLUE(NAME, encap_source) SEC(".maps");
-
-struct trie4_key {
-  __u32 prefixlen;
-  __u32 addr;
-}  __attribute__ ((packed));
-
-struct trie4_val {
-  __u16 action;
-  struct in6_addr segs[6];
-}  __attribute__ ((packed));
 
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
@@ -63,6 +26,35 @@ struct {
   __uint(max_entries, 50);
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib4) SEC(".maps");
+
+struct {
+  __uint(type, BPF_MAP_TYPE_LRU_HASH);
+  __uint(max_entries, 65535);
+  __type(key, struct addr_port);
+  __type(value, struct addr_port_stats);
+} GLUE(NAME, nat_out_table) SEC(".maps");
+
+struct {
+  __uint(type, BPF_MAP_TYPE_LRU_HASH);
+  __uint(max_entries, 65535);
+  __type(key, struct addr_port);
+  __type(value, struct addr_port_stats);
+} GLUE(NAME, nat_ret_table) SEC(".maps");
+
+struct {
+  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+  __type(key, __u32);
+  __type(value, struct in6_addr);
+  __uint(max_entries, 1);
+} GLUE(NAME, encap_source) SEC(".maps");
+
+struct {
+  __uint(type, BPF_MAP_TYPE_LPM_TRIE);
+  __uint(key_size, sizeof(struct trie_key));
+  __uint(value_size, sizeof(struct trie_val));
+  __uint(max_entries, 50);
+  __uint(map_flags, BPF_F_NO_PREALLOC);
+} GLUE(NAME, fib6) SEC(".maps");
 
 static inline void shift8(__u8 *addr)
 {

@@ -27,39 +27,12 @@
 #endif
 #define MAX_INTERFACES 512
 
-struct flow_key {
-	__u32 src4;
-	__u32 src6;
-	__u8 proto;
-	__u16 sport;
-	__u16 dport;
-} __attribute__ ((packed));
-
-struct flow_processor {
-  struct in6_addr addr;
-  // TODO(slankdev): support loadbalancing stats
-  // __u64 pkts;
-  // __u64 bytes;
-} __attribute__ ((packed));
-
 struct {
   __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
   __type(key, __u32);
   __type(value, struct flow_processor);
   __uint(max_entries, RING_SIZE * MAX_RULES);
 } GLUE(NAME, procs) SEC(".maps");
-
-struct trie_key {
-  __u32 prefixlen;
-  __u8 addr[16];
-};
-
-struct trie_val {
-  __u16 action;
-  __u16 backend_block_index;
-  __u32 vip;
-  __u16 nat_port_hash_bit;
-} __attribute__ ((packed));
 
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
@@ -68,15 +41,6 @@ struct {
   __uint(max_entries, 50);
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib6) SEC(".maps");
-
-struct vip_key {
-  __u32 vip;
-};
-
-struct vip_val {
-  __u16 backend_block_index;
-  __u16 nat_port_hash_bit;
-};
 
 struct {
   __uint(type, BPF_MAP_TYPE_PERCPU_HASH);

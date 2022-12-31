@@ -22,18 +22,50 @@ struct addr_port_stats {
   __u64 pkts;
 }  __attribute__ ((packed));
 
-struct {
-  __uint(type, BPF_MAP_TYPE_LRU_HASH);
-  __uint(max_entries, 65535);
-  __type(key, struct addr_port);
-  __type(value, struct addr_port_stats);
-} GLUE(NAME, nat_out_table) SEC(".maps");
+struct trie4_key {
+  __u32 prefixlen;
+  __u32 addr;
+}  __attribute__ ((packed));
 
-struct {
-  __uint(type, BPF_MAP_TYPE_LRU_HASH);
-  __uint(max_entries, 65535);
-  __type(key, struct addr_port);
-  __type(value, struct addr_port_stats);
-} GLUE(NAME, nat_ret_table) SEC(".maps");
+struct trie4_val {
+  __u16 action;
+  struct in6_addr segs[6];
+}  __attribute__ ((packed));
+
+struct trie_key {
+  __u32 prefixlen;
+  __u8 addr[16];
+};
+
+struct trie_val {
+  __u16 action;
+  __u16 backend_block_index;
+  __u32 vip;
+  __u16 nat_port_hash_bit;
+} __attribute__ ((packed));
+
+struct vip_key {
+  __u32 vip;
+} __attribute__ ((packed));
+
+struct vip_val {
+  __u16 backend_block_index;
+  __u16 nat_port_hash_bit;
+} __attribute__ ((packed));
+
+struct flow_key {
+	__u32 src4;
+	__u32 src6;
+	__u8 proto;
+	__u16 sport;
+	__u16 dport;
+} __attribute__ ((packed));
+
+struct flow_processor {
+  struct in6_addr addr;
+  // TODO(slankdev): support loadbalancing stats
+  // __u64 pkts;
+  // __u64 bytes;
+} __attribute__ ((packed));
 
 #endif /* _EBPFMAP_H_ */
