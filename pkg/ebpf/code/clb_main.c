@@ -35,8 +35,8 @@ struct {
 
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
-  __uint(key_size, sizeof(struct trie_key));
-  __uint(value_size, sizeof(struct trie_val));
+  __uint(key_size, sizeof(struct trie6_key));
+  __uint(value_size, sizeof(struct trie6_val));
   __uint(max_entries, 50);
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib6) SEC(".maps");
@@ -259,14 +259,15 @@ process_ipv6(struct xdp_md *ctx)
   assert_len(oh, data_end);
 
   // Lookup SRv6 SID
-  struct trie_key key = {0};
+  struct trie6_key key = {0};
   key.prefixlen = 128;
   memcpy(&key.addr, &oh->ip6.daddr, sizeof(struct in6_addr));
-  struct trie_val *val;
-  val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
+  struct trie6_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
   if (!val) {
     return ignore_packet(ctx);
   }
+  val->stats_total_bytes += data_end - data;
+  val->stats_total_pkts++;
 
   if (oh->ip6.nexthdr != IPPROTO_ROUTING ||
       oh->srh.type != 4 || oh->srh.hdrlen != 2) {

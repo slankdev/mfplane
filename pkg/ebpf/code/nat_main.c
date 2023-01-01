@@ -47,8 +47,8 @@ struct {
 
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
-  __uint(key_size, sizeof(struct trie_key));
-  __uint(value_size, sizeof(struct trie_val));
+  __uint(key_size, sizeof(struct trie6_key));
+  __uint(value_size, sizeof(struct trie6_val));
   __uint(max_entries, 50);
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib6) SEC(".maps");
@@ -76,7 +76,7 @@ static inline int finished(struct in6_addr *addr, int oct_offset, int n_shifts)
 }
 
 static inline int
-process_mf_redirect(struct xdp_md *ctx, struct trie_val *val)
+process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val)
 {
   bpf_printk(STR(NAME)"try mf_redirect");
 
@@ -112,11 +112,13 @@ process_mf_redirect(struct xdp_md *ctx, struct trie_val *val)
   memcpy(eh->h_dest, eh->h_source, 6);
   memcpy(eh->h_source, tmpmac, 6);
 
+  val->stats_redir_bytes += data_end - data;
+  val->stats_redir_pkts++;
   return XDP_TX;
 }
 
 static inline int
-process_nat_ret(struct xdp_md *ctx, struct trie_val *val)
+process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
@@ -200,7 +202,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie_val *val)
 }
 
 static inline int
-process_nat_out(struct xdp_md *ctx, struct trie_val *val)
+process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
@@ -315,13 +317,15 @@ process_ipv6(struct xdp_md *ctx)
   }
 
   // Lookup SRv6 SID
-  struct trie_key key = {0};
+  struct trie6_key key = {0};
   key.prefixlen = 128;
   memcpy(&key.addr, &oh->ip6.daddr, sizeof(struct in6_addr));
-  struct trie_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
+  struct trie6_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
   if (!val) {
     return ignore_packet(ctx);
   }
+  val->stats_total_bytes += data_end - data;
+  val->stats_total_pkts++;
 
   // Parse Inner Headers
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);

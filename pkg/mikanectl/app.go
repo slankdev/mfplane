@@ -81,8 +81,8 @@ func NewCommandMapDump() *cobra.Command {
 			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_fib6",
 				ciliumebpf.LPMTrie,
 				func(m *ciliumebpf.Map) error {
-					key := ebpf.TrieKey{}
-					val := ebpf.TrieVal{}
+					key := ebpf.Trie6Key{}
+					val := ebpf.Trie6Val{}
 					entries := m.Iterate()
 					for entries.Next(&key, &val) {
 						ip := net.IP(key.Addr[:])
@@ -234,10 +234,10 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 			for idx := range slots {
 				fmt.Printf("%03d  %s\n", idx, FullIPv6(slots[idx]))
 				key := uint32(config.MaxBackends*backendBlockIndex + idx)
-				ipaddrb := [16]uint8{}
-				copy(ipaddrb[:], slots[idx])
+				val := ebpf.FlowProcessor{}
+				copy(val.Addr[:], slots[idx])
 
-				if err := ebpf.UpdatePerCPUArrayAll(m, &key, ipaddrb,
+				if err := ebpf.UpdatePerCPUArrayAll(m, &key, &val,
 					ciliumebpf.UpdateAny); err != nil {
 					return err
 				}
@@ -256,10 +256,10 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 	if err := ebpf.BatchMapOperation(config.NamePrefix+"_fib6",
 		ciliumebpf.LPMTrie,
 		func(m *ciliumebpf.Map) error {
-			key := ebpf.TrieKey{}
+			key := ebpf.Trie6Key{}
 			copy(key.Addr[:], ipnet.IP)
 			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
-			val := ebpf.TrieVal{
+			val := ebpf.Trie6Val{
 				Action:             123, // TODO(slankdev)
 				BackendBlockIndex:  uint16(backendBlockIndex),
 				NatPortBashBit:     localSid.End_MFL.NatPortHashBit,
@@ -309,10 +309,10 @@ func localSid_End_MFN_NAT(backendBlockIndex int, localSid ConfigLocalSid, config
 	if err := ebpf.BatchMapOperation(config.NamePrefix+"_fib6",
 		ciliumebpf.LPMTrie,
 		func(m *ciliumebpf.Map) error {
-			key := ebpf.TrieKey{}
+			key := ebpf.Trie6Key{}
 			copy(key.Addr[:], ipnet.IP)
 			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
-			val := ebpf.TrieVal{
+			val := ebpf.Trie6Val{
 				Action:             456, // TODO(slankdev)
 				Vip:                ipaddrb,
 				NatPortBashBit:     localSid.End_MFN_NAT.NatPortHashBit,

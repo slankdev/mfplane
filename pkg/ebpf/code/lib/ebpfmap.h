@@ -32,18 +32,22 @@ struct trie4_val {
   struct in6_addr segs[6];
 }  __attribute__ ((packed));
 
-struct trie_key {
+struct trie6_key {
   __u32 prefixlen;
   __u8 addr[16];
 }  __attribute__ ((packed));
 
-struct trie_val {
+struct trie6_val {
   __u16 action;
   __u16 backend_block_index;
   __u32 vip;
   __u16 nat_port_hash_bit;
   __u16 usid_block_length;
   __u16 usid_function_length;
+  __u64 stats_total_bytes;
+  __u64 stats_total_pkts;
+  __u64 stats_redir_bytes;
+  __u64 stats_redir_pkts;
 } __attribute__ ((packed));
 
 struct vip_key {
@@ -55,19 +59,10 @@ struct vip_val {
   __u16 nat_port_hash_bit;
 } __attribute__ ((packed));
 
-struct flow_key {
-	__u32 src4;
-	__u32 src6;
-	__u8 proto;
-	__u16 sport;
-	__u16 dport;
-} __attribute__ ((packed));
-
 struct flow_processor {
   struct in6_addr addr;
-  // TODO(slankdev): support loadbalancing stats
-  // __u64 pkts;
-  // __u64 bytes;
+  __u64 stats_total_bytes;
+  __u64 stats_total_pkts;
 } __attribute__ ((packed));
 
 #endif /* _EBPFMAP_H_ */
