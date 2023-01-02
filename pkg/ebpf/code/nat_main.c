@@ -166,7 +166,6 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
 
   // update checksum
   in_ih->check = checksum_recalc_addr(olddest, in_ih->daddr, in_ih->check);
-
   if (in_ih->protocol == IPPROTO_TCP) {
     struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
     assert_len(in_th, data_end);
