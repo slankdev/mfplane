@@ -450,8 +450,8 @@ func NewCommandMapDumpNat() *cobra.Command {
 						keyAddr := net.IP(key.Addr[:])
 						valAddr := net.IP(val.Addr[:])
 						fmt.Printf("%s:%d -> %s:%d %d\n",
-							keyAddr, key.Port,
-							valAddr, val.Port, val.Pkts)
+							keyAddr, util.BS16(key.Port),
+							valAddr, util.BS16(val.Port), val.Pkts)
 					}
 					return nil
 				}); err != nil {

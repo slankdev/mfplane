@@ -40,15 +40,30 @@ struct trie6_key {
 struct trie6_val {
   __u16 action;
   __u16 backend_block_index;
-  __u32 vip;
-  __u16 nat_port_hash_bit;
   __u16 usid_block_length;
   __u16 usid_function_length;
   __u64 stats_total_bytes;
   __u64 stats_total_pkts;
   __u64 stats_redir_bytes;
   __u64 stats_redir_pkts;
+
+  __u32 vip;
+  __u16 nat_port_hash_bit;
+  __u8 nat_mapping;
+  __u8 nat_filterring;
 } __attribute__ ((packed));
+
+enum nat_mapping_t {
+  NAT_MAPPING_EI = 0,
+  NAT_MAPPING_AD = 1,
+  NAT_MAPPING_APD = 2,
+};
+
+enum nat_filtering_t {
+  NAT_FILTERING_EI = 0,
+  NAT_FILTERING_AD = 1,
+  NAT_FILTERING_APD = 2,
+};
 
 struct vip_key {
   __u32 vip;

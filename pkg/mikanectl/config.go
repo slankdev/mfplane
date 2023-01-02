@@ -17,13 +17,28 @@ limitations under the License.
 package mikanectl
 
 type ConfigLocalSid_End_MFL struct {
-	Vip                   string             `yaml:"vip"`
-	NatPortHashBit        uint16             `yaml:"natPortHashBit"`
 	USidBlock             string             `yaml:"uSidBlock"`
 	USidBlockLength       int                `yaml:"uSidBlockLength"`
 	USidFunctionLength    int                `yaml:"uSidFunctionLength"`
 	USidFunctionRevisions []FunctionRevision `yaml:"uSidFunctionRevisions"`
+
+	Vip            string       `yaml:"vip"`
+	NatPortHashBit uint16       `yaml:"natPortHashBit"`
+	NatMapping     NatMapping   `yaml:"natMapping"`
+	NatFiltering   NatFiltering `yaml:"natFiltering"`
 }
+
+type NatMapping string
+
+const (
+	EndpointIndependentMapping NatMapping = "endpointIndependentMapping"
+)
+
+type NatFiltering string
+
+const (
+	EndpointIndependentFiltering NatFiltering = "endpointIndependentFiltering"
+)
 
 type FunctionRevision struct {
 	Backends []string `yaml:"backends"`

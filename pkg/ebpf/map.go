@@ -44,16 +44,19 @@ type Trie6Key struct {
 }
 
 type Trie6Val struct {
-	Action             uint16   `json:"action"`
-	BackendBlockIndex  uint16   `json:"backend_block_index"`
-	Vip                [4]uint8 `json:"vip"`
-	NatPortBashBit     uint16   `json:"nat_port_hash_bit"`
-	UsidBlockLength    uint16   `json:"usid_block_length"`
-	UsidFunctionLength uint16   `json:"usid_function_length"`
-	StatsTotalBytes    uint64   `json:"stats_total_bytes"`
-	StatsTotalPkts     uint64   `json:"stats_total_pkts"`
-	StatsRedirBytes    uint64   `json:"stats_redir_bytes"`
-	StatsRedirPkts     uint64   `json:"stats_redir_pkts"`
+	Action             uint16 `json:"action"`
+	BackendBlockIndex  uint16 `json:"backend_block_index"`
+	UsidBlockLength    uint16 `json:"usid_block_length"`
+	UsidFunctionLength uint16 `json:"usid_function_length"`
+	StatsTotalBytes    uint64 `json:"stats_total_bytes"`
+	StatsTotalPkts     uint64 `json:"stats_total_pkts"`
+	StatsRedirBytes    uint64 `json:"stats_redir_bytes"`
+	StatsRedirPkts     uint64 `json:"stats_redir_pkts"`
+
+	Vip            [4]uint8 `json:"vip"`
+	NatPortBashBit uint16   `json:"nat_port_hash_bit"`
+	NatMapping     uint8    `json:"nat_mapping"`
+	NatFiltering   uint8    `json:"nat_filtering"`
 }
 
 type VipKey struct {
