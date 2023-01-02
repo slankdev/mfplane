@@ -131,8 +131,8 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   const __u8 in_ih_len = in_ih->ihl * 4;
-  struct udphdr *in_th = (struct udphdr *)((__u8 *)in_ih + in_ih_len);
-  assert_len(in_th, data_end);
+  struct l4hdr *in_l4h = (struct l4hdr *)((__u8 *)in_ih + in_ih_len);
+  assert_len(in_l4h, data_end);
 
   // XXX(slankdev): If we delete following if block, memcpy doesn't work...
   __u8 *dummy_ptr = (__u8 *)&oh->ip6.daddr;
@@ -141,7 +141,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
   struct addr_port *nval = NULL;
   struct addr_port key = {
     .addr = in_ih->daddr,
-    .port = in_th->dest,
+    .port = in_l4h->dest,
   };
   nval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
   if (!nval) {
@@ -152,17 +152,17 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
     char tmp[128] = {0};
     BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u -> %pi4:%u/%pi4:%u",
                 in_ih->protocol,
-                &in_ih->saddr, bpf_ntohs(in_th->source),
-                &in_ih->daddr, bpf_ntohs(in_th->dest),
+                &in_ih->saddr, bpf_ntohs(in_l4h->source),
+                &in_ih->daddr, bpf_ntohs(in_l4h->dest),
                 &nval->addr, bpf_ntohs(nval->port));
     bpf_printk(STR(NAME)"nat-ret %s", tmp);
 #endif
 
   // reverse nat
   __u32 olddest = in_ih->daddr;
-  __u16 olddestport = in_th->dest;
+  __u16 olddestport = in_l4h->dest;
   in_ih->daddr = nval->addr;
-  in_th->dest = nval->port;
+  in_l4h->dest = nval->port;
 
   // update checksum
   in_ih->check = checksum_recalc_addr(olddest, in_ih->daddr, in_ih->check);
@@ -219,29 +219,25 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   const __u8 in_ih_len = in_ih->ihl * 4;
+  struct l4hdr *in_l4h = (struct l4hdr *)((__u8 *)in_ih + in_ih_len);
+  assert_len(in_l4h, data_end);
 
-  __u8 syn = 0;
-  if (in_ih->protocol == IPPROTO_TCP) {
-    struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
-    assert_len(in_th, data_end);
-    syn = in_th->syn;
-  }
-
-  __u16 sport = 0, dport = 0;
-  switch (in_ih->protocol) {
-  case IPPROTO_TCP:
-  case IPPROTO_UDP:
-  {
-    struct udphdr *in_uh = (struct udphdr *)((__u8 *)in_ih + in_ih_len);
-    assert_len(in_uh, data_end);
-    sport = in_uh->source;
-    dport = in_uh->dest;
-    break;
-  }
-  default:
+  // Unsupport L4 Header
+  if (in_ih->protocol != IPPROTO_TCP &&
+      in_ih->protocol != IPPROTO_UDP) {
     bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
     return ignore_packet(ctx);
   }
+
+  __u8 tcp_syn = 0;
+  if (in_ih->protocol == IPPROTO_TCP) {
+    struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
+    assert_len(in_th, data_end);
+    tcp_syn = in_th->syn;
+  }
+
+  __u16 sport = in_l4h->source;
+  __u16 dport = in_l4h->dest;
 
   struct addr_port key = {0};
   key.addr = in_ih->saddr;
@@ -250,7 +246,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   __u32 sourceport = 0;
   struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
   if (!asval) {
-    if (in_ih->protocol == IPPROTO_TCP && syn == 0)
+    if (in_ih->protocol == IPPROTO_TCP && tcp_syn == 0)
       return process_mf_redirect(ctx, val);
 
     __u32 hash = 0;
@@ -322,9 +318,9 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
     }
   case IPPROTO_UDP:
     {
-      struct udphdr *in_uh = (struct udphdr *)((__u8 *)in_ih + in_ih_len);
-      assert_len(in_uh, data_end);
-      in_uh->source = sourceport;
+      struct l4hdr *in_l4h = (struct l4hdr *)((__u8 *)in_ih + in_ih_len);
+      assert_len(in_l4h, data_end);
+      in_l4h->source = sourceport;
       break;
     }
   }

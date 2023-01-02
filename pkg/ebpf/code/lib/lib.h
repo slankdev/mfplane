@@ -56,8 +56,9 @@ struct outer_header {
 } __attribute__ ((packed));
 
 struct l4hdr {
-  __u16 sport;
-  __u16 dport;
+  __u16 source;
+  __u16 dest;
+  __u16 icmp_id;
 } __attribute__ ((packed));
 
 static inline int

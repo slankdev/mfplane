@@ -73,8 +73,8 @@ process_nat_return(struct xdp_md *ctx)
   case IPPROTO_TCP:
   case IPPROTO_UDP:
   {
-    struct udphdr *uh = NULL;
-    uh = (struct udphdr *)((char *)ih + ih->ihl * 4);
+    struct l4hdr *uh = NULL;
+    uh = (struct l4hdr *)((char *)ih + ih->ihl * 4);
     assert_len(uh, data_end);
     sport = uh->source;
     dport = uh->dest;
@@ -298,7 +298,7 @@ process_ipv6(struct xdp_md *ctx)
   case IPPROTO_TCP:
   case IPPROTO_UDP:
     {
-      struct udphdr *in_uh = (struct udphdr *)((__u8 *)in_ih + in_ih_len);
+      struct l4hdr *in_uh = (struct l4hdr *)((__u8 *)in_ih + in_ih_len);
       assert_len(in_uh, data_end);
       sport = in_uh->source;
       dport = in_uh->dest;
