@@ -69,21 +69,6 @@ process_nat_return(struct xdp_md *ctx)
   struct l4hdr *l4h = (struct l4hdr *)((char *)ih + ih->ihl * 4);
   assert_len(l4h, data_end);
 
-  __u16 sport = 0;
-  __u16 dport = 0;
-  switch (ih->protocol) {
-  case IPPROTO_TCP:
-  case IPPROTO_UDP:
-  {
-    sport = l4h->source;
-    dport = l4h->dest;
-    break;
-  }
-  default:
-    bpf_printk(STR(NAME)"nat unsupport l4 proto %d", ih->protocol);
-    return ignore_packet(ctx);
-  }
-
   struct vip_key vk = {0};
   vk.vip = ih->daddr;
   struct vip_val *vv = bpf_map_lookup_elem(&GLUE(NAME, vip_table), &vk);
@@ -92,8 +77,19 @@ process_nat_return(struct xdp_md *ctx)
     return ignore_packet(ctx);
   }
 
-  __u16 hash = dport;
+  // Calculate Hash
+  __u16 hash = 0;
+  if (ih->protocol == IPPROTO_TCP || ih->protocol == IPPROTO_UDP) {
+    hash = l4h->dest;
+  } else if (ih->protocol == IPPROTO_ICMP) {
+    hash = l4h->icmp_id;
+  } else {
+    bpf_printk(STR(NAME)"nat unsupport l4 proto %d", ih->protocol);
+    return ignore_packet(ctx);
+  }
   hash = hash & vv->nat_port_hash_bit;
+
+  // Resolve Backend node
   __u32 idx = hash % RING_SIZE;
   idx = RING_SIZE * vv->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
@@ -104,11 +100,21 @@ process_nat_return(struct xdp_md *ctx)
 
 #ifdef DEBUG
   char tmp[128] = {0};
+  char transport_debug_msg[128] = {0};
+  if (ih->protocol == IPPROTO_TCP || ih->protocol == IPPROTO_UDP) {
+    BPF_SNPRINTF(transport_debug_msg, sizeof(transport_debug_msg),
+                 "0x%02x %pi4:%u %pi4:%u]", ih->protocol,
+                 &ih->saddr, bpf_ntohs(l4h->source),
+                 &ih->daddr, bpf_ntohs(l4h->dest));
+  } else if (ih->protocol == IPPROTO_ICMP) {
+    BPF_SNPRINTF(transport_debug_msg, sizeof(transport_debug_msg),
+                 "0x%02x %pi4:%u %pi4]", ih->protocol,
+                 &ih->saddr, bpf_ntohs(l4h->icmp_id),
+                 &ih->daddr);
+  }
   BPF_SNPRINTF(tmp, sizeof(tmp),
-               "dn-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u hb=0x%x",
-               &ih->saddr, bpf_ntohs(sport),
-               &ih->daddr, bpf_ntohs(dport),
-               ih->protocol, hash, hash, idx, vv->nat_port_hash_bit);
+               "dn-flow=[%s] hash=0x%08x/%u idx=%u hb=0x%x",
+               transport_debug_msg, hash, hash, idx, vv->nat_port_hash_bit);
   bpf_printk(STR(NAME)"%s", tmp);
 #endif
 
@@ -305,36 +311,23 @@ process_ipv6(struct xdp_md *ctx)
   struct l4hdr *in_l4h = (struct l4hdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_l4h, data_end);
 
-  // Unsupport L4 Header
-  if (in_ih->protocol != IPPROTO_TCP &&
-      in_ih->protocol != IPPROTO_UDP) {
-    bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
-    return ignore_packet(ctx);
-  }
-
+  // Calculate Hash
   __u32 hash = 0;
-  __u16 sport = 0, dport = 0;
-  switch (in_ih->protocol) {
-  case IPPROTO_TCP:
-  case IPPROTO_UDP:
-    {
-      sport = in_l4h->source;
-      dport = in_l4h->dest;
-      hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
-      hash = jhash_2words(dport, sport, hash);
-      hash = jhash_2words(in_ih->protocol, 0, hash);
-      bpf_printk(STR(NAME)"hash 0x%08x", hash);
-      break;
-    }
-  case IPPROTO_ICMP:
-  default:
+  if (in_ih->protocol == IPPROTO_TCP || in_ih->protocol == IPPROTO_UDP) {
+    hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
+    hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
+    hash = jhash_2words(in_ih->protocol, 0, hash);
+  } else if (in_ih->protocol == IPPROTO_ICMP) {
+    hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
+    hash = jhash_2words(in_ih->protocol, in_l4h->icmp_id, hash);
+  } else {
     bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
     return ignore_packet(ctx);
   }
   hash = hash & 0xffff;
   hash = hash & val->nat_port_hash_bit;
-  bpf_printk(STR(NAME)"hash 0x%08x (short)", hash);
 
+  // Resolve Backend node
   __u32 idx = hash % RING_SIZE;
   idx = RING_SIZE * val->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
@@ -345,11 +338,21 @@ process_ipv6(struct xdp_md *ctx)
 
 #ifdef DEBUG
   char tmpstr[128] = {0};
+  char transport_debug_msg[128] = {0};
+  if (in_ih->protocol == IPPROTO_TCP || in_ih->protocol == IPPROTO_UDP) {
+    BPF_SNPRINTF(transport_debug_msg, sizeof(transport_debug_msg),
+                 "0x%02x %pi4:%u %pi4:%u]", in_ih->protocol,
+                 &in_ih->saddr, bpf_ntohs(in_l4h->source),
+                 &in_ih->daddr, bpf_ntohs(in_l4h->dest));
+  } else if (in_ih->protocol == IPPROTO_ICMP) {
+    BPF_SNPRINTF(transport_debug_msg, sizeof(transport_debug_msg),
+                 "0x%02x %pi4:%u %pi4]", in_ih->protocol,
+                 &in_ih->saddr, bpf_ntohs(in_l4h->icmp_id),
+                 &in_ih->daddr);
+  }
   BPF_SNPRINTF(tmpstr, sizeof(tmpstr),
-               "up-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u hb=0x%x",
-               &in_ih->saddr, bpf_ntohs(sport),
-               &in_ih->daddr, bpf_ntohs(dport),
-               in_ih->protocol, hash, hash, idx, val->nat_port_hash_bit);
+               "up-flow=[%s] hash=0x%08x/%u idx=%u hb=0x%x",
+               transport_debug_msg, hash, hash, idx, val->nat_port_hash_bit);
   bpf_printk(STR(NAME)"%s", tmpstr);
 #endif
 
