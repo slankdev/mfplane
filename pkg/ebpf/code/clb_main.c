@@ -291,6 +291,15 @@ process_ipv6(struct xdp_md *ctx)
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   const __u8 in_ih_len = in_ih->ihl * 4;
+  struct l4hdr *in_l4h = (struct l4hdr *)((__u8 *)in_ih + in_ih_len);
+  assert_len(in_l4h, data_end);
+
+  // Unsupport L4 Header
+  if (in_ih->protocol != IPPROTO_TCP &&
+      in_ih->protocol != IPPROTO_UDP) {
+    bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
+    return ignore_packet(ctx);
+  }
 
   __u32 hash = 0;
   __u16 sport = 0, dport = 0;
@@ -298,10 +307,8 @@ process_ipv6(struct xdp_md *ctx)
   case IPPROTO_TCP:
   case IPPROTO_UDP:
     {
-      struct l4hdr *in_uh = (struct l4hdr *)((__u8 *)in_ih + in_ih_len);
-      assert_len(in_uh, data_end);
-      sport = in_uh->source;
-      dport = in_uh->dest;
+      sport = in_l4h->source;
+      dport = in_l4h->dest;
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(dport, sport, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
