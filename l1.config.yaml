@@ -15,8 +15,8 @@ localSids:
     uSidFunctionRevisions:
     # - backends:
     #   - 3301::0
-    # - backends:
-    #   - 3101::0
-    #   - 3201::0
+    - backends:
+      - 3101::0
+      - 3201::0
     - backends:
       - 3101::0
