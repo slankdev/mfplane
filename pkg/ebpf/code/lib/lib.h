@@ -55,6 +55,11 @@ struct outer_header {
   struct in6_addr seg;
 } __attribute__ ((packed));
 
+struct l4hdr {
+  __u16 sport;
+  __u16 dport;
+} __attribute__ ((packed));
+
 static inline int
 ignore_packet(struct xdp_md *ctx)
 {
