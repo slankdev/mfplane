@@ -73,6 +73,8 @@ error_packet(struct xdp_md *ctx)
   return XDP_DROP;
 }
 
+// Special thanks: kametan0730/curo
+// https://github.com/kametan0730/curo/blob/master/nat.cpp
 static inline __u32
 checksum_recalc_addr(__u32 old_addr, __u32 new_addr,
                      __u32 old_checksum)
@@ -89,6 +91,8 @@ checksum_recalc_addr(__u32 old_addr, __u32 new_addr,
   return check;
 }
 
+// Special thanks: kametan0730/curo
+// https://github.com/kametan0730/curo/blob/master/nat.cpp
 static inline __u32
 checksum_recalc_addrport(__u32 old_addr, __u32 new_addr,
                          __u16 old_port, __u16 new_port,

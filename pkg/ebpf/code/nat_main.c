@@ -283,9 +283,6 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   in_ih->saddr = val->vip;
   in_th->source = sourceport;
 
-  // Special thanks: kametan0730/curo
-  // https://github.com/kametan0730/curo/blob/master/nat.cpp
-
   // update checksum
   in_ih->check = checksum_recalc_addr(oldsource, in_ih->saddr, in_ih->check);
   in_th->check = checksum_recalc_addrport(oldsource, in_ih->saddr,
