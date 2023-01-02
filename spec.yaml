@@ -74,6 +74,7 @@ nodes:
   interfaces:
   - { name: hv1, type: direct, args: HV1#net0 }
   - { name: c1 , type: direct, args: C1#net0  }
+  - { name: c2 , type: direct, args: C2#net0  }
   - { name: l1 , type: direct, args: L1#net0  }
   - { name: l2 , type: direct, args: L2#net0  }
   - { name: l3 , type: direct, args: L3#net0  }
@@ -154,6 +155,21 @@ nodes:
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#c1 }
+  sysctls:
+  - sysctl: net.vrf.strict_mode=1
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
+  - sysctl: net.ipv4.conf.all.rp_filter=0
+  - sysctl: net.ipv4.conf.default.rp_filter=0
+  - sysctl: net.ipv4.conf.lo.rp_filter=0
+- name: C2
+  image: tmp
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#c2 }
   sysctls:
   - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
@@ -326,6 +342,7 @@ node_configs:
   cmds:
   - cmd: ip link set hv1 mtu 9000
   - cmd: ip link set c1  mtu 9000
+  - cmd: ip link set c2  mtu 9000
   - cmd: ip link set l1  mtu 9000
   - cmd: ip link set l2  mtu 9000
   - cmd: ip link set l3  mtu 9000
@@ -363,6 +380,7 @@ node_configs:
       -c ' neighbor PEER remote-as external'
       -c ' neighbor hv1 interface peer-group PEER'
       -c ' neighbor c1 interface peer-group PEER'
+      -c ' neighbor c2 interface peer-group PEER'
       -c ' neighbor l1 interface peer-group PEER'
       -c ' neighbor l2 interface peer-group PEER'
       -c ' neighbor l3 interface peer-group PEER'
@@ -391,6 +409,11 @@ node_configs:
   cmds:
   - cmd: sh /usr/bin/bgp_conf_init.sh 20.0.0.1 65101
   - cmd: ip addr add 20.0.0.1/32 dev net0
+  - cmd: nohup mikanectl ifconfig-http -p 80 &
+- name: C2
+  cmds:
+  - cmd: sh /usr/bin/bgp_conf_init.sh 20.0.0.2 65102
+  - cmd: ip addr add 20.0.0.2/32 dev net0
   - cmd: nohup mikanectl ifconfig-http -p 80 &
 
 - name: HV1
