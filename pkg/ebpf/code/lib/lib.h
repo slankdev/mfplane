@@ -31,21 +31,21 @@
 // #error "PLEASE DEFINE \"NAME\""
 // #endif
 
-// #ifdef DEBUG
-// #define assert_len(interest, end)              \
-//   ({                                           \
-//     if ((unsigned long)(interest + 1) > end) { \
-//       bpf_printk(STR(NAME)"assert_len abort"); \
-//       return XDP_ABORTED;                      \
-//     }                                          \
-//   })
-// #else
+#ifdef DEBUG
+#define assert_len(interest, end)              \
+  ({                                           \
+    if ((unsigned long)(interest + 1) > end) { \
+      bpf_printk(STR(NAME)"assert_len abort"); \
+      return XDP_ABORTED;                      \
+    }                                          \
+  })
+#else
 #define assert_len(interest, end)            \
   ({                                         \
     if ((unsigned long)(interest + 1) > end) \
       return XDP_ABORTED;                    \
   })
-// #endif
+#endif
 
 // TODO(slankdev); no support multiple sids in sid-list
 struct outer_header {
