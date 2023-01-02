@@ -174,8 +174,22 @@ process_ipv4_tcp(struct xdp_md *ctx)
   if (vv) {
     return process_nat_return(ctx);
   }
+  return ignore_packet(ctx);
+}
 
 #if 0 // This is End.MFL.R mode
+static inline int
+process_ipv4_tcp(struct xdp_md *ctx)
+{
+  __u64 data = ctx->data;
+  __u64 data_end = ctx->data_end;
+  __u64 pkt_len = data_end - data;
+
+  struct ethhdr *eh = (struct ethhdr *)data;
+  assert_len(eh, data_end);
+  struct iphdr *ih = (struct iphdr *)(eh + 1);
+  assert_len(ih, data_end);
+
   __u32 vip = bpf_ntohl(0x0afe000a); // 10.254.0.10
   if (ih->daddr != vip) {
     return ignore_packet(ctx);
@@ -255,10 +269,8 @@ process_ipv4_tcp(struct xdp_md *ctx)
   ///////////////////////////////////////////////////
 
   return XDP_TX;
-#endif
-
-  return ignore_packet(ctx);
 }
+#endif
 
 static inline int
 process_ipv6(struct xdp_md *ctx)
