@@ -240,9 +240,18 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   __u16 sport = in_l4h->source;
   __u16 dport = in_l4h->dest;
 
+  // Craft NAT Calculation Key
   struct addr_port key = {0};
   key.addr = in_ih->saddr;
-  key.port = sport;
+  switch (in_ih->protocol) {
+  case IPPROTO_TCP:
+  case IPPROTO_UDP:
+    key.port = in_l4h->source;
+    break;
+  case IPPROTO_ICMP:
+    key.port = in_l4h->icmp_id;
+    break;
+  }
 
   __u32 sourceport = 0;
   struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
@@ -261,6 +270,9 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
       bpf_printk(STR(NAME)"hash 0x%08x", hash);
       break;
     case IPPROTO_ICMP:
+      hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
+      hash = jhash_2words(in_ih->protocol, in_l4h->icmp_id, hash);
+      break;
     default:
       bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
       return ignore_packet(ctx);
@@ -307,6 +319,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   __u16 oldsourceport = sport;
   in_ih->saddr = val->vip;
 
+  // Reflect NAT Calculation
   switch (in_ih->protocol) {
   case IPPROTO_TCP:
     {
@@ -322,6 +335,15 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
       struct l4hdr *in_l4h = (struct l4hdr *)((__u8 *)in_ih + in_ih_len);
       assert_len(in_l4h, data_end);
       in_l4h->source = sourceport;
+      break;
+    }
+  case IPPROTO_ICMP:
+    {
+      __u16 old_id = in_l4h->icmp_id;
+      in_l4h->icmp_id = sourceport;
+      struct icmphdr *in_ich = (struct icmphdr *)(in_l4h);
+      in_ich->checksum = checksum_recalc_icmp(old_id, sourceport,
+                                              in_ich->checksum);
       break;
     }
   }
