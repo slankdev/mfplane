@@ -20,3 +20,15 @@ localSids:
     #   - 3201::0
     - backends:
       - 3101::0
+- sid: fc00:ff02::/32 # NAT1
+  End_MFL:
+    vip: 142.0.0.2
+    natPortHashBit: 0x00ff
+    natMapping: endpointIndependentMapping
+    natFiltering: endpointIndependentFiltering
+    uSidBlock: fc00::0
+    uSidBlockLength: 16
+    uSidFunctionLength: 16
+    uSidFunctionRevisions:
+    - backends:
+      - 3202::0

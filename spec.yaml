@@ -435,7 +435,7 @@ node_configs:
 
   - cmd: ip link add vrf2 type vrf table 2
   - cmd: ip link set vrf2 up
-  - cmd: ip link set vm2 vrf vrf2
+  - cmd: ip link set vm3 vrf vrf2
   - cmd: ip addr add 10.0.2.1/24 noprefixroute dev vm3
   - cmd: ip route add 10.0.2.13/32 dev vm2 vrf vrf2
   - cmd: ip -6 route replace fc00:1102::/32 encap seg6local action End.DT4 vrftable 2 dev net0
