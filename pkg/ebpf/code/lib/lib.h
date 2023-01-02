@@ -79,6 +79,14 @@ error_packet(struct xdp_md *ctx)
   return XDP_DROP;
 }
 
+struct icmphdr
+{
+  __u8 type;                /* message type */
+  __u8 code;                /* type sub-code */
+  __u16 checksum;
+  __u16 id;
+};
+
 // Special thanks: kametan0730/curo
 // https://github.com/kametan0730/curo/blob/master/nat.cpp
 static inline __u32
@@ -112,6 +120,22 @@ checksum_recalc_addrport(__u32 old_addr, __u32 new_addr,
   check += new_addr & 0xffff;
   check += new_addr >> 16;
   check += new_port;
+  check = ~check;
+  if (check > 0xffff)
+    check = (check & 0xffff) + (check >> 16);
+  return check;
+}
+
+// Special thanks: kametan0730/curo
+// https://github.com/kametan0730/curo/blob/master/nat.cpp
+static inline __u32
+checksum_recalc_icmp(__u16 old_id, __u16 new_id,
+                     __u32 old_checksum)
+{
+  __u32 check = old_checksum;
+  check = ~check;
+  check -= old_id;
+  check += new_id;
   check = ~check;
   if (check > 0xffff)
     check = (check & 0xffff) + (check >> 16);

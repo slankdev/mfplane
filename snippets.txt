@@ -1,1 +1,1 @@
-de CLOS tcpdump -nni any not icmp6 and not tcp port 179
+de CLOS tcpdump -nni any not icmp6 and not tcp port 179 and not ip6 multicast
