@@ -284,12 +284,14 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
     __u32 hash = 0;
     switch (in_ih->protocol) {
     case IPPROTO_TCP:
-    case IPPROTO_UDP:
-      // TODO(slankdev): Support Endpoint Independent Mapping
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
       bpf_printk(STR(NAME)"hash 0x%08x", hash);
+      break;
+    case IPPROTO_UDP:
+      hash = jhash_2words(in_ih->saddr, in_l4h->source, 0xdeadbeaf);
+      hash = jhash_2words(in_ih->protocol, 0, hash);
       break;
     case IPPROTO_ICMP:
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
