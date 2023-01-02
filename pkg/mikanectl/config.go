@@ -18,14 +18,13 @@ package mikanectl
 
 type ConfigLocalSid_End_MFL struct {
 	USidBlock             string             `yaml:"uSidBlock"`
+	Vip                   string             `yaml:"vip"`
+	NatPortHashBit        uint16             `yaml:"natPortHashBit"`
 	USidBlockLength       int                `yaml:"uSidBlockLength"`
 	USidFunctionLength    int                `yaml:"uSidFunctionLength"`
 	USidFunctionRevisions []FunctionRevision `yaml:"uSidFunctionRevisions"`
-
-	Vip            string       `yaml:"vip"`
-	NatPortHashBit uint16       `yaml:"natPortHashBit"`
-	NatMapping     NatMapping   `yaml:"natMapping"`
-	NatFiltering   NatFiltering `yaml:"natFiltering"`
+	NatMapping            NatMapping         `yaml:"natMapping"`
+	NatFiltering          NatFiltering       `yaml:"natFiltering"`
 }
 
 type NatMapping string
