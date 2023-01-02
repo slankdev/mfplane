@@ -276,18 +276,42 @@ process_ipv6(struct xdp_md *ctx)
 
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
-  __u8 in_ih_len = in_ih->ihl * 4;
-  struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
-  assert_len(in_th, data_end);
+  const __u8 in_ih_len = in_ih->ihl * 4;
 
   __u32 hash = 0;
-  hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
-  hash = jhash_2words(in_th->dest, in_th->source, hash);
-  hash = jhash_2words(in_ih->protocol, 0, hash);
+  __u16 sport = 0, dport = 0;
+  switch (in_ih->protocol) {
+  case IPPROTO_TCP:
+  {
+    struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
+    assert_len(in_th, data_end);
+    sport = in_th->source;
+    dport = in_th->dest;
+    hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
+    hash = jhash_2words(sport, dport, hash);
+    hash = jhash_2words(in_ih->protocol, 0, hash);
+    break;
+  }
+  case IPPROTO_UDP:
+  {
+    struct udphdr *in_uh = (struct udphdr *)((__u8 *)in_ih + in_ih_len);
+    assert_len(in_uh, data_end);
+    sport = in_uh->source;
+    dport = in_uh->dest;
+    hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
+    hash = jhash_2words(sport, dport, hash);
+    hash = jhash_2words(in_ih->protocol, 0, hash);
+    break;
+  }
+  default:
+    bpf_printk("nat unsupport l4 proto %d", in_ih->protocol);
+    return ignore_packet(ctx);
+  }
   hash = hash & 0xffff;
   hash = hash & val->nat_port_hash_bit;
 
-  __u32 idx = hash % RING_SIZE;
+  __u32 idx = 0;
+  idx = hash % RING_SIZE;
   idx = RING_SIZE * val->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
@@ -299,8 +323,8 @@ process_ipv6(struct xdp_md *ctx)
   char tmpstr[128] = {0};
   BPF_SNPRINTF(tmpstr, sizeof(tmpstr),
                "up-flow=[%pi4:%u %pi4:%u %u] hash=0x%08x/%u idx=%u hb=0x%x",
-               &in_ih->saddr, bpf_ntohs(in_th->source),
-               &in_ih->daddr, bpf_ntohs(in_th->dest),
+               &in_ih->saddr, bpf_ntohs(sport),
+               &in_ih->daddr, bpf_ntohs(dport),
                in_ih->protocol, hash, hash, idx, val->nat_port_hash_bit);
   bpf_printk(STR(NAME)"%s", tmpstr);
 #endif
