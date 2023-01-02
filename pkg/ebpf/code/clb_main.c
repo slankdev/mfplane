@@ -303,6 +303,7 @@ process_ipv6(struct xdp_md *ctx)
     hash = jhash_2words(in_ih->protocol, 0, hash);
     break;
   }
+  case IPPROTO_ICMP:
   default:
     bpf_printk("nat unsupport l4 proto %d", in_ih->protocol);
     return ignore_packet(ctx);
