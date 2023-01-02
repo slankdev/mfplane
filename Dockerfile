@@ -5,3 +5,7 @@ RUN apt update && apt install -y --no-install-recommends --no-install-suggests \
 RUN useradd syslog
 RUN sed -i -e "s/bgpd=no/bgpd=yes/g" /etc/frr/daemons
 WORKDIR /root
+
+RUN apt update && apt install -y --no-install-recommends --no-install-suggests \
+  coturn
+#procps less netcat hping3 iptables conntrack
