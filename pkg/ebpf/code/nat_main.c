@@ -217,23 +217,21 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   const __u8 in_ih_len = in_ih->ihl * 4;
 
   __u8 syn = 0;
-  __u16 sport = 0, dport = 0;
-  switch (in_ih->protocol) {
-  case IPPROTO_TCP:
-  {
+  if (in_ih->protocol == IPPROTO_TCP) {
     struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
     assert_len(in_th, data_end);
     syn = in_th->syn;
-    sport = in_th->source;
-    //dport = (__u16)in_th->dest; ???
-    break;
   }
+
+  __u16 sport = 0, dport = 0;
+  switch (in_ih->protocol) {
+  case IPPROTO_TCP:
   case IPPROTO_UDP:
   {
     struct udphdr *in_uh = (struct udphdr *)((__u8 *)in_ih + in_ih_len);
     assert_len(in_uh, data_end);
     sport = in_uh->source;
-    //dport = (__u16)in_uh->dest; ???
+    dport = in_uh->dest;
     break;
   }
   default:
@@ -259,6 +257,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(dport, sport, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
+      bpf_printk(STR(NAME)"hash 0x%08x", hash);
       break;
     case IPPROTO_ICMP:
     default:
@@ -267,6 +266,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
     }
     hash = hash & 0xffff;
     hash = hash & val->nat_port_hash_bit;
+    bpf_printk(STR(NAME)"hash 0x%08x (short)", hash);
 
     // TODO(slankdev): we should search un-used slot instead of rand-val.
     __u32 rand = bpf_get_prandom_u32();
