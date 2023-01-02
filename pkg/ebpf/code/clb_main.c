@@ -66,6 +66,8 @@ process_nat_return(struct xdp_md *ctx)
   assert_len(eh, data_end);
   struct iphdr *ih = (struct iphdr *)(eh + 1);
   assert_len(ih, data_end);
+  struct l4hdr *l4h = (struct l4hdr *)((char *)ih + ih->ihl * 4);
+  assert_len(l4h, data_end);
 
   __u16 sport = 0;
   __u16 dport = 0;
@@ -73,11 +75,8 @@ process_nat_return(struct xdp_md *ctx)
   case IPPROTO_TCP:
   case IPPROTO_UDP:
   {
-    struct l4hdr *uh = NULL;
-    uh = (struct l4hdr *)((char *)ih + ih->ihl * 4);
-    assert_len(uh, data_end);
-    sport = uh->source;
-    dport = uh->dest;
+    sport = l4h->source;
+    dport = l4h->dest;
     break;
   }
   default:
