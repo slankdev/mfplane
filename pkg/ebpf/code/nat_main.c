@@ -224,7 +224,8 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
 
   // Unsupport L4 Header
   if (in_ih->protocol != IPPROTO_TCP &&
-      in_ih->protocol != IPPROTO_UDP) {
+      in_ih->protocol != IPPROTO_UDP &&
+      in_ih->protocol != IPPROTO_ICMP) {
     bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
     return ignore_packet(ctx);
   }
