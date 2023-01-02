@@ -214,7 +214,15 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   assert_len(oh, data_end);
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
-  __u8 in_ih_len = in_ih->ihl * 4;
+  const __u8 in_ih_len = in_ih->ihl * 4;
+
+  switch (in_ih->protocol) {
+  case IPPROTO_TCP:
+    break;
+  default:
+    bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
+    return ignore_packet(ctx);
+  }
   struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
   assert_len(in_th, data_end);
 
@@ -327,14 +335,9 @@ process_ipv6(struct xdp_md *ctx)
   val->stats_total_bytes += data_end - data;
   val->stats_total_pkts++;
 
-  // Parse Inner Headers
+  // NAT check
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
-  __u8 in_ih_len = in_ih->ihl * 4;
-  struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
-  assert_len(in_th, data_end);
-
-  // NAT check
   return in_ih->daddr == val->vip ?
     process_nat_ret(ctx, val) :
     process_nat_out(ctx, val);
