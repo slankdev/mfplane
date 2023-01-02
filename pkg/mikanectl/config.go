@@ -23,7 +23,21 @@ type ConfigLocalSid_End_MFL struct {
 	USidBlockLength       int                `yaml:"uSidBlockLength"`
 	USidFunctionLength    int                `yaml:"uSidFunctionLength"`
 	USidFunctionRevisions []FunctionRevision `yaml:"uSidFunctionRevisions"`
+	NatMapping            NatMapping         `yaml:"natMapping"`
+	NatFiltering          NatFiltering       `yaml:"natFiltering"`
 }
+
+type NatMapping string
+
+const (
+	EndpointIndependentMapping NatMapping = "endpointIndependentMapping"
+)
+
+type NatFiltering string
+
+const (
+	EndpointIndependentFiltering NatFiltering = "endpointIndependentFiltering"
+)
 
 type FunctionRevision struct {
 	Backends []string `yaml:"backends"`

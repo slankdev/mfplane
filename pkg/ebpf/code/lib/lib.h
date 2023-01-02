@@ -31,11 +31,21 @@
 // #error "PLEASE DEFINE \"NAME\""
 // #endif
 
+#ifdef DEBUG
+#define assert_len(interest, end)              \
+  ({                                           \
+    if ((unsigned long)(interest + 1) > end) { \
+      bpf_printk(STR(NAME)"assert_len abort"); \
+      return XDP_ABORTED;                      \
+    }                                          \
+  })
+#else
 #define assert_len(interest, end)            \
   ({                                         \
     if ((unsigned long)(interest + 1) > end) \
       return XDP_ABORTED;                    \
   })
+#endif
 
 // TODO(slankdev); no support multiple sids in sid-list
 struct outer_header {
@@ -43,6 +53,12 @@ struct outer_header {
   struct ipv6_rt_hdr srh;
   __u8 padding[4];
   struct in6_addr seg;
+} __attribute__ ((packed));
+
+struct l4hdr {
+  __u16 source;
+  __u16 dest;
+  __u16 icmp_id;
 } __attribute__ ((packed));
 
 static inline int
@@ -63,6 +79,8 @@ error_packet(struct xdp_md *ctx)
   return XDP_DROP;
 }
 
+// Special thanks: kametan0730/curo
+// https://github.com/kametan0730/curo/blob/master/nat.cpp
 static inline __u32
 checksum_recalc_addr(__u32 old_addr, __u32 new_addr,
                      __u32 old_checksum)
@@ -79,6 +97,8 @@ checksum_recalc_addr(__u32 old_addr, __u32 new_addr,
   return check;
 }
 
+// Special thanks: kametan0730/curo
+// https://github.com/kametan0730/curo/blob/master/nat.cpp
 static inline __u32
 checksum_recalc_addrport(__u32 old_addr, __u32 new_addr,
                          __u16 old_port, __u16 new_port,

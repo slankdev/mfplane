@@ -54,6 +54,8 @@ type Trie6Val struct {
 	StatsTotalPkts     uint64   `json:"stats_total_pkts"`
 	StatsRedirBytes    uint64   `json:"stats_redir_bytes"`
 	StatsRedirPkts     uint64   `json:"stats_redir_pkts"`
+	NatMapping         uint8    `json:"nat_mapping"`
+	NatFiltering       uint8    `json:"nat_filtering"`
 }
 
 type VipKey struct {

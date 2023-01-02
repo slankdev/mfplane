@@ -1,0 +1,88 @@
+# TOPO:
+#                   R0
+#                   net0 .10
+#                    |
+#               20.0.0.0/24
+#               +----+----+B0
+#               |         |
+#          .11 net0      net0 .12
+#            R1(NAT)   R2(NAT)
+#          .1  net1      net1 .1
+#   10.0.1.0/24 |         | 10.0.2.0/24
+#          .2  net0      net0 .2
+#               C1        C2
+
+nodes:
+- name: R0
+  #image: nicolaka/netshoot
+  #image: coturn/coturn
+  image: coturn
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - {name: net0, type: bridge, args: B0 }
+- name: R1
+  # image: nicolaka/netshoot
+  image: coturn
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - {name: net0, type: bridge, args: B0 }
+  - {name: net1, type: direct, args: C1#net0}
+- name: R2
+  # image: nicolaka/netshoot
+  image: coturn
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - {name: net0, type: bridge, args: B0 }
+  - {name: net1, type: direct, args: C2#net0}
+- name: C1
+  #image: nicolaka/netshoot
+  #image: coturn/coturn
+  image: coturn
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - {name: net0, type: direct, args: R1#net1}
+- name: C2
+  #image: nicolaka/netshoot
+  #image: coturn/coturn
+  image: coturn
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - {name: net0, type: direct, args: R2#net1}
+
+switches:
+- name: B0
+  interfaces:
+  - { name: net0, type: container, args: R0 }
+  - { name: net0, type: container, args: R1 }
+  - { name: net0, type: container, args: R2 }
+
+node_configs:
+- name: R0
+  cmds:
+  - cmd: ip addr add 20.0.0.10/24 dev net0
+- name: R1
+  cmds:
+  - cmd: ip addr add 20.0.0.11/24 dev net0
+  - cmd: ip addr add 10.0.1.1/24 dev net1
+  - cmd: iptables -t nat -A POSTROUTING -o net0 -s 10.0.1.0/24 -j SNAT --to-source 20.0.0.11
+  - cmd: sysctl -w net.netfilter.nf_conntrack_udp_timeout=1000
+  - cmd: sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=1000
+  - cmd: sysctl -w net.netfilter.nf_flowtable_udp_timeout=1000
+  #- cmd: iptables -A INPUT -p UDP -m state --state NEW -j ACCEPT
+- name: R2
+  cmds:
+  - cmd: ip addr add 20.0.0.12/24 dev net0
+  - cmd: ip addr add 10.0.2.1/24 dev net1
+  - cmd: iptables -t nat -A POSTROUTING -o net0 -s 10.0.2.0/24 -j SNAT --to-source 20.0.0.12
+  - cmd: sysctl -w net.netfilter.nf_conntrack_udp_timeout=1000
+  - cmd: sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=1000
+  - cmd: sysctl -w net.netfilter.nf_flowtable_udp_timeout=1000
+  #- cmd: iptables -A INPUT -p UDP -m state --state NEW -j ACCEPT
+- name: C1
+  cmds:
+  - cmd: ip addr add 10.0.1.2/24 dev net0
+  - cmd: ip route add default via 10.0.1.1
+- name: C2
+  cmds:
+  - cmd: ip addr add 10.0.2.2/24 dev net0
+  - cmd: ip route add default via 10.0.2.1
