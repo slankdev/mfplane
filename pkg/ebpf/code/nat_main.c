@@ -216,34 +216,55 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   assert_len(in_ih, data_end);
   const __u8 in_ih_len = in_ih->ihl * 4;
 
+  __u8 syn = 0;
+  __u16 sport = 0, dport = 0;
   switch (in_ih->protocol) {
   case IPPROTO_TCP:
+  {
+    struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
+    assert_len(in_th, data_end);
+    syn = in_th->syn;
+    sport = in_th->source;
+    //dport = (__u16)in_th->dest; ???
     break;
+  }
+  case IPPROTO_UDP:
+  {
+    struct udphdr *in_uh = (struct udphdr *)((__u8 *)in_ih + in_ih_len);
+    assert_len(in_uh, data_end);
+    sport = in_uh->source;
+    //dport = (__u16)in_uh->dest; ???
+    break;
+  }
   default:
     bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
     return ignore_packet(ctx);
   }
-  struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
-  assert_len(in_th, data_end);
+
+  struct addr_port key = {0};
+  key.addr = in_ih->saddr;
+  key.port = sport;
 
   __u32 sourceport = 0;
-  if (in_th->syn == 0) {
-    struct addr_port key = {
-      .addr = in_ih->saddr,
-      .port = in_th->source,
-    };
-    struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
-    if (!asval) {
+  struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
+  if (!asval) {
+    if (in_ih->protocol == IPPROTO_TCP && syn == 0)
       return process_mf_redirect(ctx, val);
-    }
 
-    asval->pkts++;
-    sourceport = asval->port;
-  } else {
     __u32 hash = 0;
-    hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
-    hash = jhash_2words(in_th->dest, in_th->source, hash);
-    hash = jhash_2words(in_ih->protocol, 0, hash);
+    switch (in_ih->protocol) {
+    case IPPROTO_TCP:
+    case IPPROTO_UDP:
+      // TODO(slankdev): Support Endpoint Independent Mapping
+      hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
+      hash = jhash_2words(dport, sport, hash);
+      hash = jhash_2words(in_ih->protocol, 0, hash);
+      break;
+    case IPPROTO_ICMP:
+    default:
+      bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
+      return ignore_packet(ctx);
+    }
     hash = hash & 0xffff;
     hash = hash & val->nat_port_hash_bit;
 
@@ -251,7 +272,6 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
     __u32 rand = bpf_get_prandom_u32();
     rand = rand & 0xffff;
     rand = rand & ~val->nat_port_hash_bit;
-
     sourceport = hash | rand;
 
     struct addr_port_stats natval = {
@@ -261,32 +281,52 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
     };
     struct addr_port_stats orgval = {
       .addr = in_ih->saddr,
-      .port = in_th->source,
+      .port = sport,
       .pkts = 1,
     };
     bpf_map_update_elem(&GLUE(NAME, nat_ret_table), &natval, &orgval, BPF_ANY);
     bpf_map_update_elem(&GLUE(NAME, nat_out_table), &orgval, &natval, BPF_ANY);
+
+  } else {
+    asval->pkts++;
+    sourceport = asval->port;
   }
 
 #ifdef DEBUG
   char tmp[128] = {0};
   BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u/%pi4:%u -> %pi4:%u",
               in_ih->protocol,
-              &in_ih->saddr, bpf_ntohs(in_th->source),
+              &in_ih->saddr, bpf_ntohs(sport),
               &val->vip, bpf_ntohs(sourceport),
-              &in_ih->daddr, bpf_ntohs(in_th->dest));
+              &in_ih->daddr, bpf_ntohs(dport));
   bpf_printk(STR(NAME)"nat-out %s", tmp);
 #endif
 
   __u32 oldsource = in_ih->saddr;
-  __u16 oldsourceport = in_th->source;
+  __u16 oldsourceport = sport;
   in_ih->saddr = val->vip;
-  in_th->source = sourceport;
+
+  switch (in_ih->protocol) {
+  case IPPROTO_TCP:
+    {
+      struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
+      assert_len(in_th, data_end);
+      in_th->source = sourceport;
+      in_th->check = checksum_recalc_addrport(oldsource, in_ih->saddr,
+        oldsourceport, in_th->source, in_th->check);
+      break;
+    }
+  case IPPROTO_UDP:
+    {
+      struct udphdr *in_uh = (struct udphdr *)((__u8 *)in_ih + in_ih_len);
+      assert_len(in_uh, data_end);
+      in_uh->source = sourceport;
+      break;
+    }
+  }
 
   // update checksum
   in_ih->check = checksum_recalc_addr(oldsource, in_ih->saddr, in_ih->check);
-  in_th->check = checksum_recalc_addrport(oldsource, in_ih->saddr,
-    oldsourceport, in_th->source, in_th->check);
 
   // mac addr swap
   struct ethhdr *old_eh = (struct ethhdr *)data;
