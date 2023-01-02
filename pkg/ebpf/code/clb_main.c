@@ -317,8 +317,7 @@ process_ipv6(struct xdp_md *ctx)
   hash = hash & val->nat_port_hash_bit;
   bpf_printk(STR(NAME)"hash 0x%08x (short)", hash);
 
-  __u32 idx = 0;
-  idx = hash % RING_SIZE;
+  __u32 idx = hash % RING_SIZE;
   idx = RING_SIZE * val->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
