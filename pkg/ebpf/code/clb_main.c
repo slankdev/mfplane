@@ -398,6 +398,7 @@ process_ipv4(struct xdp_md *ctx)
   switch (ih->protocol) {
   case IPPROTO_TCP:
   case IPPROTO_UDP:
+  case IPPROTO_ICMP:
     return process_ipv4_tcp(ctx);
   default:
     return ignore_packet(ctx);
