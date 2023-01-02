@@ -17,9 +17,9 @@ limitations under the License.
 package mikanectl
 
 type ConfigLocalSid_End_MFL struct {
-	USidBlock             string             `yaml:"uSidBlock"`
 	Vip                   string             `yaml:"vip"`
 	NatPortHashBit        uint16             `yaml:"natPortHashBit"`
+	USidBlock             string             `yaml:"uSidBlock"`
 	USidBlockLength       int                `yaml:"uSidBlockLength"`
 	USidFunctionLength    int                `yaml:"uSidFunctionLength"`
 	USidFunctionRevisions []FunctionRevision `yaml:"uSidFunctionRevisions"`
