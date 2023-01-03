@@ -37,6 +37,11 @@ struct trie6_key {
   __u8 addr[16];
 }  __attribute__ ((packed));
 
+struct snat_source {
+  __u32 prefixlen;
+  __u32 addr;
+}  __attribute__ ((packed));
+
 struct trie6_val {
   __u16 action;
   __u16 backend_block_index;
@@ -50,6 +55,7 @@ struct trie6_val {
   __u64 stats_redir_pkts;
   __u8 nat_mapping;
   __u8 nat_filterring;
+  struct snat_source sources[256];
 } __attribute__ ((packed));
 
 enum nat_mapping_t {
