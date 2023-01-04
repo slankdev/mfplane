@@ -27,7 +27,8 @@ type AddrPortStats struct {
 	Addr      [4]uint8 `json:"addr"`
 	Port      uint16   `json:"port"`
 	Proto     uint8    `json:"proto"`
-	Pkts      uint64   `json:"pkts"` // Bytes     uint64   `json:"bytes"`
+	Pkts      uint64   `json:"pkts"`
+	Bytes     uint64   `json:"bytes"`
 	CreatedAt uint64   `json:"created_at"`
 	UpdatedAt uint64   `json:"update_at"`
 }
