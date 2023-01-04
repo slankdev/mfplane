@@ -163,6 +163,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
     return process_mf_redirect(ctx, val);
   }
   nval->pkts++;
+  nval->bytes += data_end - data;
   nval->update_at = bpf_ktime_get_ns();
 
 #ifdef DEBUG
@@ -321,6 +322,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
       .port = sourceport,
       .proto = in_ih->protocol,
       .pkts = 1,
+      .bytes = data_end - data,
       .created_at = now,
       .update_at = now,
     };
@@ -329,6 +331,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
       .port = org_sport,
       .proto = in_ih->protocol,
       .pkts = 1,
+      .bytes = data_end - data,
       .created_at = now,
       .update_at = now,
     };
@@ -339,6 +342,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
 
   } else {
     asval->pkts++;
+    asval->bytes += data_end - data;
     sourceport = asval->port;
     asval->update_at = now;
   }

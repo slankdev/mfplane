@@ -468,7 +468,8 @@ type Cache struct {
 }
 
 func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr uint32,
-	iPort, ePort uint16, createdAt, updatedAt uint64, rxPkts, txPkts uint64) {
+	iPort, ePort uint16, createdAt, updatedAt uint64, rxPkts, txPkts uint64,
+	rxBytes, txBytes uint64) {
 	match := false
 	for idx, cache := range c.entries {
 		if cache.AddrInternal == iAddr && cache.AddrExternal == eAddr &&
@@ -476,6 +477,8 @@ func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr uint32,
 			cache.Protocol == proto {
 			c.entries[idx].StatsReceivedPkts += rxPkts
 			c.entries[idx].StatsTransmittedPkts += txPkts
+			c.entries[idx].StatsReceivedBytes += rxBytes
+			c.entries[idx].StatsTransmittedBytes += txBytes
 			if createdAt < cache.CreatedAt {
 				c.entries[idx].CreatedAt = createdAt
 			}
@@ -488,15 +491,17 @@ func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr uint32,
 	}
 	if !match {
 		c.entries = append(c.entries, CacheEntry{
-			Protocol:             proto,
-			AddrInternal:         iAddr,
-			AddrExternal:         eAddr,
-			PortInternal:         iPort,
-			PortExternal:         ePort,
-			CreatedAt:            createdAt,
-			UpdatedAt:            updatedAt,
-			StatsReceivedPkts:    rxPkts,
-			StatsTransmittedPkts: txPkts,
+			Protocol:              proto,
+			AddrInternal:          iAddr,
+			AddrExternal:          eAddr,
+			PortInternal:          iPort,
+			PortExternal:          ePort,
+			CreatedAt:             createdAt,
+			UpdatedAt:             updatedAt,
+			StatsReceivedPkts:     rxPkts,
+			StatsReceivedBytes:    rxBytes,
+			StatsTransmittedPkts:  txPkts,
+			StatsTransmittedBytes: txBytes,
 		})
 	}
 }
@@ -521,7 +526,7 @@ func NewCommandMapDumpNat() *cobra.Command {
 							util.ConvertIPToUint32(net.IP(key.Addr[:])),
 							util.ConvertIPToUint32(net.IP(val.Addr[:])),
 							util.BS16(key.Port), util.BS16(val.Port), val.CreatedAt,
-							val.UpdatedAt, 0, val.Pkts)
+							val.UpdatedAt, 0, val.Pkts, 0, val.Bytes)
 					}
 					return nil
 				}); err != nil {
@@ -542,7 +547,7 @@ func NewCommandMapDumpNat() *cobra.Command {
 							util.BS16(val.Port),
 							util.BS16(key.Port),
 							val.CreatedAt, val.UpdatedAt,
-							val.Pkts, 0)
+							val.Pkts, 0, val.Bytes, 0)
 					}
 					return nil
 				}); err != nil {
