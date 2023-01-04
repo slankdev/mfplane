@@ -507,7 +507,7 @@ func NewCommandMapDumpNat() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "map-dump-nat",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			//fmt.Printf("%s\n", clioptMapNamePrefix)
+			// Bi-directional Cache tmp data
 			cache := Cache{}
 
 			// Parse NAT-Out Caches
@@ -528,6 +528,8 @@ func NewCommandMapDumpNat() *cobra.Command {
 				}); err != nil {
 				return err
 			}
+
+			// Parse NAT-Ret Caches
 			if err := ebpf.BatchMapOperation(clioptMapNamePrefix+"_nat_ret_tabl",
 				ciliumebpf.LRUHash,
 				func(m *ciliumebpf.Map) error {
@@ -548,11 +550,11 @@ func NewCommandMapDumpNat() *cobra.Command {
 				return err
 			}
 
-			// Parse NAT-Ret Caches
-
 			// Print Result
 			table := util.NewTableWriter(os.Stdout)
-			table.SetHeader([]string{"proto", "internal", "external", "tx", "rx", "created", "updated"})
+			table.SetHeader([]string{"proto", "internal", "external",
+				"tx", "rx",
+				"created", "updated"})
 			for _, ent := range cache.entries {
 				iAddr := util.ConvertUint32ToIP(ent.AddrInternal)
 				eAddr := util.ConvertUint32ToIP(ent.AddrExternal)
