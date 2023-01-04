@@ -376,6 +376,14 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   // update checksum
   in_ih->check = checksum_recalc_addr(oldsource, in_ih->saddr, in_ih->check);
 
+  // NOTE(slankdev):
+  // If there is a local cache for hairpin communication, the communication
+  // can be directly returned here. However, as for the forwarding mechanism,
+  // forwarding the packets once to mfplane reduces the size of the software
+  // implementation. If there are many nodes, packets are forwarded to mfplane
+  // in most cases, but it is possible to reduce the latency and the bandwidth
+  // of mfplane here.
+
   // mac addr swap
   struct ethhdr *old_eh = (struct ethhdr *)data;
   struct ethhdr *new_eh = (struct ethhdr *)(data + sizeof(struct outer_header));
@@ -443,9 +451,9 @@ process_ipv6(struct xdp_md *ctx)
   // NAT check
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
-  return in_ih->daddr == val->vip ?
-    process_nat_ret(ctx, val) :
-    process_nat_out(ctx, val);
+  return snat_match(val, in_ih->saddr) ?
+    process_nat_out(ctx, val) :
+    process_nat_ret(ctx, val);
 }
 
 static inline int
