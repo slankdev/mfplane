@@ -140,6 +140,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
   // lookup
   struct addr_port key = {0};
   key.addr = in_ih->daddr;
+  key.proto = in_ih->protocol;
   switch (in_ih->protocol) {
   case IPPROTO_TCP:
   case IPPROTO_UDP:
@@ -267,6 +268,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   // Craft NAT Calculation Key
   struct addr_port key = {0};
   key.addr = in_ih->saddr;
+  key.proto = in_ih->protocol;
   switch (in_ih->protocol) {
   case IPPROTO_TCP:
   case IPPROTO_UDP:
@@ -317,6 +319,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
     struct addr_port_stats natval = {
       .addr = val->vip,
       .port = sourceport,
+      .proto = in_ih->protocol,
       .pkts = 1,
       .created_at = now,
       .update_at = now,
@@ -324,6 +327,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
     struct addr_port_stats orgval = {
       .addr = in_ih->saddr,
       .port = org_sport,
+      .proto = in_ih->protocol,
       .pkts = 1,
       .created_at = now,
       .update_at = now,
