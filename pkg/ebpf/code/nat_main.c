@@ -140,6 +140,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
   // lookup
   struct addr_port key = {0};
   key.addr = in_ih->daddr;
+  key.proto = in_ih->protocol;
   switch (in_ih->protocol) {
   case IPPROTO_TCP:
   case IPPROTO_UDP:
@@ -156,11 +157,14 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
     bpf_printk(STR(NAME)"nat-ret lookup %s", tmp);
   }
 
-  struct addr_port *nval = NULL;
+  struct addr_port_stats *nval = NULL;
   nval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
   if (!nval) {
     return process_mf_redirect(ctx, val);
   }
+  nval->pkts++;
+  nval->bytes += data_end - data;
+  nval->update_at = bpf_ktime_get_sec();
 
 #ifdef DEBUG
     char tmp[128] = {0};
@@ -265,6 +269,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   // Craft NAT Calculation Key
   struct addr_port key = {0};
   key.addr = in_ih->saddr;
+  key.proto = in_ih->protocol;
   switch (in_ih->protocol) {
   case IPPROTO_TCP:
   case IPPROTO_UDP:
@@ -276,6 +281,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   }
 
   __u32 sourceport = 0;
+  __u64 now = bpf_ktime_get_sec();
   struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
   if (!asval) {
     if (in_ih->protocol == IPPROTO_TCP && tcp_syn == 0)
@@ -314,12 +320,20 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
     struct addr_port_stats natval = {
       .addr = val->vip,
       .port = sourceport,
+      .proto = in_ih->protocol,
       .pkts = 1,
+      .bytes = data_end - data,
+      .created_at = now,
+      .update_at = now,
     };
     struct addr_port_stats orgval = {
       .addr = in_ih->saddr,
       .port = org_sport,
+      .proto = in_ih->protocol,
       .pkts = 1,
+      .bytes = data_end - data,
+      .created_at = now,
+      .update_at = now,
     };
     if (in_ih->protocol == IPPROTO_ICMP)
       orgval.port = org_icmp_id;
@@ -328,7 +342,9 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
 
   } else {
     asval->pkts++;
+    asval->bytes += data_end - data;
     sourceport = asval->port;
+    asval->update_at = now;
   }
 
 #ifdef DEBUG

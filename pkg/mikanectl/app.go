@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 
 	ciliumebpf "github.com/cilium/ebpf"
 	"github.com/spf13/cobra"
@@ -40,6 +41,7 @@ func NewCommand() *cobra.Command {
 	cmd.AddCommand(NewCommandMapLoad())
 	cmd.AddCommand(NewCommandMapDump())
 	cmd.AddCommand(NewCommandMapDumpNat())
+	cmd.AddCommand(NewCommandMapDumpNatOld())
 	cmd.AddCommand(NewCommandMapClearNat())
 	cmd.AddCommand(util.NewCommandVersion())
 	cmd.AddCommand(util.NewCmdCompletion(cmd))
@@ -447,10 +449,151 @@ func NewCommandMapLoad() *cobra.Command {
 	return cmd
 }
 
+type CacheEntry struct {
+	Protocol              uint8
+	AddrInternal          uint32
+	AddrExternal          uint32
+	PortInternal          uint16
+	PortExternal          uint16
+	CreatedAt             uint64
+	UpdatedAt             uint64
+	StatsReceivedPkts     uint64
+	StatsReceivedBytes    uint64
+	StatsTransmittedPkts  uint64
+	StatsTransmittedBytes uint64
+}
+
+type Cache struct {
+	entries []CacheEntry
+}
+
+func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr uint32,
+	iPort, ePort uint16, createdAt, updatedAt uint64, rxPkts, txPkts uint64,
+	rxBytes, txBytes uint64) {
+	match := false
+	for idx, cache := range c.entries {
+		if cache.AddrInternal == iAddr && cache.AddrExternal == eAddr &&
+			cache.PortInternal == iPort && cache.PortExternal == ePort &&
+			cache.Protocol == proto {
+			c.entries[idx].StatsReceivedPkts += rxPkts
+			c.entries[idx].StatsTransmittedPkts += txPkts
+			c.entries[idx].StatsReceivedBytes += rxBytes
+			c.entries[idx].StatsTransmittedBytes += txBytes
+			if createdAt < cache.CreatedAt {
+				c.entries[idx].CreatedAt = createdAt
+			}
+			if updatedAt > cache.UpdatedAt {
+				c.entries[idx].UpdatedAt = updatedAt
+			}
+			match = true
+			break
+		}
+	}
+	if !match {
+		c.entries = append(c.entries, CacheEntry{
+			Protocol:              proto,
+			AddrInternal:          iAddr,
+			AddrExternal:          eAddr,
+			PortInternal:          iPort,
+			PortExternal:          ePort,
+			CreatedAt:             createdAt,
+			UpdatedAt:             updatedAt,
+			StatsReceivedPkts:     rxPkts,
+			StatsReceivedBytes:    rxBytes,
+			StatsTransmittedPkts:  txPkts,
+			StatsTransmittedBytes: txBytes,
+		})
+	}
+}
+
 func NewCommandMapDumpNat() *cobra.Command {
-	var clioptMapName string
+	var clioptMapNamePrefix string
 	cmd := &cobra.Command{
 		Use: "map-dump-nat",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bi-directional Cache tmp data
+			cache := Cache{}
+
+			// Parse NAT-Out Caches
+			if err := ebpf.BatchMapOperation(clioptMapNamePrefix+"_nat_out_tabl",
+				ciliumebpf.LRUHash,
+				func(m *ciliumebpf.Map) error {
+					key := ebpf.AddrPort{}
+					val := ebpf.AddrPortStats{}
+					entries := m.Iterate()
+					for entries.Next(&key, &val) {
+						cache.statsIncrement(key.Proto,
+							util.ConvertIPToUint32(net.IP(key.Addr[:])),
+							util.ConvertIPToUint32(net.IP(val.Addr[:])),
+							util.BS16(key.Port), util.BS16(val.Port), val.CreatedAt,
+							val.UpdatedAt, 0, val.Pkts, 0, val.Bytes)
+					}
+					return nil
+				}); err != nil {
+				return err
+			}
+
+			// Parse NAT-Ret Caches
+			if err := ebpf.BatchMapOperation(clioptMapNamePrefix+"_nat_ret_tabl",
+				ciliumebpf.LRUHash,
+				func(m *ciliumebpf.Map) error {
+					key := ebpf.AddrPort{}
+					val := ebpf.AddrPortStats{}
+					entries := m.Iterate()
+					for entries.Next(&key, &val) {
+						cache.statsIncrement(key.Proto,
+							util.ConvertIPToUint32(net.IP(val.Addr[:])),
+							util.ConvertIPToUint32(net.IP(key.Addr[:])),
+							util.BS16(val.Port),
+							util.BS16(key.Port),
+							val.CreatedAt, val.UpdatedAt,
+							val.Pkts, 0, val.Bytes, 0)
+					}
+					return nil
+				}); err != nil {
+				return err
+			}
+
+			// Print Result
+			table := util.NewTableWriter(os.Stdout)
+			table.SetHeader([]string{"proto", "internal", "external",
+				"tx(p:b)", "rx(p:b)",
+				"created", "updated"})
+			for _, ent := range cache.entries {
+				const timefmt = "2006.01.02:15:04:05"
+				cat, err := util.KtimeSecToTime(ent.CreatedAt)
+				if err != nil {
+					return err
+				}
+				uat, err := util.KtimeSecToTime(ent.UpdatedAt)
+				if err != nil {
+					return err
+				}
+
+				iAddr := util.ConvertUint32ToIP(ent.AddrInternal)
+				eAddr := util.ConvertUint32ToIP(ent.AddrExternal)
+				table.Append([]string{
+					fmt.Sprintf("%d", ent.Protocol),
+					fmt.Sprintf("%s:%d", iAddr, ent.PortInternal),
+					fmt.Sprintf("%s:%d", eAddr, ent.PortExternal),
+					fmt.Sprintf("%d:%d", ent.StatsTransmittedPkts, ent.StatsTransmittedBytes),
+					fmt.Sprintf("%d:%d", ent.StatsReceivedPkts, ent.StatsReceivedBytes),
+					cat.Format(timefmt),
+					uat.Format(timefmt),
+				})
+			}
+			table.Render()
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptMapNamePrefix, "name", "n", "n1", "")
+	return cmd
+}
+
+func NewCommandMapDumpNatOld() *cobra.Command {
+	var clioptMapName string
+	cmd := &cobra.Command{
+		Use: "map-dump-nat-old",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("%s\n", clioptMapName)
 
@@ -463,7 +606,8 @@ func NewCommandMapDumpNat() *cobra.Command {
 					for entries.Next(&key, &val) {
 						keyAddr := net.IP(key.Addr[:])
 						valAddr := net.IP(val.Addr[:])
-						fmt.Printf("%s:%d -> %s:%d %d\n",
+						fmt.Printf("%d:%s:%d -> %s:%d %d\n",
+							key.Proto,
 							keyAddr, util.BS16(key.Port),
 							valAddr, util.BS16(val.Port), val.Pkts)
 					}

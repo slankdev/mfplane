@@ -14,12 +14,17 @@
 struct addr_port {
   __u32 addr;
   __u16 port;
+  __u8 proto;
 }  __attribute__ ((packed));
 
 struct addr_port_stats {
   __u32 addr;
   __u16 port;
+  __u8 proto;
   __u64 pkts;
+  __u64 bytes;
+  __u64 created_at;
+  __u64 update_at;
 }  __attribute__ ((packed));
 
 struct trie4_key {

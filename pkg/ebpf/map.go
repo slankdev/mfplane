@@ -18,14 +18,19 @@ limitations under the License.
 package ebpf
 
 type AddrPort struct {
-	Addr [4]uint8 `json:"addr"`
-	Port uint16   `json:"port"`
+	Addr  [4]uint8 `json:"addr"`
+	Port  uint16   `json:"port"`
+	Proto uint8    `json:"proto"`
 }
 
 type AddrPortStats struct {
-	Addr [4]uint8 `json:"addr"`
-	Port uint16   `json:"port"`
-	Pkts uint64   `json:"pkts"`
+	Addr      [4]uint8 `json:"addr"`
+	Port      uint16   `json:"port"`
+	Proto     uint8    `json:"proto"`
+	Pkts      uint64   `json:"pkts"`
+	Bytes     uint64   `json:"bytes"`
+	CreatedAt uint64   `json:"created_at"`
+	UpdatedAt uint64   `json:"update_at"`
 }
 
 type Trie4Key struct {
