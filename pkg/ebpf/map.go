@@ -43,19 +43,25 @@ type Trie6Key struct {
 	Addr      [16]uint8 `json:"addr"`
 }
 
+type SnatSource struct {
+	Prefixlen uint32 `json:"prefixlen"`
+	Addr      uint32 `json:"addr"`
+}
+
 type Trie6Val struct {
-	Action             uint16   `json:"action"`
-	BackendBlockIndex  uint16   `json:"backend_block_index"`
-	Vip                [4]uint8 `json:"vip"`
-	NatPortBashBit     uint16   `json:"nat_port_hash_bit"`
-	UsidBlockLength    uint16   `json:"usid_block_length"`
-	UsidFunctionLength uint16   `json:"usid_function_length"`
-	StatsTotalBytes    uint64   `json:"stats_total_bytes"`
-	StatsTotalPkts     uint64   `json:"stats_total_pkts"`
-	StatsRedirBytes    uint64   `json:"stats_redir_bytes"`
-	StatsRedirPkts     uint64   `json:"stats_redir_pkts"`
-	NatMapping         uint8    `json:"nat_mapping"`
-	NatFiltering       uint8    `json:"nat_filtering"`
+	Action             uint16          `json:"action"`
+	BackendBlockIndex  uint16          `json:"backend_block_index"`
+	Vip                [4]uint8        `json:"vip"`
+	NatPortBashBit     uint16          `json:"nat_port_hash_bit"`
+	UsidBlockLength    uint16          `json:"usid_block_length"`
+	UsidFunctionLength uint16          `json:"usid_function_length"`
+	StatsTotalBytes    uint64          `json:"stats_total_bytes"`
+	StatsTotalPkts     uint64          `json:"stats_total_pkts"`
+	StatsRedirBytes    uint64          `json:"stats_redir_bytes"`
+	StatsRedirPkts     uint64          `json:"stats_redir_pkts"`
+	NatMapping         uint8           `json:"nat_mapping"`
+	NatFiltering       uint8           `json:"nat_filtering"`
+	Sources            [256]SnatSource `json:"sources"`
 }
 
 type VipKey struct {

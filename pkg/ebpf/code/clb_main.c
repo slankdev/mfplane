@@ -313,9 +313,12 @@ process_ipv6(struct xdp_md *ctx)
 
   // Calculate Hash
   __u32 hash = 0;
-  if (in_ih->protocol == IPPROTO_TCP || in_ih->protocol == IPPROTO_UDP) {
+  if (in_ih->protocol == IPPROTO_TCP) {
     hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
     hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
+    hash = jhash_2words(in_ih->protocol, 0, hash);
+  } else if (in_ih->protocol == IPPROTO_UDP) {
+    hash = jhash_2words(in_ih->saddr, in_l4h->source, 0xdeadbeaf);
     hash = jhash_2words(in_ih->protocol, 0, hash);
   } else if (in_ih->protocol == IPPROTO_ICMP) {
     hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);

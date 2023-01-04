@@ -284,12 +284,14 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
     __u32 hash = 0;
     switch (in_ih->protocol) {
     case IPPROTO_TCP:
-    case IPPROTO_UDP:
-      // TODO(slankdev): Support Endpoint Independent Mapping
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
       bpf_printk(STR(NAME)"hash 0x%08x", hash);
+      break;
+    case IPPROTO_UDP:
+      hash = jhash_2words(in_ih->saddr, in_l4h->source, 0xdeadbeaf);
+      hash = jhash_2words(in_ih->protocol, 0, hash);
       break;
     case IPPROTO_ICMP:
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
@@ -374,6 +376,14 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   // update checksum
   in_ih->check = checksum_recalc_addr(oldsource, in_ih->saddr, in_ih->check);
 
+  // NOTE(slankdev):
+  // If there is a local cache for hairpin communication, the communication
+  // can be directly returned here. However, as for the forwarding mechanism,
+  // forwarding the packets once to mfplane reduces the size of the software
+  // implementation. If there are many nodes, packets are forwarded to mfplane
+  // in most cases, but it is possible to reduce the latency and the bandwidth
+  // of mfplane here.
+
   // mac addr swap
   struct ethhdr *old_eh = (struct ethhdr *)data;
   struct ethhdr *new_eh = (struct ethhdr *)(data + sizeof(struct outer_header));
@@ -388,6 +398,26 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
     return error_packet(ctx);
   }
   return XDP_TX;
+}
+
+static inline int
+snat_match(struct trie6_val *val, __u32 saddr)
+{
+  for (int i = 0; i < 256; i++) {
+    __u32 plen = val->sources[i].prefixlen;
+    __u32 addr = val->sources[i].addr;
+    if (plen == 0 && addr == 0)
+      return 0;
+
+    __u32 mask = 0;
+    for (int j = 0; j < 32 && j < plen; j++)
+      mask = mask | (0x80000000 >> j);
+    mask = bpf_ntohl(mask);
+
+    if (addr == (saddr & mask))
+      return 1;
+  }
+  return 0;
 }
 
 static inline int
@@ -421,9 +451,9 @@ process_ipv6(struct xdp_md *ctx)
   // NAT check
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
-  return in_ih->daddr == val->vip ?
-    process_nat_ret(ctx, val) :
-    process_nat_out(ctx, val);
+  return snat_match(val, in_ih->saddr) ?
+    process_nat_out(ctx, val) :
+    process_nat_ret(ctx, val);
 }
 
 static inline int

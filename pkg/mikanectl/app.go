@@ -309,6 +309,19 @@ func localSid_End_MFN_NAT(backendBlockIndex int, localSid ConfigLocalSid, config
 	if err := ebpf.BatchMapOperation(config.NamePrefix+"_fib6",
 		ciliumebpf.LPMTrie,
 		func(m *ciliumebpf.Map) error {
+			// craft snat_sources
+			sources := [256]ebpf.SnatSource{}
+			for idx, srcpStr := range localSid.End_MFN_NAT.Sources {
+				_, srcp, err := net.ParseCIDR(srcpStr)
+				if err != nil {
+					return err
+				}
+				source := ebpf.SnatSource{}
+				source.Prefixlen = uint32(util.Plen(srcp.Mask))
+				source.Addr = util.ConvertIPToUint32(srcp.IP)
+				sources[idx] = source
+			}
+
 			key := ebpf.Trie6Key{}
 			copy(key.Addr[:], ipnet.IP)
 			key.Prefixlen = uint32(util.Plen(ipnet.Mask))
@@ -318,6 +331,7 @@ func localSid_End_MFN_NAT(backendBlockIndex int, localSid ConfigLocalSid, config
 				NatPortBashBit:     localSid.End_MFN_NAT.NatPortHashBit,
 				UsidBlockLength:    uint16(localSid.End_MFN_NAT.USidBlockLength),
 				UsidFunctionLength: uint16(localSid.End_MFN_NAT.USidFunctionLength),
+				Sources:            sources,
 			}
 			if err := m.Update(key, val, ciliumebpf.UpdateAny); err != nil {
 				return err
