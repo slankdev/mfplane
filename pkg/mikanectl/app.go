@@ -665,6 +665,12 @@ func NewCommandMapInstallNat() *cobra.Command {
 				return err
 			}
 
+			// Get current time as ktimeSec
+			nowKtime, err := util.TimeToKtimeSec(time.Now())
+			if err != nil {
+				return err
+			}
+
 			// nat-out
 			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_nat_out_tabl",
 				ciliumebpf.LRUHash,
@@ -675,11 +681,11 @@ func NewCommandMapInstallNat() *cobra.Command {
 						Port:  iport,
 					}
 					val := ebpf.AddrPortStats{
-						Proto: uint8(proto),
-						Addr:  eaddr,
-						Port:  eport,
-						// CreatedAt TODO(slankdev)
-						// UpdatedAt TODO(slankdev)
+						Proto:     uint8(proto),
+						Addr:      eaddr,
+						Port:      eport,
+						CreatedAt: nowKtime,
+						UpdatedAt: nowKtime,
 					}
 					if err := m.Update(key, val, ciliumebpf.UpdateNoExist); err != nil {
 						return err
@@ -699,11 +705,11 @@ func NewCommandMapInstallNat() *cobra.Command {
 						Port:  eport,
 					}
 					val := ebpf.AddrPortStats{
-						Proto: uint8(proto),
-						Addr:  iaddr,
-						Port:  iport,
-						// CreatedAt TODO(slankdev)
-						// UpdatedAt TODO(slankdev)
+						Proto:     uint8(proto),
+						Addr:      iaddr,
+						Port:      iport,
+						CreatedAt: nowKtime,
+						UpdatedAt: nowKtime,
 					}
 					if err := m.Update(key, val, ciliumebpf.UpdateNoExist); err != nil {
 						return err

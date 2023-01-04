@@ -56,3 +56,15 @@ func KtimeSecToTime(ktimeSec uint64) (time.Time, error) {
 	unixTimeSecTarget := unixTimeSecKernelBooted + int64(ktimeSec)
 	return time.Unix(unixTimeSecTarget, 0), nil
 }
+
+// presition: second
+func TimeToKtimeSec(t time.Time) (uint64, error) {
+	return 0, nil
+	// sysinfo := syscall.Sysinfo_t{}
+	// if err := syscall.Sysinfo(&sysinfo); err != nil {
+	// 	return time.Time{}, err
+	// }
+	// unixTimeSecKernelBooted := time.Now().Unix() - sysinfo.Uptime
+	// unixTimeSecTarget := unixTimeSecKernelBooted + int64(ktimeSec)
+	// return time.Unix(unixTimeSecTarget, 0), nil
+}
