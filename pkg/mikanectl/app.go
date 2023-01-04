@@ -22,6 +22,9 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	ciliumebpf "github.com/cilium/ebpf"
 	"github.com/spf13/cobra"
@@ -38,9 +41,11 @@ func NewCommand() *cobra.Command {
 	}
 	cmd.AddCommand(NewCommandHash())
 	cmd.AddCommand(NewCommandBpf())
+	cmd.AddCommand(NewCommandDaemonNat())
 	cmd.AddCommand(NewCommandMapLoad())
 	cmd.AddCommand(NewCommandMapDump())
 	cmd.AddCommand(NewCommandMapDumpNat())
+	cmd.AddCommand(NewCommandMapInstallNat())
 	cmd.AddCommand(NewCommandMapDumpNatOld())
 	cmd.AddCommand(NewCommandMapClearNat())
 	cmd.AddCommand(util.NewCommandVersion())
@@ -463,6 +468,64 @@ type CacheEntry struct {
 	StatsTransmittedBytes uint64
 }
 
+func (e CacheEntry) CleanupMapEntri(namePrefix string) error {
+	// Delete from nat-out
+	if err := ebpf.BatchMapOperation(namePrefix+"_nat_out_tabl",
+		ciliumebpf.LRUHash,
+		func(m *ciliumebpf.Map) error {
+			ip := util.ConvertUint32ToIP(e.AddrInternal)
+			ipb := [4]byte{}
+			copy(ipb[:], ip)
+			key := ebpf.AddrPort{
+				Proto: e.Protocol,
+				Addr:  ipb,
+				Port:  util.BS16(e.PortInternal),
+			}
+			if err := m.Delete(key); err != nil {
+				fmt.Printf("DEBUG: delete key failed (1)\n")
+				return err
+			}
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	// Delete from nat-ret
+	if err := ebpf.BatchMapOperation(namePrefix+"_nat_ret_tabl",
+		ciliumebpf.LRUHash,
+		func(m *ciliumebpf.Map) error {
+			ip := util.ConvertUint32ToIP(e.AddrExternal)
+			ipb := [4]byte{}
+			copy(ipb[:], ip)
+			key := ebpf.AddrPort{
+				Proto: e.Protocol,
+				Addr:  ipb,
+				Port:  util.BS16(e.PortExternal),
+			}
+			out := ebpf.AddrPortStats{}
+			if err := m.LookupAndDelete(key, &out); err != nil {
+				fmt.Printf("DEBUG: delete key failed (2)\n")
+				return err
+			}
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e CacheEntry) IsExpired() (bool, error) {
+	timeoutDuration := time.Duration(10 * time.Second)
+	now := time.Now()
+	updatedAt, err := util.KtimeSecToTime(e.UpdatedAt)
+	if err != nil {
+		return false, err
+	}
+	diff := now.Sub(updatedAt)
+	return diff > timeoutDuration, nil
+}
+
 type Cache struct {
 	entries []CacheEntry
 }
@@ -506,51 +569,171 @@ func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr uint32,
 	}
 }
 
-func NewCommandMapDumpNat() *cobra.Command {
-	var clioptMapNamePrefix string
-	cmd := &cobra.Command{
-		Use: "map-dump-nat",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// Bi-directional Cache tmp data
-			cache := Cache{}
+func getLatestCache(namePrefix string) (*Cache, error) {
+	// Bi-directional Cache tmp data
+	cache := Cache{}
 
-			// Parse NAT-Out Caches
-			if err := ebpf.BatchMapOperation(clioptMapNamePrefix+"_nat_out_tabl",
+	// Parse NAT-Out Caches
+	if err := ebpf.BatchMapOperation(namePrefix+"_nat_out_tabl",
+		ciliumebpf.LRUHash,
+		func(m *ciliumebpf.Map) error {
+			key := ebpf.AddrPort{}
+			val := ebpf.AddrPortStats{}
+			entries := m.Iterate()
+			for entries.Next(&key, &val) {
+				cache.statsIncrement(key.Proto,
+					util.ConvertIPToUint32(net.IP(key.Addr[:])),
+					util.ConvertIPToUint32(net.IP(val.Addr[:])),
+					util.BS16(key.Port), util.BS16(val.Port), val.CreatedAt,
+					val.UpdatedAt, 0, val.Pkts, 0, val.Bytes)
+			}
+			return nil
+		}); err != nil {
+		return nil, err
+	}
+
+	// Parse NAT-Ret Caches
+	if err := ebpf.BatchMapOperation(namePrefix+"_nat_ret_tabl",
+		ciliumebpf.LRUHash,
+		func(m *ciliumebpf.Map) error {
+			key := ebpf.AddrPort{}
+			val := ebpf.AddrPortStats{}
+			entries := m.Iterate()
+			for entries.Next(&key, &val) {
+				cache.statsIncrement(key.Proto,
+					util.ConvertIPToUint32(net.IP(val.Addr[:])),
+					util.ConvertIPToUint32(net.IP(key.Addr[:])),
+					util.BS16(val.Port),
+					util.BS16(key.Port),
+					val.CreatedAt, val.UpdatedAt,
+					val.Pkts, 0, val.Bytes, 0)
+			}
+			return nil
+		}); err != nil {
+		return nil, err
+	}
+
+	return &cache, nil
+}
+
+func NewCommandMapInstallNat() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptFlow string
+	cmd := &cobra.Command{
+		Use: "map-install-nat-cache",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Parse CLI Input
+			println(clioptFlow)
+			words := strings.Split(clioptFlow, ":")
+			if len(words) != 5 {
+				return fmt.Errorf("invalid format %s", clioptFlow)
+			}
+
+			// Parse Porotocol
+			protoS := words[0]
+			protoI, err := strconv.Atoi(protoS)
+			proto := uint8(protoI)
+			if err != nil {
+				return err
+			}
+
+			// Parse Internal IP Address
+			iaddrS := words[1]
+			iaddrNI := net.ParseIP(iaddrS)
+			iaddr := [4]uint8{}
+			copy(iaddr[:], iaddrNI[12:])
+
+			// Parse Internal Port Number
+			iportS := words[2]
+			iportI, err := strconv.Atoi(iportS)
+			iport := util.BS16(uint16(iportI))
+			if err != nil {
+				return err
+			}
+
+			// Parse External IP Address
+			eaddrS := words[3]
+			eaddrNI := net.ParseIP(eaddrS)
+			eaddr := [4]uint8{}
+			copy(eaddr[:], eaddrNI[12:])
+
+			// Parse External Port Number
+			eportS := words[4]
+			eportI, err := strconv.Atoi(eportS)
+			eport := util.BS16(uint16(eportI))
+			if err != nil {
+				return err
+			}
+
+			// Get current time as ktimeSec
+			nowKtime, err := util.TimeToKtimeSec(time.Now())
+			if err != nil {
+				return err
+			}
+
+			// nat-out
+			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_nat_out_tabl",
 				ciliumebpf.LRUHash,
 				func(m *ciliumebpf.Map) error {
-					key := ebpf.AddrPort{}
-					val := ebpf.AddrPortStats{}
-					entries := m.Iterate()
-					for entries.Next(&key, &val) {
-						cache.statsIncrement(key.Proto,
-							util.ConvertIPToUint32(net.IP(key.Addr[:])),
-							util.ConvertIPToUint32(net.IP(val.Addr[:])),
-							util.BS16(key.Port), util.BS16(val.Port), val.CreatedAt,
-							val.UpdatedAt, 0, val.Pkts, 0, val.Bytes)
+					key := ebpf.AddrPort{
+						Proto: uint8(proto),
+						Addr:  iaddr,
+						Port:  iport,
+					}
+					val := ebpf.AddrPortStats{
+						Proto:     uint8(proto),
+						Addr:      eaddr,
+						Port:      eport,
+						CreatedAt: nowKtime,
+						UpdatedAt: nowKtime,
+					}
+					if err := m.Update(key, val, ciliumebpf.UpdateNoExist); err != nil {
+						return err
 					}
 					return nil
 				}); err != nil {
 				return err
 			}
 
-			// Parse NAT-Ret Caches
-			if err := ebpf.BatchMapOperation(clioptMapNamePrefix+"_nat_ret_tabl",
+			// nat-ret
+			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_nat_ret_tabl",
 				ciliumebpf.LRUHash,
 				func(m *ciliumebpf.Map) error {
-					key := ebpf.AddrPort{}
-					val := ebpf.AddrPortStats{}
-					entries := m.Iterate()
-					for entries.Next(&key, &val) {
-						cache.statsIncrement(key.Proto,
-							util.ConvertIPToUint32(net.IP(val.Addr[:])),
-							util.ConvertIPToUint32(net.IP(key.Addr[:])),
-							util.BS16(val.Port),
-							util.BS16(key.Port),
-							val.CreatedAt, val.UpdatedAt,
-							val.Pkts, 0, val.Bytes, 0)
+					key := ebpf.AddrPort{
+						Proto: uint8(proto),
+						Addr:  eaddr,
+						Port:  eport,
+					}
+					val := ebpf.AddrPortStats{
+						Proto:     uint8(proto),
+						Addr:      iaddr,
+						Port:      iport,
+						CreatedAt: nowKtime,
+						UpdatedAt: nowKtime,
+					}
+					if err := m.Update(key, val, ciliumebpf.UpdateNoExist); err != nil {
+						return err
 					}
 					return nil
 				}); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "n1", "")
+	cmd.Flags().StringVarP(&clioptFlow, "flow", "f", "6:10.0.0.1:1024:142.0.0.1:1600", "")
+	return cmd
+}
+
+func NewCommandMapDumpNat() *cobra.Command {
+	var clioptMapNamePrefix string
+	cmd := &cobra.Command{
+		Use: "map-dump-nat",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cache, err := getLatestCache(clioptMapNamePrefix)
+			if err != nil {
 				return err
 			}
 
@@ -656,4 +839,56 @@ func NewCommandMapClearNat() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&clioptMapName, "map", "m", "n1_nat_out_table", "")
 	return cmd
+}
+
+func NewCommandDaemonNat() *cobra.Command {
+	var clioptNamePrefixes []string
+	cmd := &cobra.Command{
+		Use: "daemon-nat",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			t(clioptNamePrefixes)
+			return nil
+		},
+	}
+	cmd.Flags().StringArrayVarP(&clioptNamePrefixes,
+		"name", "n", []string{"n1"}, "")
+	return cmd
+}
+
+func t(names []string) {
+	ticker1 := time.NewTicker(time.Second)
+	ticker2 := time.NewTicker(time.Second)
+
+	for {
+		select {
+		case <-ticker1.C:
+			for _, name := range names {
+				// Get cache
+				cache, err := getLatestCache(name)
+				if err != nil {
+					fmt.Printf("ERROR1: %s\n", err.Error())
+					continue
+				}
+
+				// Walk and cleanup cache entry
+				for _, ent := range cache.entries {
+					expired, err := ent.IsExpired()
+					if err != nil {
+						fmt.Printf("ERROR2: %s\n", err.Error())
+						continue
+					}
+					if expired {
+						if err := ent.CleanupMapEntri(name); err != nil {
+							fmt.Printf("ERROR3: %s\n", err.Error())
+							continue
+						}
+						// TODO(slankdev): make LOG here
+					}
+				}
+			}
+
+		case <-ticker2.C:
+			continue
+		}
+	}
 }
