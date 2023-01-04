@@ -451,8 +451,8 @@ func NewCommandMapLoad() *cobra.Command {
 
 type CacheEntry struct {
 	Protocol             uint8
-	AddrInternal         net.IP
-	AddrExternal         net.IP
+	AddrInternal         uint32
+	AddrExternal         uint32
 	PortInternal         uint16
 	PortExternal         uint16
 	CreatedAt            uint64
@@ -465,12 +465,12 @@ type Cache struct {
 	entries []CacheEntry
 }
 
-func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr net.IP,
+func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr uint32,
 	iPort, ePort uint16, createdAt, updatedAt uint64, rxPkts, txPkts uint64) {
 	match := false
 	for idx, cache := range c.entries {
 		//fmt.Printf("-- ")
-		if cache.AddrInternal.Equal(iAddr) && cache.AddrExternal.Equal(eAddr) &&
+		if cache.AddrInternal == iAddr && cache.AddrExternal == eAddr &&
 			cache.PortInternal == iPort && cache.PortExternal == ePort &&
 			cache.Protocol == proto {
 			c.entries[idx].StatsReceivedPkts += rxPkts
@@ -519,7 +519,8 @@ func NewCommandMapDumpNat() *cobra.Command {
 					entries := m.Iterate()
 					for entries.Next(&key, &val) {
 						cache.statsIncrement(key.Proto,
-							net.IP(key.Addr[:]), net.IP(val.Addr[:]),
+							util.ConvertIPToUint32(net.IP(key.Addr[:])),
+							util.ConvertIPToUint32(net.IP(val.Addr[:])),
 							util.BS16(key.Port), util.BS16(val.Port), val.CreatedAt,
 							val.UpdatedAt, 0, val.Pkts)
 					}
@@ -535,8 +536,8 @@ func NewCommandMapDumpNat() *cobra.Command {
 					entries := m.Iterate()
 					for entries.Next(&key, &val) {
 						cache.statsIncrement(key.Proto,
-							net.IP(val.Addr[:]),
-							net.IP(key.Addr[:]),
+							util.ConvertIPToUint32(net.IP(val.Addr[:])),
+							util.ConvertIPToUint32(net.IP(key.Addr[:])),
 							util.BS16(val.Port),
 							util.BS16(key.Port),
 							val.CreatedAt, val.UpdatedAt,
@@ -553,10 +554,12 @@ func NewCommandMapDumpNat() *cobra.Command {
 			table := util.NewTableWriter(os.Stdout)
 			table.SetHeader([]string{"proto", "internal", "external", "tx", "rx", "created", "updated"})
 			for _, ent := range cache.entries {
+				iAddr := util.ConvertUint32ToIP(ent.AddrInternal)
+				eAddr := util.ConvertUint32ToIP(ent.AddrExternal)
 				table.Append([]string{
 					fmt.Sprintf("%d", ent.Protocol),
-					fmt.Sprintf("%s:%d", ent.AddrInternal, ent.PortInternal),
-					fmt.Sprintf("%s:%d", ent.AddrExternal, ent.PortExternal),
+					fmt.Sprintf("%s:%d", iAddr, ent.PortInternal),
+					fmt.Sprintf("%s:%d", eAddr, ent.PortExternal),
 					fmt.Sprintf("%d", ent.StatsTransmittedPkts),
 					fmt.Sprintf("%d", ent.StatsReceivedPkts),
 					fmt.Sprintf("%d", ent.CreatedAt),
