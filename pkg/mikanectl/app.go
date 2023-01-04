@@ -469,7 +469,6 @@ func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr uint32,
 	iPort, ePort uint16, createdAt, updatedAt uint64, rxPkts, txPkts uint64) {
 	match := false
 	for idx, cache := range c.entries {
-		//fmt.Printf("-- ")
 		if cache.AddrInternal == iAddr && cache.AddrExternal == eAddr &&
 			cache.PortInternal == iPort && cache.PortExternal == ePort &&
 			cache.Protocol == proto {
@@ -482,12 +481,10 @@ func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr uint32,
 				c.entries[idx].UpdatedAt = updatedAt
 			}
 			match = true
-			//fmt.Printf("updated\n")
 			break
 		}
 	}
 	if !match {
-		//fmt.Printf("new\n")
 		c.entries = append(c.entries, CacheEntry{
 			Protocol:             proto,
 			AddrInternal:         iAddr,
