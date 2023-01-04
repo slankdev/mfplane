@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"time"
 
 	ciliumebpf "github.com/cilium/ebpf"
 	"github.com/spf13/cobra"
@@ -507,51 +508,60 @@ func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr uint32,
 	}
 }
 
+func getLatestCache(namePrefix string) (*Cache, error) {
+	// Bi-directional Cache tmp data
+	cache := Cache{}
+
+	// Parse NAT-Out Caches
+	if err := ebpf.BatchMapOperation(namePrefix+"_nat_out_tabl",
+		ciliumebpf.LRUHash,
+		func(m *ciliumebpf.Map) error {
+			key := ebpf.AddrPort{}
+			val := ebpf.AddrPortStats{}
+			entries := m.Iterate()
+			for entries.Next(&key, &val) {
+				cache.statsIncrement(key.Proto,
+					util.ConvertIPToUint32(net.IP(key.Addr[:])),
+					util.ConvertIPToUint32(net.IP(val.Addr[:])),
+					util.BS16(key.Port), util.BS16(val.Port), val.CreatedAt,
+					val.UpdatedAt, 0, val.Pkts, 0, val.Bytes)
+			}
+			return nil
+		}); err != nil {
+		return nil, err
+	}
+
+	// Parse NAT-Ret Caches
+	if err := ebpf.BatchMapOperation(namePrefix+"_nat_ret_tabl",
+		ciliumebpf.LRUHash,
+		func(m *ciliumebpf.Map) error {
+			key := ebpf.AddrPort{}
+			val := ebpf.AddrPortStats{}
+			entries := m.Iterate()
+			for entries.Next(&key, &val) {
+				cache.statsIncrement(key.Proto,
+					util.ConvertIPToUint32(net.IP(val.Addr[:])),
+					util.ConvertIPToUint32(net.IP(key.Addr[:])),
+					util.BS16(val.Port),
+					util.BS16(key.Port),
+					val.CreatedAt, val.UpdatedAt,
+					val.Pkts, 0, val.Bytes, 0)
+			}
+			return nil
+		}); err != nil {
+		return nil, err
+	}
+
+	return &cache, nil
+}
+
 func NewCommandMapDumpNat() *cobra.Command {
 	var clioptMapNamePrefix string
 	cmd := &cobra.Command{
 		Use: "map-dump-nat",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Bi-directional Cache tmp data
-			cache := Cache{}
-
-			// Parse NAT-Out Caches
-			if err := ebpf.BatchMapOperation(clioptMapNamePrefix+"_nat_out_tabl",
-				ciliumebpf.LRUHash,
-				func(m *ciliumebpf.Map) error {
-					key := ebpf.AddrPort{}
-					val := ebpf.AddrPortStats{}
-					entries := m.Iterate()
-					for entries.Next(&key, &val) {
-						cache.statsIncrement(key.Proto,
-							util.ConvertIPToUint32(net.IP(key.Addr[:])),
-							util.ConvertIPToUint32(net.IP(val.Addr[:])),
-							util.BS16(key.Port), util.BS16(val.Port), val.CreatedAt,
-							val.UpdatedAt, 0, val.Pkts, 0, val.Bytes)
-					}
-					return nil
-				}); err != nil {
-				return err
-			}
-
-			// Parse NAT-Ret Caches
-			if err := ebpf.BatchMapOperation(clioptMapNamePrefix+"_nat_ret_tabl",
-				ciliumebpf.LRUHash,
-				func(m *ciliumebpf.Map) error {
-					key := ebpf.AddrPort{}
-					val := ebpf.AddrPortStats{}
-					entries := m.Iterate()
-					for entries.Next(&key, &val) {
-						cache.statsIncrement(key.Proto,
-							util.ConvertIPToUint32(net.IP(val.Addr[:])),
-							util.ConvertIPToUint32(net.IP(key.Addr[:])),
-							util.BS16(val.Port),
-							util.BS16(key.Port),
-							val.CreatedAt, val.UpdatedAt,
-							val.Pkts, 0, val.Bytes, 0)
-					}
-					return nil
-				}); err != nil {
+			cache, err := getLatestCache(clioptMapNamePrefix)
+			if err != nil {
 				return err
 			}
 
@@ -664,11 +674,35 @@ func NewCommandDaemonNat() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "daemon-nat",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			print("hello\n")
+			t(clioptNamePrefixes)
 			return nil
 		},
 	}
 	cmd.Flags().StringArrayVarP(&clioptNamePrefixes,
 		"name", "n", []string{"n1"}, "")
 	return cmd
+}
+
+func t(names []string) {
+	ticker1 := time.NewTicker(time.Second)
+	ticker2 := time.NewTicker(time.Second)
+
+	for {
+		select {
+		case <-ticker1.C:
+			for _, name := range names {
+				cache, err := getLatestCache(name)
+				if err != nil {
+					fmt.Printf("ERROR %s", err.Error())
+					continue
+				}
+
+				_ = cache
+				fmt.Printf("hello %s\n", name)
+			}
+
+		case <-ticker2.C:
+			continue
+		}
+	}
 }
