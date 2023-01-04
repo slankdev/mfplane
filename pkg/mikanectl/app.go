@@ -38,6 +38,7 @@ func NewCommand() *cobra.Command {
 	}
 	cmd.AddCommand(NewCommandHash())
 	cmd.AddCommand(NewCommandBpf())
+	cmd.AddCommand(NewCommandDaemonNat())
 	cmd.AddCommand(NewCommandMapLoad())
 	cmd.AddCommand(NewCommandMapDump())
 	cmd.AddCommand(NewCommandMapDumpNat())
@@ -655,5 +656,19 @@ func NewCommandMapClearNat() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&clioptMapName, "map", "m", "n1_nat_out_table", "")
+	return cmd
+}
+
+func NewCommandDaemonNat() *cobra.Command {
+	var clioptNamePrefixes []string
+	cmd := &cobra.Command{
+		Use: "daemon-nat",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			print("hello\n")
+			return nil
+		},
+	}
+	cmd.Flags().StringArrayVarP(&clioptNamePrefixes,
+		"name", "n", []string{"n1"}, "")
 	return cmd
 }
