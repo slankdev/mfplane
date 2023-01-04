@@ -9,6 +9,14 @@ localSids:
     uSidFunctionLength: 16
     sources:
     - 10.0.1.0/24
+- sid: fc00:3302::/32 # NAT2
+  End_MFN_NAT:
+    vip: 142.0.0.2
+    natPortHashBit: 0x00ff
+    uSidBlockLength: 16
+    uSidFunctionLength: 16
+    sources:
+    - 10.0.2.0/24
 fib4:
 - prefix: 10.0.1.0/24
   action:
@@ -16,3 +24,9 @@ fib4:
       mode: encap
       segs:
       - fc00:1101::0
+- prefix: 10.0.2.0/24
+  action:
+    encapSeg6:
+      mode: encap
+      segs:
+      - fc00:1102::0
