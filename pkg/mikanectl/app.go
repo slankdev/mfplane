@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 
 	ciliumebpf "github.com/cilium/ebpf"
 	"github.com/spf13/cobra"
@@ -40,6 +41,7 @@ func NewCommand() *cobra.Command {
 	cmd.AddCommand(NewCommandMapLoad())
 	cmd.AddCommand(NewCommandMapDump())
 	cmd.AddCommand(NewCommandMapDumpNat())
+	cmd.AddCommand(NewCommandMapDumpNatOld())
 	cmd.AddCommand(NewCommandMapClearNat())
 	cmd.AddCommand(util.NewCommandVersion())
 	cmd.AddCommand(util.NewCmdCompletion(cmd))
@@ -447,10 +449,132 @@ func NewCommandMapLoad() *cobra.Command {
 	return cmd
 }
 
+type CacheEntry struct {
+	Protocol             uint8
+	AddrInternal         net.IP
+	AddrExternal         net.IP
+	PortInternal         uint16
+	PortExternal         uint16
+	CreatedAt            uint64
+	UpdatedAt            uint64
+	StatsReceivedPkts    uint64
+	StatsTransmittedPkts uint64
+}
+
+type Cache struct {
+	entries []CacheEntry
+}
+
+func (c *Cache) statsIncrement(proto uint8, iAddr, eAddr net.IP,
+	iPort, ePort uint16, createdAt, updatedAt uint64, rxPkts, txPkts uint64) {
+	match := false
+	for idx, cache := range c.entries {
+		//fmt.Printf("-- ")
+		if cache.AddrInternal.Equal(iAddr) && cache.AddrExternal.Equal(eAddr) &&
+			cache.PortInternal == iPort && cache.PortExternal == ePort &&
+			cache.Protocol == proto {
+			c.entries[idx].StatsReceivedPkts += rxPkts
+			c.entries[idx].StatsTransmittedPkts += txPkts
+			if createdAt < cache.CreatedAt {
+				c.entries[idx].CreatedAt = createdAt
+			}
+			if updatedAt > cache.UpdatedAt {
+				c.entries[idx].UpdatedAt = updatedAt
+			}
+			match = true
+			//fmt.Printf("updated\n")
+			break
+		}
+	}
+	if !match {
+		//fmt.Printf("new\n")
+		c.entries = append(c.entries, CacheEntry{
+			Protocol:             proto,
+			AddrInternal:         iAddr,
+			AddrExternal:         eAddr,
+			PortInternal:         iPort,
+			PortExternal:         ePort,
+			CreatedAt:            createdAt,
+			UpdatedAt:            updatedAt,
+			StatsReceivedPkts:    rxPkts,
+			StatsTransmittedPkts: txPkts,
+		})
+	}
+}
+
 func NewCommandMapDumpNat() *cobra.Command {
-	var clioptMapName string
+	var clioptMapNamePrefix string
 	cmd := &cobra.Command{
 		Use: "map-dump-nat",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			//fmt.Printf("%s\n", clioptMapNamePrefix)
+			cache := Cache{}
+
+			// Parse NAT-Out Caches
+			if err := ebpf.BatchMapOperation(clioptMapNamePrefix+"_nat_out_tabl",
+				ciliumebpf.LRUHash,
+				func(m *ciliumebpf.Map) error {
+					key := ebpf.AddrPort{}
+					val := ebpf.AddrPortStats{}
+					entries := m.Iterate()
+					for entries.Next(&key, &val) {
+						cache.statsIncrement(key.Proto,
+							net.IP(key.Addr[:]), net.IP(val.Addr[:]),
+							util.BS16(key.Port), util.BS16(val.Port), val.CreatedAt,
+							val.UpdatedAt, 0, val.Pkts)
+					}
+					return nil
+				}); err != nil {
+				return err
+			}
+			if err := ebpf.BatchMapOperation(clioptMapNamePrefix+"_nat_ret_tabl",
+				ciliumebpf.LRUHash,
+				func(m *ciliumebpf.Map) error {
+					key := ebpf.AddrPort{}
+					val := ebpf.AddrPortStats{}
+					entries := m.Iterate()
+					for entries.Next(&key, &val) {
+						cache.statsIncrement(key.Proto,
+							net.IP(val.Addr[:]),
+							net.IP(key.Addr[:]),
+							util.BS16(val.Port),
+							util.BS16(key.Port),
+							val.CreatedAt, val.UpdatedAt,
+							val.Pkts, 0)
+					}
+					return nil
+				}); err != nil {
+				return err
+			}
+
+			// Parse NAT-Ret Caches
+
+			// Print Result
+			table := util.NewTableWriter(os.Stdout)
+			table.SetHeader([]string{"proto", "internal", "external", "tx", "rx", "created", "updated"})
+			for _, ent := range cache.entries {
+				table.Append([]string{
+					fmt.Sprintf("%d", ent.Protocol),
+					fmt.Sprintf("%s:%d", ent.AddrInternal, ent.PortInternal),
+					fmt.Sprintf("%s:%d", ent.AddrExternal, ent.PortExternal),
+					fmt.Sprintf("%d", ent.StatsTransmittedPkts),
+					fmt.Sprintf("%d", ent.StatsReceivedPkts),
+					fmt.Sprintf("%d", ent.CreatedAt),
+					fmt.Sprintf("%d", ent.UpdatedAt),
+				})
+			}
+			table.Render()
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptMapNamePrefix, "name", "n", "n1", "")
+	return cmd
+}
+
+func NewCommandMapDumpNatOld() *cobra.Command {
+	var clioptMapName string
+	cmd := &cobra.Command{
+		Use: "map-dump-nat-old",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("%s\n", clioptMapName)
 
