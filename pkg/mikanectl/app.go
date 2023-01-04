@@ -450,15 +450,17 @@ func NewCommandMapLoad() *cobra.Command {
 }
 
 type CacheEntry struct {
-	Protocol             uint8
-	AddrInternal         uint32
-	AddrExternal         uint32
-	PortInternal         uint16
-	PortExternal         uint16
-	CreatedAt            uint64
-	UpdatedAt            uint64
-	StatsReceivedPkts    uint64
-	StatsTransmittedPkts uint64
+	Protocol              uint8
+	AddrInternal          uint32
+	AddrExternal          uint32
+	PortInternal          uint16
+	PortExternal          uint16
+	CreatedAt             uint64
+	UpdatedAt             uint64
+	StatsReceivedPkts     uint64
+	StatsReceivedBytes    uint64
+	StatsTransmittedPkts  uint64
+	StatsTransmittedBytes uint64
 }
 
 type Cache struct {
@@ -550,7 +552,7 @@ func NewCommandMapDumpNat() *cobra.Command {
 			// Print Result
 			table := util.NewTableWriter(os.Stdout)
 			table.SetHeader([]string{"proto", "internal", "external",
-				"tx", "rx",
+				"tx(p:b)", "rx(p:b)",
 				"created", "updated"})
 			for _, ent := range cache.entries {
 				iAddr := util.ConvertUint32ToIP(ent.AddrInternal)
@@ -559,8 +561,8 @@ func NewCommandMapDumpNat() *cobra.Command {
 					fmt.Sprintf("%d", ent.Protocol),
 					fmt.Sprintf("%s:%d", iAddr, ent.PortInternal),
 					fmt.Sprintf("%s:%d", eAddr, ent.PortExternal),
-					fmt.Sprintf("%d", ent.StatsTransmittedPkts),
-					fmt.Sprintf("%d", ent.StatsReceivedPkts),
+					fmt.Sprintf("%d:%d", ent.StatsTransmittedPkts, ent.StatsTransmittedBytes),
+					fmt.Sprintf("%d:%d", ent.StatsReceivedPkts, ent.StatsReceivedBytes),
 					fmt.Sprintf("%d", ent.CreatedAt),
 					fmt.Sprintf("%d", ent.UpdatedAt),
 				})
