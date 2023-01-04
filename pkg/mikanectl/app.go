@@ -43,6 +43,7 @@ func NewCommand() *cobra.Command {
 	cmd.AddCommand(NewCommandMapLoad())
 	cmd.AddCommand(NewCommandMapDump())
 	cmd.AddCommand(NewCommandMapDumpNat())
+	cmd.AddCommand(NewCommandMapInstallNat())
 	cmd.AddCommand(NewCommandMapDumpNatOld())
 	cmd.AddCommand(NewCommandMapClearNat())
 	cmd.AddCommand(util.NewCommandVersion())
@@ -611,6 +612,30 @@ func getLatestCache(namePrefix string) (*Cache, error) {
 	}
 
 	return &cache, nil
+}
+
+func NewCommandMapInstallNat() *cobra.Command {
+	var clioptNamePrefix string
+	cmd := &cobra.Command{
+		Use: "map-clear-nat",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// nat-out
+			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_nat_out_tabl",
+				ciliumebpf.LRUHash,
+				func(m *ciliumebpf.Map) error {
+					return nil
+				}); err != nil {
+				return err
+			}
+
+			// TODO(slankdev): implement me
+			// nat-ret
+
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "n1", "")
+	return cmd
 }
 
 func NewCommandMapDumpNat() *cobra.Command {
