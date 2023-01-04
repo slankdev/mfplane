@@ -393,6 +393,26 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
 }
 
 static inline int
+snat_match(struct trie6_val *val, __u32 saddr)
+{
+  for (int i = 0; i < 256; i++) {
+    __u32 plen = val->sources[i].prefixlen;
+    __u32 addr = val->sources[i].addr;
+    if (plen == 0 && addr == 0)
+      return 0;
+
+    __u32 mask = 0;
+    for (int j = 0; j < 32 && j < plen; j++)
+      mask = mask | (0x80000000 >> j);
+    mask = bpf_ntohl(mask);
+
+    if (addr == (saddr & mask))
+      return 1;
+  }
+  return 0;
+}
+
+static inline int
 process_ipv6(struct xdp_md *ctx)
 {
   __u64 data = ctx->data;
