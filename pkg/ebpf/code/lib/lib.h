@@ -26,6 +26,18 @@
 
 #include "ebpfmap.h"
 
+#define NSEC_PER_SEC  (1000ULL * 1000ULL * 1000UL)
+#define NSEC_PER_MSEC (1000ULL * 1000ULL)
+#define NSEC_PER_USEC (1000UL)
+#define bpf_ktime_get_sec() \
+  ({ __u64 __x = bpf_ktime_get_ns() / NSEC_PER_SEC; __x; })
+#define bpf_ktime_get_msec()  \
+  ({ __u64 __x = bpf_ktime_get_ns() / NSEC_PER_MSEC; __x; })
+#define bpf_ktime_get_usec()  \
+  ({ __u64 __x = bpf_ktime_get_ns() / NSEC_PER_USEC; __x; })
+#define bpf_ktime_get_nsec()  \
+  ({ __u64 __x = bpf_ktime_get_ns(); __x; })
+
 // TODO(slankdev): i'm not sure how to write like follow...
 // #if STR_HELPER(NAME) == ""
 // #error "PLEASE DEFINE \"NAME\""

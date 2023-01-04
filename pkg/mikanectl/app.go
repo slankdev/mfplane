@@ -560,6 +560,16 @@ func NewCommandMapDumpNat() *cobra.Command {
 				"tx(p:b)", "rx(p:b)",
 				"created", "updated"})
 			for _, ent := range cache.entries {
+				const timefmt = "2006.01.02:15:04:05"
+				cat, err := util.KtimeSecToTime(ent.CreatedAt)
+				if err != nil {
+					return err
+				}
+				uat, err := util.KtimeSecToTime(ent.UpdatedAt)
+				if err != nil {
+					return err
+				}
+
 				iAddr := util.ConvertUint32ToIP(ent.AddrInternal)
 				eAddr := util.ConvertUint32ToIP(ent.AddrExternal)
 				table.Append([]string{
@@ -568,8 +578,8 @@ func NewCommandMapDumpNat() *cobra.Command {
 					fmt.Sprintf("%s:%d", eAddr, ent.PortExternal),
 					fmt.Sprintf("%d:%d", ent.StatsTransmittedPkts, ent.StatsTransmittedBytes),
 					fmt.Sprintf("%d:%d", ent.StatsReceivedPkts, ent.StatsReceivedBytes),
-					fmt.Sprintf("%d", ent.CreatedAt),
-					fmt.Sprintf("%d", ent.UpdatedAt),
+					cat.Format(timefmt),
+					uat.Format(timefmt),
 				})
 			}
 			table.Render()

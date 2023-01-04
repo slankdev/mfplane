@@ -164,7 +164,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
   }
   nval->pkts++;
   nval->bytes += data_end - data;
-  nval->update_at = bpf_ktime_get_ns();
+  nval->update_at = bpf_ktime_get_sec();
 
 #ifdef DEBUG
     char tmp[128] = {0};
@@ -281,7 +281,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   }
 
   __u32 sourceport = 0;
-  __u64 now = bpf_ktime_get_ns();
+  __u64 now = bpf_ktime_get_sec();
   struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
   if (!asval) {
     if (in_ih->protocol == IPPROTO_TCP && tcp_syn == 0)
