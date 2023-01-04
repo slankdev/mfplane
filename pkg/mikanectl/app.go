@@ -22,6 +22,8 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	ciliumebpf "github.com/cilium/ebpf"
@@ -616,25 +618,106 @@ func getLatestCache(namePrefix string) (*Cache, error) {
 
 func NewCommandMapInstallNat() *cobra.Command {
 	var clioptNamePrefix string
+	var clioptFlow string
 	cmd := &cobra.Command{
-		Use: "map-clear-nat",
+		Use: "map-install-nat-cache",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Parse CLI Input
+			println(clioptFlow)
+			words := strings.Split(clioptFlow, ":")
+			if len(words) != 5 {
+				return fmt.Errorf("invalid format %s", clioptFlow)
+			}
+
+			// Parse Porotocol
+			protoS := words[0]
+			protoI, err := strconv.Atoi(protoS)
+			proto := uint8(protoI)
+			if err != nil {
+				return err
+			}
+
+			// Parse Internal IP Address
+			iaddrS := words[1]
+			iaddrNI := net.ParseIP(iaddrS)
+			iaddr := [4]uint8{}
+			copy(iaddr[:], iaddrNI[12:])
+
+			// Parse Internal Port Number
+			iportS := words[2]
+			iportI, err := strconv.Atoi(iportS)
+			iport := util.BS16(uint16(iportI))
+			if err != nil {
+				return err
+			}
+
+			// Parse External IP Address
+			eaddrS := words[3]
+			eaddrNI := net.ParseIP(eaddrS)
+			eaddr := [4]uint8{}
+			copy(eaddr[:], eaddrNI[12:])
+
+			// Parse External Port Number
+			eportS := words[4]
+			eportI, err := strconv.Atoi(eportS)
+			eport := util.BS16(uint16(eportI))
+			if err != nil {
+				return err
+			}
+
 			// nat-out
 			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_nat_out_tabl",
 				ciliumebpf.LRUHash,
 				func(m *ciliumebpf.Map) error {
+					key := ebpf.AddrPort{
+						Proto: uint8(proto),
+						Addr:  iaddr,
+						Port:  iport,
+					}
+					val := ebpf.AddrPortStats{
+						Proto: uint8(proto),
+						Addr:  eaddr,
+						Port:  eport,
+						// CreatedAt TODO(slankdev)
+						// UpdatedAt TODO(slankdev)
+					}
+					if err := m.Update(key, val, ciliumebpf.UpdateNoExist); err != nil {
+						return err
+					}
 					return nil
 				}); err != nil {
 				return err
 			}
 
-			// TODO(slankdev): implement me
 			// nat-ret
+			if err := ebpf.BatchMapOperation(clioptNamePrefix+"_nat_ret_tabl",
+				ciliumebpf.LRUHash,
+				func(m *ciliumebpf.Map) error {
+					key := ebpf.AddrPort{
+						Proto: uint8(proto),
+						Addr:  eaddr,
+						Port:  eport,
+					}
+					val := ebpf.AddrPortStats{
+						Proto: uint8(proto),
+						Addr:  iaddr,
+						Port:  iport,
+						// CreatedAt TODO(slankdev)
+						// UpdatedAt TODO(slankdev)
+					}
+					if err := m.Update(key, val, ciliumebpf.UpdateNoExist); err != nil {
+						return err
+					}
+					return nil
+				}); err != nil {
+				return err
+			}
 
 			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "n1", "")
+	cmd.Flags().StringVarP(&clioptFlow, "flow", "f", "6:10.0.0.1:1024:142.0.0.1:1600", "")
 	return cmd
 }
 
