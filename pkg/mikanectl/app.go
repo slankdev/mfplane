@@ -465,6 +465,53 @@ type CacheEntry struct {
 	StatsTransmittedBytes uint64
 }
 
+func (e CacheEntry) CleanupMapEntri(namePrefix string) error {
+	// Delete from nat-out
+	if err := ebpf.BatchMapOperation(namePrefix+"_nat_out_tabl",
+		ciliumebpf.LRUHash,
+		func(m *ciliumebpf.Map) error {
+			ip := util.ConvertUint32ToIP(e.AddrInternal)
+			ipb := [4]byte{}
+			copy(ipb[:], ip)
+			key := ebpf.AddrPort{
+				Proto: e.Protocol,
+				Addr:  ipb,
+				Port:  util.BS16(e.PortInternal),
+			}
+			if err := m.Delete(key); err != nil {
+				fmt.Printf("DEBUG: delete key failed (1)\n")
+				return err
+			}
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	// Delete from nat-ret
+	if err := ebpf.BatchMapOperation(namePrefix+"_nat_ret_tabl",
+		ciliumebpf.LRUHash,
+		func(m *ciliumebpf.Map) error {
+			ip := util.ConvertUint32ToIP(e.AddrExternal)
+			ipb := [4]byte{}
+			copy(ipb[:], ip)
+			key := ebpf.AddrPort{
+				Proto: e.Protocol,
+				Addr:  ipb,
+				Port:  util.BS16(e.PortExternal),
+			}
+			out := ebpf.AddrPortStats{}
+			if err := m.LookupAndDelete(key, &out); err != nil {
+				fmt.Printf("DEBUG: delete key failed (2)\n")
+				return err
+			}
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (e CacheEntry) IsExpired() (bool, error) {
 	timeoutDuration := time.Duration(10 * time.Second)
 	now := time.Now()
@@ -705,7 +752,7 @@ func t(names []string) {
 				// Get cache
 				cache, err := getLatestCache(name)
 				if err != nil {
-					fmt.Printf("ERROR %s", err.Error())
+					fmt.Printf("ERROR1: %s\n", err.Error())
 					continue
 				}
 
@@ -713,13 +760,15 @@ func t(names []string) {
 				for _, ent := range cache.entries {
 					expired, err := ent.IsExpired()
 					if err != nil {
-						fmt.Printf("ERROR %s", err.Error())
+						fmt.Printf("ERROR2: %s\n", err.Error())
 						continue
 					}
 					if expired {
-						// TODO(slankdev): delete expired cache from
-						// nat-out-table, nat-ret-table
-						fmt.Printf("E\n")
+						if err := ent.CleanupMapEntri(name); err != nil {
+							fmt.Printf("ERROR3: %s\n", err.Error())
+							continue
+						}
+						// TODO(slankdev): make LOG here
 					}
 				}
 			}
