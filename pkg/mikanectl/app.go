@@ -465,6 +465,17 @@ type CacheEntry struct {
 	StatsTransmittedBytes uint64
 }
 
+func (e CacheEntry) IsExpired() (bool, error) {
+	timeoutDuration := time.Duration(10 * time.Second)
+	now := time.Now()
+	updatedAt, err := util.KtimeSecToTime(e.UpdatedAt)
+	if err != nil {
+		return false, err
+	}
+	diff := now.Sub(updatedAt)
+	return diff > timeoutDuration, nil
+}
+
 type Cache struct {
 	entries []CacheEntry
 }
@@ -691,14 +702,26 @@ func t(names []string) {
 		select {
 		case <-ticker1.C:
 			for _, name := range names {
+				// Get cache
 				cache, err := getLatestCache(name)
 				if err != nil {
 					fmt.Printf("ERROR %s", err.Error())
 					continue
 				}
 
-				_ = cache
-				fmt.Printf("hello %s\n", name)
+				// Walk and cleanup cache entry
+				for _, ent := range cache.entries {
+					expired, err := ent.IsExpired()
+					if err != nil {
+						fmt.Printf("ERROR %s", err.Error())
+						continue
+					}
+					if expired {
+						// TODO(slankdev): delete expired cache from
+						// nat-out-table, nat-ret-table
+						fmt.Printf("E\n")
+					}
+				}
 			}
 
 		case <-ticker2.C:
