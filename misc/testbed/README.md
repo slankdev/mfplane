@@ -23,7 +23,7 @@ index fd20409..6839e7f 100644
 
 Then, administrator will execute
 
-```shell
+```text
 $ ssh vpn.slank.dev
 $ sudo bash
 # cd /home/slankdev/mfplane/misc/testbed
