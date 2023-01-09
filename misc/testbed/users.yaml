@@ -1,0 +1,7 @@
+users:
+- name: slankdev.mbp
+  owner: Hiroki Shirokura
+  description: test1
+- name: slankdev.pixel5
+  owner: Hiroki Shirokura
+  description: test2
