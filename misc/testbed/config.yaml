@@ -13,3 +13,7 @@ users:
   name: slankdev.pixel5
   owner: Hiroki Shirokura
   description: test2
+- id: f2cc8de6-9e06-4fe5-aca5-05b54f358f62
+  name: slankdev.imac
+  owner: Hiroki Shirokura
+  description: test3
