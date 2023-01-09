@@ -47,8 +47,7 @@ SERVER_KEY_PATH = "/etc/wireguard/cache/server_key"
 os.makedirs("/etc/wireguard/cache", exist_ok=True)
 if not os.path.isfile("/etc/wireguard/cache/server_key"):
     tmp = subprocess.run(['wg', 'genkey'], capture_output=True, text=True).stdout
-    with open("/etc/wireguard/cache/server_key", 'w') as f:
-        f.write(tmp)
+    open("/etc/wireguard/cache/server_key", 'w').write(tmp)
 server_key = open(SERVER_KEY_PATH).read()
 
 print("[Interface]")
