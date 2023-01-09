@@ -25,9 +25,7 @@ if local_ip != actual_ip:
 # print(local_ip)
 # print(actual_ip)
 
-config = {}
-with open(args.config) as f:
-    config = yaml.safe_load(f)
+config = yaml.safe_load(open(args.config))
 # pprint.pprint(config)
 
 hosts = []
