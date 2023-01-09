@@ -1,3 +1,6 @@
+mtu: 1380
+listenPort: 51820
+cidr: 10.0.33.0/24
 users:
 - name: slankdev.mbp
   owner: Hiroki Shirokura

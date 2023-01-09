@@ -2,10 +2,14 @@
 import argparse
 import socket
 import sys
+import yaml
+import pprint
+import ipaddress
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--dry-run', action='store_true')
+parser.add_argument('-c', '--config', default='/home/slankdev/mfplane/misc/testbed/config.yaml')
 args = parser.parse_args()
 
 local_ip = socket.gethostbyname(socket.gethostname())
@@ -16,6 +20,50 @@ if local_ip != actual_ip:
     print(" vpn.slank.dev: {}".format(actual_ip))
     print(" local_ip:      {}".format(local_ip))
     sys.exit(1)
+# print(local_ip)
+# print(actual_ip)
 
-print(local_ip)
-print(actual_ip)
+config = {}
+with open(args.config) as f:
+    config = yaml.safe_load(f)
+# pprint.pprint(config)
+
+hosts = []
+first = True
+server_addr = ""
+for host in ipaddress.ip_network(config["cidr"]).hosts():
+    if first:
+        server_addr = str(host)
+        first = False
+        continue
+    hosts.append({"addr":str(host),"reserved":False})
+# for addr in hosts:
+#     print(addr)
+# print("\n\n")
+
+print("[Interface]")
+print("Address = {}/32".format(server_addr))
+print("MTU = {}".format(config["mtu"]))
+print("ListenPort = {}".format(config["listenPort"]))
+print("PrivateKey = {}".format("<TODO>"))
+
+for user in config["users"]:
+    allocated_addr = ""
+    for addr in hosts:
+        if not addr["reserved"]:
+            allocated_addr = addr["addr"]
+            addr["reserved"] = True
+            break
+    if allocated_addr == "":
+        print("address exeeded")
+        sys.exit(1)
+
+    print("")
+    print("# USERNAME:    {}".format(user["name"]))
+    print("# DESCRIPTION: {}".format(user["description"]))
+    print("[Peer]")
+    print("PublicKey = ")
+    print("AllowedIPs = {}/32".format(allocated_addr))
+
+# generate tmp file
+
