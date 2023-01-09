@@ -50,7 +50,7 @@ os.makedirs("/etc/wireguard/cache", exist_ok=True)
 SERVER_KEY_PATH = "/etc/wireguard/cache/server_key"
 SERVER_PUBKEY_PATH = "/etc/wireguard/cache/server_pub"
 if not os.path.isfile(SERVER_KEY_PATH):
-    tmp = subprocess.run(['wg', 'genkey'], capture_output=True, text=True).stdout
+    tmp = run(['wg', 'genkey'])
     open(SERVER_KEY_PATH, 'w').write(tmp)
 server_key = open(SERVER_KEY_PATH).read().replace("\n", "")
 if not os.path.isfile(SERVER_PUBKEY_PATH):
