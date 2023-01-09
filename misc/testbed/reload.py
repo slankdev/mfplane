@@ -50,13 +50,15 @@ os.makedirs("/etc/wireguard/cache", exist_ok=True)
 SERVER_KEY_PATH = "/etc/wireguard/cache/server_key"
 SERVER_PUBKEY_PATH = "/etc/wireguard/cache/server_pub"
 if not os.path.isfile(SERVER_KEY_PATH):
+    print("create new {}".format(SERVER_KEY_PATH))
     tmp = run(['wg', 'genkey'])
     open(SERVER_KEY_PATH, 'w').write(tmp)
 server_key = open(SERVER_KEY_PATH).read().replace("\n", "")
 if not os.path.isfile(SERVER_PUBKEY_PATH):
+    print("create new {}".format(SERVER_PUBKEY_PATH))
     tmp = run(['wg', 'pubkey'], stdin=open(SERVER_KEY_PATH))
-    open(SERVER_KEY_PATH, 'w').write(tmp)
-server_pubkey = open(SERVER_KEY_PATH).read().replace("\n", "")
+    open(SERVER_PUBKEY_PATH, 'w').write(tmp)
+server_pubkey = open(SERVER_PUBKEY_PATH).read().replace("\n", "")
 
 serverF = open("/etc/wireguard/cache/server.conf", "w")
 serverF.write("[Interface]\n")
@@ -79,10 +81,12 @@ for user in config["users"]:
     CLIENT_KEY_PATH = "/etc/wireguard/cache/client_{}_key".format(user["id"])
     CLIENT_PUBKEY_PATH = "/etc/wireguard/cache/client_{}_pub".format(user["id"])
     if not os.path.isfile(CLIENT_KEY_PATH):
+        print("create new {}".format(CLIENT_KEY_PATH))
         client_key = run(['wg', 'genkey'])
         open(CLIENT_KEY_PATH, 'w').write(client_key)
     client_key = open(CLIENT_KEY_PATH).read().replace("\n", "")
     if not os.path.isfile(CLIENT_PUBKEY_PATH):
+        print("create new {}".format(CLIENT_PUBKEY_PATH))
         client_pubkey = run(['wg', 'pubkey'], stdin=open(CLIENT_KEY_PATH))
         open(CLIENT_PUBKEY_PATH, 'w').write(client_pubkey)
     client_pubkey = open(CLIENT_PUBKEY_PATH).read().replace("\n", "")
