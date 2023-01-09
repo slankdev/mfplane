@@ -9,23 +9,28 @@ import subprocess
 import os
 
 
+def run(cmd, stdin=None):
+    return subprocess.run(cmd,
+        capture_output=True,
+        text=True, stdin=stdin).stdout
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--dry-run', action='store_true')
 parser.add_argument('-c', '--config', default='/home/slankdev/mfplane/misc/testbed/config.yaml')
 args = parser.parse_args()
+config = yaml.safe_load(open(args.config))
 
 local_ip = socket.gethostbyname(socket.gethostname())
-actual_ip = socket.gethostbyname("vpn.slank.dev")
+actual_ip = socket.gethostbyname(config["server"])
 if local_ip != actual_ip:
-    print("this script must be executed in vpn.slank.dev")
-    print("this machine looks like non vpn.slank.dev")
+    print("this script must be executed in {}".format(actual_ip))
+    print("this machine looks like non {}".format(actual_ip))
     print(" vpn.slank.dev: {}".format(actual_ip))
     print(" local_ip:      {}".format(local_ip))
     sys.exit(1)
 # print(local_ip)
 # print(actual_ip)
-
-config = yaml.safe_load(open(args.config))
 # pprint.pprint(config)
 
 hosts = []
@@ -41,18 +46,24 @@ for host in ipaddress.ip_network(config["cidr"]).hosts():
 #     print(addr)
 # print("\n\n")
 
-SERVER_KEY_PATH = "/etc/wireguard/cache/server_key"
 os.makedirs("/etc/wireguard/cache", exist_ok=True)
-if not os.path.isfile("/etc/wireguard/cache/server_key"):
+SERVER_KEY_PATH = "/etc/wireguard/cache/server_key"
+SERVER_PUBKEY_PATH = "/etc/wireguard/cache/server_pub"
+if not os.path.isfile(SERVER_KEY_PATH):
     tmp = subprocess.run(['wg', 'genkey'], capture_output=True, text=True).stdout
-    open("/etc/wireguard/cache/server_key", 'w').write(tmp)
-server_key = open(SERVER_KEY_PATH).read()
+    open(SERVER_KEY_PATH, 'w').write(tmp)
+server_key = open(SERVER_KEY_PATH).read().replace("\n", "")
+if not os.path.isfile(SERVER_PUBKEY_PATH):
+    tmp = run(['wg', 'pubkey'], stdin=open(SERVER_KEY_PATH))
+    open(SERVER_KEY_PATH, 'w').write(tmp)
+server_pubkey = open(SERVER_KEY_PATH).read().replace("\n", "")
 
-print("[Interface]")
-print("Address = {}/32".format(server_addr))
-print("MTU = {}".format(config["mtu"]))
-print("ListenPort = {}".format(config["listenPort"]))
-print("PrivateKey = {}".format(server_key))
+serverF = open("/etc/wireguard/cache/server.conf", "w")
+serverF.write("[Interface]\n")
+serverF.write("Address = {}/32\n".format(server_addr))
+serverF.write("MTU = {}\n".format(config["mtu"]))
+serverF.write("ListenPort = {}\n".format(config["listenPort"]))
+serverF.write("PrivateKey = {}\n".format(server_key))
 
 for user in config["users"]:
     allocated_addr = ""
@@ -65,14 +76,39 @@ for user in config["users"]:
         print("address exeeded")
         sys.exit(1)
 
-    client_key = subprocess.run(['wg', 'genkey'], capture_output=True, text=True).stdout
+    CLIENT_KEY_PATH = "/etc/wireguard/cache/client_{}_key".format(user["id"])
+    CLIENT_PUBKEY_PATH = "/etc/wireguard/cache/client_{}_pub".format(user["id"])
+    if not os.path.isfile(CLIENT_KEY_PATH):
+        client_key = run(['wg', 'genkey'])
+        open(CLIENT_KEY_PATH, 'w').write(client_key)
+    client_key = open(CLIENT_KEY_PATH).read().replace("\n", "")
+    if not os.path.isfile(CLIENT_PUBKEY_PATH):
+        client_pubkey = run(['wg', 'pubkey'], stdin=open(CLIENT_KEY_PATH))
+        open(CLIENT_PUBKEY_PATH, 'w').write(client_pubkey)
+    client_pubkey = open(CLIENT_PUBKEY_PATH).read().replace("\n", "")
 
-    print("")
-    print("# USERNAME:    {}".format(user["name"]))
-    print("# DESCRIPTION: {}".format(user["description"]))
-    print("[Peer]")
-    print("PublicKey = ")
-    print("AllowedIPs = {}/32".format(allocated_addr))
+    CLIENT_CONFIG_PATH = "/etc/wireguard/cache/client_{}.conf".format(user["id"])
+    with open(CLIENT_CONFIG_PATH, "w") as f:
+        f.write("# ID: {}\n".format(user["id"]))
+        f.write("# USERNAME: {}\n".format(user["name"]))
+        f.write("# DESCRIPTION: {}\n".format(user["description"]))
+        f.write("[Interface]\n")
+        f.write("PrivateKey = {}\n".format(client_key))
+        f.write("Address = {}/32\n".format(allocated_addr))
+        f.write("DNS = {}\n".format(",".join(config["nameservers"])))
+        f.write("[Peer]\n")
+        f.write("PublicKey = {}\n".format(server_pubkey))
+        f.write("AllowedIPs = 0.0.0.0/0\n")
+        f.write("Endpoint = vpn.slank.dev:{}\n".format(config["listenPort"]))
 
+    serverF.write("\n")
+    serverF.write("# ID: {}\n".format(user["id"]))
+    serverF.write("# USERNAME: {}\n".format(user["name"]))
+    serverF.write("# DESCRIPTION: {}\n".format(user["description"]))
+    serverF.write("[Peer]\n")
+    serverF.write("PublicKey = {}\n".format(client_pubkey))
+    serverF.write("AllowedIPs = {}/32\n".format(allocated_addr))
+
+serverF.close()
 # generate tmp file
 
