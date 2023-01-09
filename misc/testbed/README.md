@@ -24,9 +24,15 @@ index fd20409..6839e7f 100644
 Then, administrator will execute
 
 ```shell
-ssh vpn.slank.dev
-sudo bash
-cd /home/slankdev/mfplane/misc/testbed
-git pull
-./reload.py
+$ ssh vpn.slank.dev
+$ sudo bash
+# cd /home/slankdev/mfplane/misc/testbed
+# git pull
+# ./reload.py
+wg-quick down /etc/wireguard/cache/server.conf
+wg-quick up /etc/wireguard/cache/server.conf
+
+# wg-quick down /etc/wireguard/cache/server.conf
+# wg-quick up /etc/wireguard/cache/server.conf
+# cat /etc/wireguard/cache/client_f2cc8de6-9e06-4fe5-aca5-05b54f358f62.conf
 ```
