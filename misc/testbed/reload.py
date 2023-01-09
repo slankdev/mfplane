@@ -5,6 +5,8 @@ import sys
 import yaml
 import pprint
 import ipaddress
+import subprocess
+import os
 
 
 parser = argparse.ArgumentParser()
@@ -41,11 +43,19 @@ for host in ipaddress.ip_network(config["cidr"]).hosts():
 #     print(addr)
 # print("\n\n")
 
+SERVER_KEY_PATH = "/etc/wireguard/cache/server_key"
+os.makedirs("/etc/wireguard/cache", exist_ok=True)
+if not os.path.isfile("/etc/wireguard/cache/server_key"):
+    tmp = subprocess.run(['wg', 'genkey'], capture_output=True, text=True).stdout
+    with open("/etc/wireguard/cache/server_key", 'w') as f:
+        f.write(tmp)
+server_key = open(SERVER_KEY_PATH).read()
+
 print("[Interface]")
 print("Address = {}/32".format(server_addr))
 print("MTU = {}".format(config["mtu"]))
 print("ListenPort = {}".format(config["listenPort"]))
-print("PrivateKey = {}".format("<TODO>"))
+print("PrivateKey = {}".format(server_key))
 
 for user in config["users"]:
     allocated_addr = ""
@@ -57,6 +67,8 @@ for user in config["users"]:
     if allocated_addr == "":
         print("address exeeded")
         sys.exit(1)
+
+    client_key = subprocess.run(['wg', 'genkey'], capture_output=True, text=True).stdout
 
     print("")
     print("# USERNAME:    {}".format(user["name"]))
