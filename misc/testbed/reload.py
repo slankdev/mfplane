@@ -112,3 +112,5 @@ for user in config["users"]:
 serverF.close()
 # generate tmp file
 
+print("wg-quick down /etc/wireguard/cache/server.conf")
+print("wg-quick up /etc/wireguard/cache/server.conf")
