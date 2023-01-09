@@ -1,0 +1,15 @@
+server: vpn.slank.dev
+mtu: 1380
+listenPort: 51820
+cidr: 10.0.33.0/24
+nameservers:
+- 8.8.8.8
+users:
+- id: f1f18a2d-ba68-4004-8e06-404c4bdc1f35
+  name: slankdev.mbp
+  owner: Hiroki Shirokura
+  description: test1
+- id: 3a5a0c30-5e44-447f-9ace-6537cc89ad23
+  name: slankdev.pixel5
+  owner: Hiroki Shirokura
+  description: test2
