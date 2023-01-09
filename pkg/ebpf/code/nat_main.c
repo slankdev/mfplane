@@ -118,7 +118,8 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val)
 }
 
 static inline int
-process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
+process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
+                struct trie6_val *val)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
@@ -231,7 +232,8 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
 }
 
 static inline int
-process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
+process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
+                struct trie6_val *val)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
@@ -267,35 +269,36 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   const __u16 org_icmp_id = in_l4h->icmp_id;
 
   // Craft NAT Calculation Key
-  struct addr_port key = {0};
-  key.addr = in_ih->saddr;
-  key.proto = in_ih->protocol;
+  struct addr_port apkey = {0};
+  apkey.addr = in_ih->saddr;
+  apkey.proto = in_ih->protocol;
   switch (in_ih->protocol) {
   case IPPROTO_TCP:
   case IPPROTO_UDP:
-    key.port = in_l4h->source;
+    apkey.port = in_l4h->source;
     break;
   case IPPROTO_ICMP:
-    key.port = in_l4h->icmp_id;
+    apkey.port = in_l4h->icmp_id;
     break;
   }
 
   __u32 sourceport = 0;
   __u64 now = bpf_ktime_get_sec();
-  struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
+  struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &apkey);
   if (!asval) {
-    if (in_ih->protocol == IPPROTO_TCP && tcp_syn == 0)
-      return process_mf_redirect(ctx, val);
-
     __u32 hash = 0;
     switch (in_ih->protocol) {
     case IPPROTO_TCP:
+      if (tcp_syn == 0)
+        return process_mf_redirect(ctx, val);
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
-      bpf_printk(STR(NAME)"hash 0x%08x", hash);
+      //bpf_printk(STR(NAME)"hash 0x%08x", hash);
       break;
     case IPPROTO_UDP:
+      if (key->addr[4] != 0x00 && key->addr[5] != 0x00)
+        return process_mf_redirect(ctx, val);
       hash = jhash_2words(in_ih->saddr, in_l4h->source, 0xdeadbeaf);
       hash = jhash_2words(in_ih->protocol, 0, hash);
       break;
@@ -468,8 +471,8 @@ process_ipv6(struct xdp_md *ctx)
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   return snat_match(val, in_ih->saddr) ?
-    process_nat_out(ctx, val) :
-    process_nat_ret(ctx, val);
+    process_nat_out(ctx, &key, val) :
+    process_nat_ret(ctx, &key, val);
 }
 
 static inline int
