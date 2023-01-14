@@ -155,6 +155,18 @@ func FullIPv6(ip net.IP) string {
 		string(dst[28:])
 }
 
+func BitShiftLeft8(u8 [16]uint8) [16]uint8 {
+	ret := [16]uint8{}
+	for i := 0; i <= 15; i++ {
+		if i == 15 {
+			ret[i] = 0
+		} else {
+			ret[i] = u8[i+1]
+		}
+	}
+	return ret
+}
+
 func BitShiftRight8(u8 [16]uint8) [16]uint8 {
 	ret := [16]uint8{}
 	for i := 15; i >= 0; i-- {
@@ -850,6 +862,7 @@ var (
 )
 
 func httpHandler(w http.ResponseWriter, r *http.Request) {
+	println("call")
 	q0 := r.FormValue("q")
 	q1, err := base64.StdEncoding.DecodeString(q0)
 	if err != nil {
@@ -899,19 +912,60 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		out, err := json.Marshal(ent)
+		out, err := json.MarshalIndent(ent, "", "  ")
 		if err != nil {
 			io.WriteString(w, "ERROR6\n")
 			return
 		}
-		io.WriteString(w, string(out))
+		io.WriteString(w, string(out)+"\n")
 		return
 	}
 
 	// Check More Previous node
-	_ = sid
+	head := [16]uint8{}
+	u8 := [16]uint8{}
+	copy(u8[:], sid)
+	copy(head[:], sid)
+	u8 = BitShiftLeft8(u8)
+	u8 = BitShiftLeft8(u8)
+	u8[0] = head[0]
+	u8[1] = head[1]
+	copy(sid, u8[:])
+	//fmt.Printf("%s\n", sid)
+	host := [16]uint8{}
+	copy(host[:], sid)
+	host[3] = 0
+	hostip := net.IP(host[:])
+	//fmt.Printf("sid: %s\n", sid)
+	//fmt.Printf("host: %s\n", hostip.To16())
 
-	io.WriteString(w, fmt.Sprintf("%s\n", r.RemoteAddr))
+	if u8[2] == 0 && u8[3] == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		io.WriteString(w, "{\"msg\": \"END\"}\n")
+		return
+	}
+
+	nextParam := fmt.Sprintf("%s/%s/%s/%s", sid, protStr, addrStr, portStr)
+	nextParam = base64.StdEncoding.EncodeToString([]byte(nextParam))
+	//fmt.Printf("param: %s\n", nextParam)
+	//fmt.Printf("host: %s\n", hostip.To16())
+
+	url := fmt.Sprintf("http://[%s]:8080/?q=%s", hostip, nextParam)
+	println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		io.WriteString(w, "ERROR7\n")
+		return
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		io.WriteString(w, "ERROR8\n")
+		return
+	}
+	w.WriteHeader(resp.StatusCode)
+	w.Write(body)
+	//io.WriteString(w, "{\"msg\": \"NEED NEXT\"}")
 }
 
 func NewCommandDaemonNat() *cobra.Command {
