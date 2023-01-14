@@ -965,7 +965,6 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	//io.WriteString(w, "{\"msg\": \"NEED NEXT\"}")
 }
 
 func NewCommandDaemonNat() *cobra.Command {
