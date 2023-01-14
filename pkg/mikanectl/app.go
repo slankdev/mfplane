@@ -17,10 +17,14 @@ limitations under the License.
 package mikanectl
 
 import (
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -516,7 +520,7 @@ func (e CacheEntry) CleanupMapEntri(namePrefix string) error {
 }
 
 func (e CacheEntry) IsExpired() (bool, error) {
-	timeoutDuration := time.Duration(10 * time.Second)
+	timeoutDuration := time.Duration(1000 * time.Second)
 	now := time.Now()
 	updatedAt, err := util.KtimeSecToTime(e.UpdatedAt)
 	if err != nil {
@@ -841,17 +845,93 @@ func NewCommandMapClearNat() *cobra.Command {
 	return cmd
 }
 
+var (
+	Name string
+)
+
+func httpHandler(w http.ResponseWriter, r *http.Request) {
+	q0 := r.FormValue("q")
+	q1, err := base64.StdEncoding.DecodeString(q0)
+	if err != nil {
+		io.WriteString(w, "ERROR1\n")
+		return
+	}
+	words := strings.Split(string(q1), "/")
+	if len(words) != 4 {
+		io.WriteString(w, "ERROR2\n")
+		return
+	}
+	sidStr := words[0]
+	protStr := words[1]
+	addrStr := words[2]
+	portStr := words[3]
+	// pp.Println(words)
+
+	sid := net.ParseIP(sidStr)
+	prot, err := strconv.Atoi(protStr)
+	if err != nil {
+		io.WriteString(w, "ERROR3\n")
+		return
+	}
+	addr := util.ConvertIPToUint32(net.ParseIP(addrStr))
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		io.WriteString(w, "ERROR4\n")
+		return
+	}
+	// pp.Println(sid, prot, addr, port)
+
+	cache, err := getLatestCache(Name)
+	if err != nil {
+		io.WriteString(w, "ERROR5\n")
+		return
+	}
+
+	// Match Internal to External map
+	for _, ent := range cache.entries {
+		if ent.Protocol != uint8(prot) {
+			continue
+		}
+		if ent.AddrInternal != addr {
+			continue
+		}
+		if ent.PortInternal != uint16(port) {
+			continue
+		}
+
+		out, err := json.Marshal(ent)
+		if err != nil {
+			io.WriteString(w, "ERROR6\n")
+			return
+		}
+		io.WriteString(w, string(out))
+		return
+	}
+
+	// Check More Previous node
+	_ = sid
+
+	io.WriteString(w, fmt.Sprintf("%s\n", r.RemoteAddr))
+}
+
 func NewCommandDaemonNat() *cobra.Command {
+	var clioptPort int
 	var clioptNamePrefixes []string
 	cmd := &cobra.Command{
 		Use: "daemon-nat",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			go func() {
+				Name = clioptNamePrefixes[0]
+				http.HandleFunc("/", httpHandler)
+				http.ListenAndServe(fmt.Sprintf(":%d", clioptPort), nil)
+			}()
 			t(clioptNamePrefixes)
 			return nil
 		},
 	}
 	cmd.Flags().StringArrayVarP(&clioptNamePrefixes,
 		"name", "n", []string{"n1"}, "")
+	cmd.Flags().IntVarP(&clioptPort, "port", "p", 8080, "")
 	return cmd
 }
 
