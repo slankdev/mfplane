@@ -862,7 +862,7 @@ var (
 )
 
 func httpHandler(w http.ResponseWriter, r *http.Request) {
-	println("call")
+	//println("call")
 	q0 := r.FormValue("q")
 	q1, err := base64.StdEncoding.DecodeString(q0)
 	if err != nil {
@@ -951,7 +951,7 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Printf("host: %s\n", hostip.To16())
 
 	url := fmt.Sprintf("http://[%s]:8080/?q=%s", hostip, nextParam)
-	println(url)
+	//println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		io.WriteString(w, "ERROR7\n")
