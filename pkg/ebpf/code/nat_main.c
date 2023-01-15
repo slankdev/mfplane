@@ -60,6 +60,12 @@ struct {
   __type(value, struct mf_redir_rate_stat_val);
 } GLUE(NAME, rate_stats) SEC(".maps");
 
+struct {
+  __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
+  __uint(key_size, sizeof(__u32));   // TODO: nos sure it is needed or not
+  __uint(value_size, sizeof(__u32)); // TODO: nos sure it is needed or not
+} GLUE(NAME, events) SEC(".maps");
+
 static inline void shift8(int oct_offset, struct in6_addr *a)
 {
   __u8 *addr = a->in6_u.u6_addr8;
@@ -137,6 +143,13 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
     sval->bytes = data_end - data;
     sval->pkts = 1;
     sval->last_reset = bpf_ktime_get_ns();
+  }
+
+  // STAT Check and create event if neede
+  if (sval->pkts > 2) {
+    bpf_printk("perf");
+    bpf_perf_event_output(ctx, &GLUE(NAME, events), BPF_F_CURRENT_CPU, &skey,
+      sizeof(skey));
   }
 
   // mac addr swap
