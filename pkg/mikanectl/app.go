@@ -17,7 +17,9 @@ limitations under the License.
 package mikanectl
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -978,6 +980,7 @@ func NewCommandDaemonNat() *cobra.Command {
 				http.HandleFunc("/", httpHandler)
 				http.ListenAndServe(fmt.Sprintf(":%d", clioptPort), nil)
 			}()
+			go threadEventHandler(clioptNamePrefixes[0])
 			t(clioptNamePrefixes)
 			return nil
 		},
@@ -986,6 +989,35 @@ func NewCommandDaemonNat() *cobra.Command {
 		"name", "n", []string{"n1"}, "")
 	cmd.Flags().IntVarP(&clioptPort, "port", "p", 8080, "")
 	return cmd
+}
+
+func threadEventHandler(name string) {
+	perfEvent, err := ebpf.StartReader(name + "_events")
+	if err != nil {
+		panic(err)
+	}
+	defer close(perfEvent)
+
+	for {
+		pe := <-perfEvent
+		var sidBytes [16]uint8
+		var addrBytes [4]uint8
+		var port uint16
+		var proto uint8
+
+		buf := bytes.NewBuffer(pe.Record.RawSample)
+		binary.Read(buf, binary.BigEndian, &sidBytes)
+		binary.Read(buf, binary.BigEndian, &addrBytes)
+		binary.Read(buf, binary.BigEndian, &port)
+		binary.Read(buf, binary.BigEndian, &proto)
+
+		sidBytes[3] = 0
+		sid := net.IP(sidBytes[:])
+		addr := net.IP(addrBytes[:])
+
+		fmt.Printf("%s/%d/%s/%d\n", sid, proto, addr, port)
+		//println("\n\n")
+	}
 }
 
 func t(names []string) {
