@@ -130,26 +130,27 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
   struct mf_redir_rate_stat_val isval = {0};
   struct mf_redir_rate_stat_val *sval = bpf_map_lookup_elem(
     &(GLUE(NAME, rate_stats)), &skey);
+  __u64 now = bpf_ktime_get_ns();
   if (!sval) {
-    isval.bytes = 0;
-    isval.pkts = 0;
-    isval.last_reset = bpf_ktime_get_ns();
+    isval.bytes = data_end - data;
+    isval.pkts = 1;
+    isval.last_reset = now;
     bpf_map_update_elem(&GLUE(NAME, rate_stats), &skey, &isval, BPF_ANY);
     sval = &isval;
-  }
-  sval->bytes += data_end - data;
-  sval->pkts += 1;
-  if (bpf_ktime_get_ns() - sval->last_reset > 1000000000) {
-    sval->bytes = data_end - data;
-    sval->pkts = 1;
-    sval->last_reset = bpf_ktime_get_ns();
-  }
-
-  // STAT Check and create event if neede
-  if (sval->pkts > 2) {
-    bpf_printk("perf");
-    bpf_perf_event_output(ctx, &GLUE(NAME, events), BPF_F_CURRENT_CPU, &skey,
-      sizeof(skey));
+  } else {
+    if (now - sval->last_reset > 5000000000) {
+      if (sval->pkts > (5 * 100)) {
+        bpf_printk("perf");
+        bpf_perf_event_output(ctx, &GLUE(NAME, events), BPF_F_CURRENT_CPU,
+          &skey, sizeof(skey));
+      }
+      sval->bytes = data_end - data;
+      sval->pkts = 1;
+      sval->last_reset = now;
+    } else {
+      sval->bytes += data_end - data;
+      sval->pkts += 1;
+    }
   }
 
   // mac addr swap
