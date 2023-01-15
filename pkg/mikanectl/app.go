@@ -935,7 +935,9 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Printf("%s\n", sid)
 	host := [16]uint8{}
 	copy(host[:], sid)
-	host[3] = 0
+	for i := 3; i < 16; i++ {
+		host[i] = 0
+	}
 	hostip := net.IP(host[:])
 	//fmt.Printf("sid: %s\n", sid)
 	//fmt.Printf("host: %s\n", hostip.To16())
@@ -1009,7 +1011,9 @@ func threadEventHandler(name string) {
 		binary.Read(buf, binary.BigEndian, &addrBytes)
 		binary.Read(buf, binary.BigEndian, &port)
 		binary.Read(buf, binary.BigEndian, &proto)
-		sidBytes[3] = 0
+		for i := 3; i < 16; i++ {
+			sidBytes[i] = 0
+		}
 		sid := net.IP(sidBytes[:])
 		addr := net.IP(addrBytes[:])
 
