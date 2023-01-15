@@ -871,7 +871,7 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	words := strings.Split(string(q1), "/")
-	if len(words) != 4 {
+	if len(words) != 5 {
 		io.WriteString(w, "ERROR2\n")
 		return
 	}
@@ -879,7 +879,7 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 	protStr := words[1]
 	addrStr := words[2]
 	portStr := words[3]
-	// pp.Println(words)
+	isoutStr := words[4]
 
 	sid := net.ParseIP(sidStr)
 	prot, err := strconv.Atoi(protStr)
@@ -893,6 +893,11 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "ERROR4\n")
 		return
 	}
+	isout, err := strconv.Atoi(isoutStr)
+	if err != nil {
+		io.WriteString(w, "ERROR4.1\n")
+		return
+	}
 	// pp.Println(sid, prot, addr, port)
 
 	cache, err := getLatestCache(Name)
@@ -903,14 +908,18 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Match Internal to External map
 	for _, ent := range cache.entries {
-		if ent.Protocol != uint8(prot) {
-			continue
-		}
-		if ent.AddrInternal != addr {
-			continue
-		}
-		if ent.PortInternal != uint16(port) {
-			continue
+		if isout == 1 {
+			if ent.Protocol != uint8(prot) ||
+				ent.AddrInternal != addr ||
+				ent.PortInternal != uint16(port) {
+				continue
+			}
+		} else {
+			if ent.Protocol != uint8(prot) ||
+				ent.AddrExternal != addr ||
+				ent.PortExternal != uint16(port) {
+				continue
+			}
 		}
 
 		out, err := json.MarshalIndent(ent, "", "  ")
@@ -948,7 +957,8 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nextParam := fmt.Sprintf("%s/%s/%s/%s", sid, protStr, addrStr, portStr)
+	nextParam := fmt.Sprintf("%s/%s/%s/%s/%s",
+		sid, protStr, addrStr, portStr, isoutStr)
 	nextParam = base64.StdEncoding.EncodeToString([]byte(nextParam))
 	//fmt.Printf("param: %s\n", nextParam)
 	//fmt.Printf("host: %s\n", hostip.To16())
@@ -1006,11 +1016,13 @@ func threadEventHandler(name string) {
 		var addrBytes [4]uint8
 		var port uint16
 		var proto uint8
+		var isOut uint8
 		buf := bytes.NewBuffer(pe.Record.RawSample)
 		binary.Read(buf, binary.BigEndian, &sidBytes)
 		binary.Read(buf, binary.BigEndian, &addrBytes)
 		binary.Read(buf, binary.BigEndian, &port)
 		binary.Read(buf, binary.BigEndian, &proto)
+		binary.Read(buf, binary.BigEndian, &isOut)
 		for i := 3; i < 16; i++ {
 			sidBytes[i] = 0
 		}
@@ -1018,7 +1030,7 @@ func threadEventHandler(name string) {
 		addr := net.IP(addrBytes[:])
 
 		// Resolve session caches from remote N-node recursivery
-		nextParam := fmt.Sprintf("%s/%d/%s/%d", sid, proto, addr, port)
+		nextParam := fmt.Sprintf("%s/%d/%s/%d/%d", sid, proto, addr, port, isOut)
 		nextParam = base64.StdEncoding.EncodeToString([]byte(nextParam))
 		url := fmt.Sprintf("http://[%s]:8080/?q=%s", sid, nextParam)
 		resp, err := http.Get(url)

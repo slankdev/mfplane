@@ -90,7 +90,7 @@ static inline int finished(struct in6_addr *addr, int oct_offset, int n_shifts)
 
 static inline int
 process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
-                    struct addr_port *apkey)
+                    struct addr_port *apkey, __u8 is_out)
 {
   bpf_printk(STR(NAME)"try mf_redirect");
 
@@ -125,7 +125,7 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
   skey.addr = apkey->addr;
   skey.port = apkey->port;
   skey.proto = apkey->proto;
-  skey.is_out = 1;
+  skey.is_out = is_out;
   memcpy(&skey.next_sid, &oh->ip6.daddr, sizeof(struct in6_addr));
   struct mf_redir_rate_stat_val isval = {0};
   struct mf_redir_rate_stat_val *sval = bpf_map_lookup_elem(
@@ -207,7 +207,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   struct addr_port_stats *nval = NULL;
   nval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
   if (!nval) {
-    return process_mf_redirect(ctx, val, &key);
+    return process_mf_redirect(ctx, val, &key, 0);
   }
   nval->pkts++;
   nval->bytes += data_end - data;
@@ -336,7 +336,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
     switch (in_ih->protocol) {
     case IPPROTO_TCP:
       if (tcp_syn == 0)
-        return process_mf_redirect(ctx, val, &apkey);
+        return process_mf_redirect(ctx, val, &apkey, 1);
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
@@ -344,7 +344,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
       break;
     case IPPROTO_UDP:
       if (key->addr[4] != 0x00 && key->addr[5] != 0x00)
-        return process_mf_redirect(ctx, val, &apkey);
+        return process_mf_redirect(ctx, val, &apkey, 1);
       hash = jhash_2words(in_ih->saddr, in_l4h->source, 0xdeadbeaf);
       hash = jhash_2words(in_ih->protocol, 0, hash);
       break;
