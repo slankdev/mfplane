@@ -500,8 +500,8 @@ func (e CacheEntry) CleanupMapEntri(namePrefix string) error {
 				Port:  util.BS16(e.PortInternal),
 			}
 			if err := m.Delete(key); err != nil {
-				fmt.Printf("DEBUG: delete key failed (1)\n")
-				return err
+				fmt.Printf("DEBUG: delete key failed (1) ... ignore\n")
+				//return err
 			}
 			return nil
 		}); err != nil {
@@ -520,10 +520,9 @@ func (e CacheEntry) CleanupMapEntri(namePrefix string) error {
 				Addr:  ipb,
 				Port:  util.BS16(e.PortExternal),
 			}
-			out := ebpf.AddrPortStats{}
-			if err := m.LookupAndDelete(key, &out); err != nil {
-				fmt.Printf("DEBUG: delete key failed (2)\n")
-				return err
+			if err := m.Delete(key); err != nil {
+				fmt.Printf("DEBUG: delete key failed (2) ... ignore\n")
+				//return err
 			}
 			return nil
 		}); err != nil {
