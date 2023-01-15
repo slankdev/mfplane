@@ -17,10 +17,16 @@ limitations under the License.
 package mikanectl
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -149,6 +155,18 @@ func FullIPv6(ip net.IP) string {
 		string(dst[20:24]) + ":" +
 		string(dst[24:28]) + ":" +
 		string(dst[28:])
+}
+
+func BitShiftLeft8(u8 [16]uint8) [16]uint8 {
+	ret := [16]uint8{}
+	for i := 0; i <= 15; i++ {
+		if i == 15 {
+			ret[i] = 0
+		} else {
+			ret[i] = u8[i+1]
+		}
+	}
+	return ret
 }
 
 func BitShiftRight8(u8 [16]uint8) [16]uint8 {
@@ -482,8 +500,8 @@ func (e CacheEntry) CleanupMapEntri(namePrefix string) error {
 				Port:  util.BS16(e.PortInternal),
 			}
 			if err := m.Delete(key); err != nil {
-				fmt.Printf("DEBUG: delete key failed (1)\n")
-				return err
+				fmt.Printf("DEBUG: delete key failed (1) ... ignore\n")
+				//return err
 			}
 			return nil
 		}); err != nil {
@@ -502,10 +520,9 @@ func (e CacheEntry) CleanupMapEntri(namePrefix string) error {
 				Addr:  ipb,
 				Port:  util.BS16(e.PortExternal),
 			}
-			out := ebpf.AddrPortStats{}
-			if err := m.LookupAndDelete(key, &out); err != nil {
-				fmt.Printf("DEBUG: delete key failed (2)\n")
-				return err
+			if err := m.Delete(key); err != nil {
+				fmt.Printf("DEBUG: delete key failed (2) ... ignore\n")
+				//return err
 			}
 			return nil
 		}); err != nil {
@@ -516,7 +533,7 @@ func (e CacheEntry) CleanupMapEntri(namePrefix string) error {
 }
 
 func (e CacheEntry) IsExpired() (bool, error) {
-	timeoutDuration := time.Duration(10 * time.Second)
+	timeoutDuration := time.Duration(1000 * time.Second)
 	now := time.Now()
 	updatedAt, err := util.KtimeSecToTime(e.UpdatedAt)
 	if err != nil {
@@ -841,18 +858,261 @@ func NewCommandMapClearNat() *cobra.Command {
 	return cmd
 }
 
+var (
+	Name string
+)
+
+func httpHandler(w http.ResponseWriter, r *http.Request) {
+	//println("call")
+	q0 := r.FormValue("q")
+	q1, err := base64.StdEncoding.DecodeString(q0)
+	if err != nil {
+		io.WriteString(w, "ERROR1\n")
+		return
+	}
+	words := strings.Split(string(q1), "/")
+	if len(words) != 5 {
+		io.WriteString(w, "ERROR2\n")
+		return
+	}
+	sidStr := words[0]
+	protStr := words[1]
+	addrStr := words[2]
+	portStr := words[3]
+	isoutStr := words[4]
+
+	sid := net.ParseIP(sidStr)
+	prot, err := strconv.Atoi(protStr)
+	if err != nil {
+		io.WriteString(w, "ERROR3\n")
+		return
+	}
+	addr := util.ConvertIPToUint32(net.ParseIP(addrStr))
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		io.WriteString(w, "ERROR4\n")
+		return
+	}
+	isout, err := strconv.Atoi(isoutStr)
+	if err != nil {
+		io.WriteString(w, "ERROR4.1\n")
+		return
+	}
+	// pp.Println(sid, prot, addr, port)
+
+	cache, err := getLatestCache(Name)
+	if err != nil {
+		io.WriteString(w, "ERROR5\n")
+		return
+	}
+
+	// Match Internal to External map
+	for _, ent := range cache.entries {
+		if isout == 1 {
+			if ent.Protocol != uint8(prot) ||
+				ent.AddrInternal != addr ||
+				ent.PortInternal != uint16(port) {
+				continue
+			}
+		} else {
+			if ent.Protocol != uint8(prot) ||
+				ent.AddrExternal != addr ||
+				ent.PortExternal != uint16(port) {
+				continue
+			}
+		}
+
+		out, err := json.MarshalIndent(ent, "", "  ")
+		if err != nil {
+			io.WriteString(w, "ERROR6\n")
+			return
+		}
+		io.WriteString(w, string(out)+"\n")
+		return
+	}
+
+	// Check More Previous node
+	head := [16]uint8{}
+	u8 := [16]uint8{}
+	copy(u8[:], sid)
+	copy(head[:], sid)
+	u8 = BitShiftLeft8(u8)
+	u8 = BitShiftLeft8(u8)
+	u8[0] = head[0]
+	u8[1] = head[1]
+	copy(sid, u8[:])
+	//fmt.Printf("%s\n", sid)
+	host := [16]uint8{}
+	copy(host[:], sid)
+	for i := 3; i < 16; i++ {
+		host[i] = 0
+	}
+	hostip := net.IP(host[:])
+	//fmt.Printf("sid: %s\n", sid)
+	//fmt.Printf("host: %s\n", hostip.To16())
+
+	if u8[2] == 0 && u8[3] == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		io.WriteString(w, "{\"msg\": \"END\"}\n")
+		return
+	}
+
+	nextParam := fmt.Sprintf("%s/%s/%s/%s/%s",
+		sid, protStr, addrStr, portStr, isoutStr)
+	nextParam = base64.StdEncoding.EncodeToString([]byte(nextParam))
+	//fmt.Printf("param: %s\n", nextParam)
+	//fmt.Printf("host: %s\n", hostip.To16())
+
+	url := fmt.Sprintf("http://[%s]:8080/?q=%s", hostip, nextParam)
+	//println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		io.WriteString(w, "ERROR7\n")
+		return
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		io.WriteString(w, "ERROR8\n")
+		return
+	}
+	w.WriteHeader(resp.StatusCode)
+	w.Write(body)
+}
+
 func NewCommandDaemonNat() *cobra.Command {
+	var clioptPort int
 	var clioptNamePrefixes []string
 	cmd := &cobra.Command{
 		Use: "daemon-nat",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			go func() {
+				Name = clioptNamePrefixes[0]
+				http.HandleFunc("/", httpHandler)
+				http.ListenAndServe(fmt.Sprintf(":%d", clioptPort), nil)
+			}()
+			go threadEventHandler(clioptNamePrefixes[0])
 			t(clioptNamePrefixes)
 			return nil
 		},
 	}
 	cmd.Flags().StringArrayVarP(&clioptNamePrefixes,
 		"name", "n", []string{"n1"}, "")
+	cmd.Flags().IntVarP(&clioptPort, "port", "p", 8080, "")
 	return cmd
+}
+
+func threadEventHandler(name string) {
+	perfEvent, err := ebpf.StartReader(name + "_events")
+	if err != nil {
+		panic(err)
+	}
+	defer close(perfEvent)
+
+	for {
+		// Parse event data
+		pe := <-perfEvent
+		var sidBytes [16]uint8
+		var addrBytes [4]uint8
+		var port uint16
+		var proto uint8
+		var isOut uint8
+		buf := bytes.NewBuffer(pe.Record.RawSample)
+		binary.Read(buf, binary.BigEndian, &sidBytes)
+		binary.Read(buf, binary.BigEndian, &addrBytes)
+		binary.Read(buf, binary.BigEndian, &port)
+		binary.Read(buf, binary.BigEndian, &proto)
+		binary.Read(buf, binary.BigEndian, &isOut)
+		for i := 3; i < 16; i++ {
+			sidBytes[i] = 0
+		}
+		sid := net.IP(sidBytes[:])
+		addr := net.IP(addrBytes[:])
+
+		// Resolve session caches from remote N-node recursivery
+		nextParam := fmt.Sprintf("%s/%d/%s/%d/%d", sid, proto, addr, port, isOut)
+		nextParam = base64.StdEncoding.EncodeToString([]byte(nextParam))
+		url := fmt.Sprintf("http://[%s]:8080/?q=%s", sid, nextParam)
+		resp, err := http.Get(url)
+		if err != nil {
+			fmt.Printf("E: %+v\n", err)
+			continue
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Printf("E: %+v\n", err)
+			resp.Body.Close()
+			continue
+		}
+		// fmt.Printf("LOG: %s\n", nextParam)
+		// fmt.Printf("OUT: %s\n\n", string(body))
+
+		// Install NAT Cache
+		ent := CacheEntry{}
+		if err := json.Unmarshal(body, &ent); err != nil {
+			fmt.Printf("E: %+v\n", err)
+			resp.Body.Close()
+			continue
+		}
+		resp.Body.Close()
+
+		var iAddrByte [4]uint8
+		var eAddrByte [4]uint8
+		iAddrIP := util.ConvertUint32ToIP(ent.AddrInternal)
+		eAddrIP := util.ConvertUint32ToIP(ent.AddrExternal)
+		copy(iAddrByte[:], iAddrIP)
+		copy(eAddrByte[:], eAddrIP)
+
+		// nat-out
+		if err := ebpf.BatchMapOperation(name+"_nat_out_tabl",
+			ciliumebpf.LRUHash,
+			func(m *ciliumebpf.Map) error {
+				key := ebpf.AddrPort{
+					Proto: uint8(ent.Protocol),
+					Addr:  iAddrByte,
+					Port:  util.BS16((ent.PortInternal)),
+				}
+				val := ebpf.AddrPortStats{
+					Proto:     uint8(proto),
+					Addr:      eAddrByte,
+					Port:      util.BS16(uint16(ent.PortExternal)),
+					CreatedAt: ent.CreatedAt,
+					UpdatedAt: ent.UpdatedAt,
+				}
+				if err := m.Update(key, val, ciliumebpf.UpdateNoExist); err != nil {
+					return err
+				}
+				return nil
+			}); err != nil {
+			fmt.Printf("E: %+v\n", err)
+			continue
+		}
+
+		// nat-ret
+		if err := ebpf.BatchMapOperation(name+"_nat_ret_tabl",
+			ciliumebpf.LRUHash,
+			func(m *ciliumebpf.Map) error {
+				key := ebpf.AddrPort{
+					Proto: uint8(proto),
+					Addr:  eAddrByte,
+					Port:  util.BS16(uint16(ent.PortExternal)),
+				}
+				val := ebpf.AddrPortStats{
+					Proto:     uint8(ent.Protocol),
+					Addr:      iAddrByte,
+					Port:      util.BS16((ent.PortInternal)),
+					CreatedAt: ent.CreatedAt,
+					UpdatedAt: ent.UpdatedAt,
+				}
+				if err := m.Update(key, val, ciliumebpf.UpdateNoExist); err != nil {
+					return err
+				}
+				return nil
+			}); err != nil {
+			fmt.Printf("E: %+v\n", err)
+			continue
+		}
+	}
 }
 
 func t(names []string) {

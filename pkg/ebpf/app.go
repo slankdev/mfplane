@@ -24,9 +24,11 @@ import (
 	"runtime"
 
 	"github.com/cilium/ebpf"
-	"github.com/slankdev/hyperplane/pkg/util"
+	"github.com/cilium/ebpf/perf"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+
+	"github.com/slankdev/hyperplane/pkg/util"
 )
 
 //go:embed code
@@ -252,4 +254,55 @@ func GetMapIDsByNameType(mapName string, mapType ebpf.MapType) ([]ebpf.MapID, er
 		ids = append(ids, id)
 	}
 	return ids, nil
+}
+
+type PerfObject struct {
+	MapID  ebpf.MapID
+	Record perf.Record
+}
+
+func StartReaderPerMap(mapID ebpf.MapID, poCh chan PerfObject) error {
+	m, err := ebpf.NewMapFromID(mapID)
+	if err != nil {
+		return err
+	}
+	defer m.Close()
+
+	rd, err := perf.NewReader(m, 4096)
+	if err != nil {
+		return err
+	}
+	defer rd.Close()
+
+	for {
+		rec, err := rd.Read()
+		if err != nil {
+			return err
+		}
+		po := PerfObject{
+			MapID:  mapID,
+			Record: rec,
+		}
+		poCh <- po
+	}
+}
+
+func StartReader(name string) (chan PerfObject, error) {
+	ids, err := GetMapIDsByNameType(name, ebpf.PerfEventArray)
+	if err != nil {
+		return nil, err
+	}
+
+	poCh := make(chan PerfObject, 10)
+	for _, id := range ids {
+		go func(id ebpf.MapID) {
+			for {
+				if err := StartReaderPerMap(id, poCh); err != nil {
+					fmt.Printf("FAIL: %s ... ignored", err.Error())
+				}
+			}
+		}(id)
+	}
+
+	return poCh, nil
 }

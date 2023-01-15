@@ -53,6 +53,19 @@ struct {
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib6) SEC(".maps");
 
+struct {
+  __uint(type, BPF_MAP_TYPE_LRU_HASH);
+  __uint(max_entries, 65535);
+  __type(key, struct mf_redir_rate_stat_key);
+  __type(value, struct mf_redir_rate_stat_val);
+} GLUE(NAME, rate_stats) SEC(".maps");
+
+struct {
+  __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
+  __uint(key_size, sizeof(__u32));   // TODO: nos sure it is needed or not
+  __uint(value_size, sizeof(__u32)); // TODO: nos sure it is needed or not
+} GLUE(NAME, events) SEC(".maps");
+
 static inline void shift8(int oct_offset, struct in6_addr *a)
 {
   __u8 *addr = a->in6_u.u6_addr8;
@@ -76,7 +89,8 @@ static inline int finished(struct in6_addr *addr, int oct_offset, int n_shifts)
 }
 
 static inline int
-process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val)
+process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
+                    struct addr_port *apkey, __u8 is_out)
 {
   bpf_printk(STR(NAME)"try mf_redirect");
 
@@ -106,6 +120,39 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val)
     shift8(oct_offset, &oh->ip6.daddr);
   }
 
+  // STAT Get
+  struct mf_redir_rate_stat_key skey = {0};
+  skey.addr = apkey->addr;
+  skey.port = apkey->port;
+  skey.proto = apkey->proto;
+  skey.is_out = is_out;
+  memcpy(&skey.next_sid, &oh->ip6.daddr, sizeof(struct in6_addr));
+  struct mf_redir_rate_stat_val isval = {0};
+  struct mf_redir_rate_stat_val *sval = bpf_map_lookup_elem(
+    &(GLUE(NAME, rate_stats)), &skey);
+  __u64 now = bpf_ktime_get_ns();
+  if (!sval) {
+    isval.bytes = data_end - data;
+    isval.pkts = 1;
+    isval.last_reset = now;
+    bpf_map_update_elem(&GLUE(NAME, rate_stats), &skey, &isval, BPF_ANY);
+    sval = &isval;
+  } else {
+    if (now - sval->last_reset > 5000000000) {
+      if (sval->pkts > (5 * 100)) {
+        bpf_printk("perf");
+        bpf_perf_event_output(ctx, &GLUE(NAME, events), BPF_F_CURRENT_CPU,
+          &skey, sizeof(skey));
+      }
+      sval->bytes = data_end - data;
+      sval->pkts = 1;
+      sval->last_reset = now;
+    } else {
+      sval->bytes += data_end - data;
+      sval->pkts += 1;
+    }
+  }
+
   // mac addr swap
   __u8 tmpmac[6] = {0};
   memcpy(tmpmac, eh->h_dest, 6);
@@ -118,7 +165,8 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val)
 }
 
 static inline int
-process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
+process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
+                struct trie6_val *val)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
@@ -160,7 +208,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
   struct addr_port_stats *nval = NULL;
   nval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
   if (!nval) {
-    return process_mf_redirect(ctx, val);
+    return process_mf_redirect(ctx, val, &key, 0);
   }
   nval->pkts++;
   nval->bytes += data_end - data;
@@ -231,7 +279,8 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_val *val)
 }
 
 static inline int
-process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
+process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
+                struct trie6_val *val)
 {
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
@@ -267,35 +316,36 @@ process_nat_out(struct xdp_md *ctx, struct trie6_val *val)
   const __u16 org_icmp_id = in_l4h->icmp_id;
 
   // Craft NAT Calculation Key
-  struct addr_port key = {0};
-  key.addr = in_ih->saddr;
-  key.proto = in_ih->protocol;
+  struct addr_port apkey = {0};
+  apkey.addr = in_ih->saddr;
+  apkey.proto = in_ih->protocol;
   switch (in_ih->protocol) {
   case IPPROTO_TCP:
   case IPPROTO_UDP:
-    key.port = in_l4h->source;
+    apkey.port = in_l4h->source;
     break;
   case IPPROTO_ICMP:
-    key.port = in_l4h->icmp_id;
+    apkey.port = in_l4h->icmp_id;
     break;
   }
 
   __u32 sourceport = 0;
   __u64 now = bpf_ktime_get_sec();
-  struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &key);
+  struct addr_port_stats *asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out_table)), &apkey);
   if (!asval) {
-    if (in_ih->protocol == IPPROTO_TCP && tcp_syn == 0)
-      return process_mf_redirect(ctx, val);
-
     __u32 hash = 0;
     switch (in_ih->protocol) {
     case IPPROTO_TCP:
+      if (tcp_syn == 0)
+        return process_mf_redirect(ctx, val, &apkey, 1);
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
-      bpf_printk(STR(NAME)"hash 0x%08x", hash);
+      //bpf_printk(STR(NAME)"hash 0x%08x", hash);
       break;
     case IPPROTO_UDP:
+      if (key->addr[4] != 0x00 && key->addr[5] != 0x00)
+        return process_mf_redirect(ctx, val, &apkey, 1);
       hash = jhash_2words(in_ih->saddr, in_l4h->source, 0xdeadbeaf);
       hash = jhash_2words(in_ih->protocol, 0, hash);
       break;
@@ -468,8 +518,8 @@ process_ipv6(struct xdp_md *ctx)
   struct iphdr *in_ih = (struct iphdr *)(oh + 1);
   assert_len(in_ih, data_end);
   return snat_match(val, in_ih->saddr) ?
-    process_nat_out(ctx, val) :
-    process_nat_ret(ctx, val);
+    process_nat_out(ctx, &key, val) :
+    process_nat_ret(ctx, &key, val);
 }
 
 static inline int
