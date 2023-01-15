@@ -90,4 +90,18 @@ struct flow_processor {
   __u64 stats_total_pkts;
 } __attribute__ ((packed));
 
+struct mf_redir_rate_stat_key {
+  struct in6_addr next_sid;
+  __u32 addr;
+  __u16 port;
+  __u8 proto;
+  __u8 is_out;
+}  __attribute__ ((packed));
+
+struct mf_redir_rate_stat_val {
+  __u64 last_reset;
+  __u64 pkts;
+  __u64 bytes;
+}  __attribute__ ((packed));
+
 #endif /* _EBPFMAP_H_ */

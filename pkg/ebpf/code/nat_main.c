@@ -53,6 +53,13 @@ struct {
   __uint(map_flags, BPF_F_NO_PREALLOC);
 } GLUE(NAME, fib6) SEC(".maps");
 
+struct {
+  __uint(type, BPF_MAP_TYPE_LRU_HASH);
+  __uint(max_entries, 65535);
+  __type(key, struct mf_redir_rate_stat_key);
+  __type(value, struct mf_redir_rate_stat_val);
+} GLUE(NAME, rate_stats) SEC(".maps");
+
 static inline void shift8(int oct_offset, struct in6_addr *a)
 {
   __u8 *addr = a->in6_u.u6_addr8;
@@ -76,7 +83,8 @@ static inline int finished(struct in6_addr *addr, int oct_offset, int n_shifts)
 }
 
 static inline int
-process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val)
+process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
+                    struct addr_port *apkey)
 {
   bpf_printk(STR(NAME)"try mf_redirect");
 
@@ -104,6 +112,31 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val)
   // bit shitt
   for (int j = 0; j < n_shifts & j < 4; j++) {
     shift8(oct_offset, &oh->ip6.daddr);
+  }
+
+  // STAT Get
+  struct mf_redir_rate_stat_key skey = {0};
+  skey.addr = apkey->addr;
+  skey.port = apkey->port;
+  skey.proto = apkey->proto;
+  skey.is_out = 1;
+  memcpy(&skey.next_sid, &oh->ip6.daddr, sizeof(struct in6_addr));
+  struct mf_redir_rate_stat_val isval = {0};
+  struct mf_redir_rate_stat_val *sval = bpf_map_lookup_elem(
+    &(GLUE(NAME, rate_stats)), &skey);
+  if (!sval) {
+    isval.bytes = 0;
+    isval.pkts = 0;
+    isval.last_reset = bpf_ktime_get_ns();
+    bpf_map_update_elem(&GLUE(NAME, rate_stats), &skey, &isval, BPF_ANY);
+    sval = &isval;
+  }
+  sval->bytes += data_end - data;
+  sval->pkts += 1;
+  if (bpf_ktime_get_ns() - sval->last_reset > 1000000000) {
+    sval->bytes = data_end - data;
+    sval->pkts = 1;
+    sval->last_reset = bpf_ktime_get_ns();
   }
 
   // mac addr swap
@@ -161,7 +194,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   struct addr_port_stats *nval = NULL;
   nval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret_table)), &key);
   if (!nval) {
-    return process_mf_redirect(ctx, val);
+    return process_mf_redirect(ctx, val, &key);
   }
   nval->pkts++;
   nval->bytes += data_end - data;
@@ -290,7 +323,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
     switch (in_ih->protocol) {
     case IPPROTO_TCP:
       if (tcp_syn == 0)
-        return process_mf_redirect(ctx, val);
+        return process_mf_redirect(ctx, val, &apkey);
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
@@ -298,7 +331,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
       break;
     case IPPROTO_UDP:
       if (key->addr[4] != 0x00 && key->addr[5] != 0x00)
-        return process_mf_redirect(ctx, val);
+        return process_mf_redirect(ctx, val, &apkey);
       hash = jhash_2words(in_ih->saddr, in_l4h->source, 0xdeadbeaf);
       hash = jhash_2words(in_ih->protocol, 0, hash);
       break;
