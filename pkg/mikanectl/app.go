@@ -1015,7 +1015,88 @@ func threadEventHandler(name string) {
 		addr := net.IP(addrBytes[:])
 
 		// Resolve session caches from remote N-node recursivery
-		fmt.Printf("LOG: %s/%d/%s/%d\n", sid, proto, addr, port)
+		nextParam := fmt.Sprintf("%s/%d/%s/%d", sid, proto, addr, port)
+		nextParam = base64.StdEncoding.EncodeToString([]byte(nextParam))
+		url := fmt.Sprintf("http://[%s]:8080/?q=%s", sid, nextParam)
+		resp, err := http.Get(url)
+		if err != nil {
+			fmt.Printf("E: %+v\n", err)
+			continue
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Printf("E: %+v\n", err)
+			resp.Body.Close()
+			continue
+		}
+		// fmt.Printf("LOG: %s\n", nextParam)
+		// fmt.Printf("OUT: %s\n\n", string(body))
+
+		// Install NAT Cache
+		ent := CacheEntry{}
+		if err := json.Unmarshal(body, &ent); err != nil {
+			fmt.Printf("E: %+v\n", err)
+			resp.Body.Close()
+			continue
+		}
+		resp.Body.Close()
+
+		var iAddrByte [4]uint8
+		var eAddrByte [4]uint8
+		iAddrIP := util.ConvertUint32ToIP(ent.AddrInternal)
+		eAddrIP := util.ConvertUint32ToIP(ent.AddrExternal)
+		copy(iAddrByte[:], iAddrIP)
+		copy(eAddrByte[:], eAddrIP)
+
+		// nat-out
+		if err := ebpf.BatchMapOperation(name+"_nat_out_tabl",
+			ciliumebpf.LRUHash,
+			func(m *ciliumebpf.Map) error {
+				key := ebpf.AddrPort{
+					Proto: uint8(ent.Protocol),
+					Addr:  iAddrByte,
+					Port:  util.BS16((ent.PortInternal)),
+				}
+				val := ebpf.AddrPortStats{
+					Proto:     uint8(proto),
+					Addr:      eAddrByte,
+					Port:      util.BS16(uint16(ent.PortExternal)),
+					CreatedAt: ent.CreatedAt,
+					UpdatedAt: ent.UpdatedAt,
+				}
+				if err := m.Update(key, val, ciliumebpf.UpdateNoExist); err != nil {
+					return err
+				}
+				return nil
+			}); err != nil {
+			fmt.Printf("E: %+v\n", err)
+			continue
+		}
+
+		// nat-ret
+		if err := ebpf.BatchMapOperation(name+"_nat_ret_tabl",
+			ciliumebpf.LRUHash,
+			func(m *ciliumebpf.Map) error {
+				key := ebpf.AddrPort{
+					Proto: uint8(proto),
+					Addr:  eAddrByte,
+					Port:  util.BS16(uint16(ent.PortExternal)),
+				}
+				val := ebpf.AddrPortStats{
+					Proto:     uint8(ent.Protocol),
+					Addr:      iAddrByte,
+					Port:      util.BS16((ent.PortInternal)),
+					CreatedAt: ent.CreatedAt,
+					UpdatedAt: ent.UpdatedAt,
+				}
+				if err := m.Update(key, val, ciliumebpf.UpdateNoExist); err != nil {
+					return err
+				}
+				return nil
+			}); err != nil {
+			fmt.Printf("E: %+v\n", err)
+			continue
+		}
 	}
 }
 

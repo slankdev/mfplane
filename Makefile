@@ -14,4 +14,3 @@ r: mikanectl-build
 	docker cp ./bin/mikanectl N1:/usr/bin/mikanectl
 	docker cp ./bin/mikanectl N2:/usr/bin/mikanectl
 	docker cp ./bin/mikanectl N3:/usr/bin/mikanectl
-	#docker exec -it N3:/usr/bin/mikanectl
