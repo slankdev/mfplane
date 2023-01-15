@@ -999,24 +999,23 @@ func threadEventHandler(name string) {
 	defer close(perfEvent)
 
 	for {
+		// Parse event data
 		pe := <-perfEvent
 		var sidBytes [16]uint8
 		var addrBytes [4]uint8
 		var port uint16
 		var proto uint8
-
 		buf := bytes.NewBuffer(pe.Record.RawSample)
 		binary.Read(buf, binary.BigEndian, &sidBytes)
 		binary.Read(buf, binary.BigEndian, &addrBytes)
 		binary.Read(buf, binary.BigEndian, &port)
 		binary.Read(buf, binary.BigEndian, &proto)
-
 		sidBytes[3] = 0
 		sid := net.IP(sidBytes[:])
 		addr := net.IP(addrBytes[:])
 
-		fmt.Printf("%s/%d/%s/%d\n", sid, proto, addr, port)
-		//println("\n\n")
+		// Resolve session caches from remote N-node recursivery
+		fmt.Printf("LOG: %s/%d/%s/%d\n", sid, proto, addr, port)
 	}
 }
 
