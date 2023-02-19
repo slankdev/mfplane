@@ -16,6 +16,7 @@ datas = [
     {"name": "no-middlebox-10E4", "file": "data1.csv", "linestyle": "dashed"},
     {"name": "ipip-x2-10E4", "file": "data3_ipip_x2.csv", "linestyle": "solid"},
     {"name": "ipip-x2-nat-10E4", "file": "data5_ipip_x2_nat.csv", "linestyle": "dotted"},
+    {"name": "srv6-x2-10E4", "file": "data6_srv6_x2.csv", "linestyle": "-."},
 ]
 
 for data in datas:
