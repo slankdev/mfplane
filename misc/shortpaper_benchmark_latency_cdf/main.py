@@ -13,9 +13,11 @@ fs = 18
 tfs = 16
 
 datas = [
-    {"name": "no-MB-10E3", "file": "data0.csv"},
+    #{"name": "no-MB-10E3", "file": "data0.csv"},
     {"name": "no-MB-10E4", "file": "data1.csv"},
-    {"name": "no-MB-10E5", "file": "data2.csv"},
+    #{"name": "no-MB-10E5", "file": "data2.csv"},
+    {"name": "ipip-x2-MB-10E4", "file": "data3_ipip_x2.csv"},
+    #{"name": "ipip-x2-MB-10E4-2", "file": "data4_ipip_x2.csv"},
 ]
 
 for data in datas:
@@ -29,7 +31,7 @@ for data in datas:
 
 plt.xticks(fontsize=tfs)
 plt.yticks(fontsize=tfs)
-plt.xlabel("Maximum RTT (usec)", fontsize=fs)
+plt.xlabel("RTT (msec)", fontsize=fs)
 plt.ylabel("CDF", fontsize=fs)
 plt.ylim(0, 1)
 plt.title("CDF of ping-RTT", fontsize=fs)
