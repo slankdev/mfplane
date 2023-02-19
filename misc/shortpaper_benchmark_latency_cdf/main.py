@@ -17,6 +17,7 @@ datas = [
     {"name": "ipip-x2", "file": "data3_ipip_x2.csv", "linestyle": "solid"},
     {"name": "ipip-x2-nat", "file": "data5_ipip_x2_nat.csv", "linestyle": "dotted"},
     {"name": "srv6-x2", "file": "data6_srv6_x2.csv", "linestyle": "-."},
+    {"name": "mfplane", "file": "data7_mfplane.csv", "linestyle": "-"},
 ]
 
 for data in datas:
@@ -33,7 +34,7 @@ plt.yticks(fontsize=tfs)
 plt.xlabel("RTT (msec)", fontsize=fs)
 plt.ylabel("CDF", fontsize=fs)
 plt.ylim(0, 1)
-plt.title("CDF of ping-RTT (10^2 pkts)", fontsize=fs)
+plt.title("CDF of ping-RTT (10^4 pkts)", fontsize=fs)
 plt.tight_layout()
 plt.legend(fontsize=tfs, loc='lower right')
 plt.savefig("mfplane-nat-latency.drawio.pdf")
