@@ -13,11 +13,9 @@ fs = 18
 tfs = 16
 
 datas = [
-    #{"name": "no-MB-10E3", "file": "data0.csv"},
-    {"name": "no-MB-10E4", "file": "data1.csv"},
-    #{"name": "no-MB-10E5", "file": "data2.csv"},
-    {"name": "ipip-x2-MB-10E4", "file": "data3_ipip_x2.csv"},
-    #{"name": "ipip-x2-MB-10E4-2", "file": "data4_ipip_x2.csv"},
+    {"name": "no-middlebox-10E4", "file": "data1.csv", "linestyle": "dashed"},
+    {"name": "ipip-x2-10E4", "file": "data3_ipip_x2.csv", "linestyle": "solid"},
+    {"name": "ipip-x2-nat-10E4", "file": "data5_ipip_x2_nat.csv", "linestyle": "dotted"},
 ]
 
 for data in datas:
@@ -27,7 +25,7 @@ for data in datas:
             x.append(float(line))
         x = np.array(sorted(x))
         cdf = np.cumsum(x) / np.sum(x)
-        plt.plot(x, cdf, label=data["name"])
+        plt.plot(x, cdf, label=data["name"], linestyle=data["linestyle"])
 
 plt.xticks(fontsize=tfs)
 plt.yticks(fontsize=tfs)
