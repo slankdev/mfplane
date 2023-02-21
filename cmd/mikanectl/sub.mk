@@ -13,6 +13,15 @@ nat-attach-n2: mikanectl-build
 nat-attach-n3: mikanectl-build
 	docker cp ./bin/mikanectl N3:/usr/bin/mikanectl
 	docker exec N3 mikanectl bpf nat attach -i net0 -f -d -n n3
+nat-attach-n4: mikanectl-build
+	docker cp ./bin/mikanectl N4:/usr/bin/mikanectl
+	docker exec N4 mikanectl bpf nat attach -i net0 -f -d -n n4
+nat-attach-n5: mikanectl-build
+	docker cp ./bin/mikanectl N5:/usr/bin/mikanectl
+	docker exec N5 mikanectl bpf nat attach -i net0 -f -d -n n5
+nat-attach-n6: mikanectl-build
+	docker cp ./bin/mikanectl N6:/usr/bin/mikanectl
+	docker exec N6 mikanectl bpf nat attach -i net0 -f -d -n n6
 nat-attach-all: nat-attach-n1 nat-attach-n2 nat-attach-n3
 nat-detach-all:
 	docker exec N1 mikanectl bpf nat detach -i net0
