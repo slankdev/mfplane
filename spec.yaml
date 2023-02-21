@@ -544,3 +544,9 @@ node_configs:
 - name: N4
   cmds:
   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.14 65014 fc00:3400::/24
+- name: N5
+  cmds:
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.15 65015 fc00:3500::/24
+- name: N6
+  cmds:
+  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.16 65016 fc00:3600::/24
