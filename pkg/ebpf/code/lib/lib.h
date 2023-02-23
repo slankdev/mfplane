@@ -86,7 +86,7 @@ static inline int
 error_packet(struct xdp_md *ctx)
 {
 #ifdef DEBUG
-  bpf_printk(STR(NAME)"error packet");
+  // bpf_printk(STR(NAME)"error packet");
 #endif
   return XDP_DROP;
 }

@@ -92,8 +92,7 @@ static inline int
 process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
                     struct addr_port *apkey, __u8 is_out)
 {
-  bpf_printk(STR(NAME)"try mf_redirect");
-
+  // bpf_printk(STR(NAME)"try mf_redirect");
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
@@ -104,14 +103,14 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
   assert_len(oh, data_end);
 
   if (!val) {
-    bpf_printk(STR(NAME)"failed");
+    // bpf_printk(STR(NAME)"failed");
     return XDP_DROP;
   }
 
   int oct_offset = val->usid_block_length / 8;
   int n_shifts = val->usid_function_length / 8;
   if (finished(&oh->ip6.daddr, oct_offset, n_shifts)) {
-    bpf_printk(STR(NAME)"mf_redirect finished");
+    // bpf_printk(STR(NAME)"mf_redirect finished");
     return XDP_DROP;
   }
 
@@ -140,7 +139,7 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
   } else {
     if (now - sval->last_reset > 5000000000) {
       if (sval->pkts > (5 * 100)) {
-        bpf_printk("perf");
+        // bpf_printk("perf");
         bpf_perf_event_output(ctx, &GLUE(NAME, events), BPF_F_CURRENT_CPU,
           &skey, sizeof(skey));
       }
@@ -202,7 +201,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   if (1) {
     char tmp[128] = {0};
     BPF_SNPRINTF(tmp, sizeof(tmp), "%pi4:%u", &key.addr, key.port);
-    bpf_printk(STR(NAME)"nat-ret lookup %s", tmp);
+    // bpf_printk(STR(NAME)"nat-ret lookup %s", tmp);
   }
 
   struct addr_port_stats *nval = NULL;
@@ -221,7 +220,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
                 &in_ih->saddr, bpf_ntohs(in_l4h->source),
                 &in_ih->daddr, bpf_ntohs(in_l4h->dest),
                 &nval->addr, bpf_ntohs(nval->port));
-    bpf_printk(STR(NAME)"nat-ret %s", tmp);
+    // bpf_printk(STR(NAME)"nat-ret %s", tmp);
 #endif
 
   // reverse nat
@@ -256,7 +255,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   __u32 z = 0;
   struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
   if (!tunsrc) {
-    bpf_printk(STR(NAME)"no tunsrc is set");
+    // bpf_printk(STR(NAME)"no tunsrc is set");
     return ignore_packet(ctx);
   }
 
@@ -266,7 +265,7 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   key4.prefixlen = 32;
   struct trie4_val *val4 = bpf_map_lookup_elem(&GLUE(NAME, fib4), &key4);
   if (!val4) {
-    bpf_printk(STR(NAME)"fib4 lookup failed");
+    // bpf_printk(STR(NAME)"fib4 lookup failed");
     return ignore_packet(ctx);
   }
 
@@ -300,7 +299,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
   if (in_ih->protocol != IPPROTO_TCP &&
       in_ih->protocol != IPPROTO_UDP &&
       in_ih->protocol != IPPROTO_ICMP) {
-    bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
+    // bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
     return ignore_packet(ctx);
   }
 
@@ -354,12 +353,12 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
       hash = jhash_2words(in_ih->protocol, in_l4h->icmp_id, hash);
       break;
     default:
-      bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
+      // bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
       return ignore_packet(ctx);
     }
     hash = hash & 0xffff;
     hash = hash & val->nat_port_hash_bit;
-    bpf_printk(STR(NAME)"hash 0x%08x (short)", hash);
+    // bpf_printk(STR(NAME)"hash 0x%08x (short)", hash);
 
     // TODO(slankdev): we should search un-used slot instead of rand-val.
     __u32 rand = bpf_get_prandom_u32();
@@ -404,7 +403,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
               &in_ih->saddr, bpf_ntohs(org_sport),
               &val->vip, bpf_ntohs(sourceport),
               &in_ih->daddr, bpf_ntohs(org_dport));
-  bpf_printk(STR(NAME)"nat-out %s", tmp);
+  // bpf_printk(STR(NAME)"nat-out %s", tmp);
 #endif
 
   __u32 oldsource = in_ih->saddr;

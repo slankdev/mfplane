@@ -73,7 +73,7 @@ process_nat_return(struct xdp_md *ctx)
   vk.vip = ih->daddr;
   struct vip_val *vv = bpf_map_lookup_elem(&GLUE(NAME, vip_table), &vk);
   if (!vv) {
-    bpf_printk(STR(NAME)"nono");
+    // bpf_printk(STR(NAME)"nono");
     return ignore_packet(ctx);
   }
 
@@ -84,7 +84,7 @@ process_nat_return(struct xdp_md *ctx)
   } else if (ih->protocol == IPPROTO_ICMP) {
     hash = l4h->icmp_id;
   } else {
-    bpf_printk(STR(NAME)"nat unsupport l4 proto %d", ih->protocol);
+    // bpf_printk(STR(NAME)"nat unsupport l4 proto %d", ih->protocol);
     return ignore_packet(ctx);
   }
   hash = hash & vv->nat_port_hash_bit;
@@ -94,7 +94,7 @@ process_nat_return(struct xdp_md *ctx)
   idx = RING_SIZE * vv->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
-    bpf_printk(STR(NAME)"no entry fatal");
+    // bpf_printk(STR(NAME)"no entry fatal");
     return ignore_packet(ctx);
   }
 
@@ -115,7 +115,7 @@ process_nat_return(struct xdp_md *ctx)
   BPF_SNPRINTF(tmp, sizeof(tmp),
                "dn-flow=[%s] hash=0x%08x/%u idx=%u hb=0x%x",
                transport_debug_msg, hash, hash, idx, vv->nat_port_hash_bit);
-  bpf_printk(STR(NAME)"%s", tmp);
+  // bpf_printk(STR(NAME)"%s", tmp);
 #endif
 
   // Adjust packet buffer head pointer
@@ -129,7 +129,7 @@ process_nat_return(struct xdp_md *ctx)
   __u32 z = 0;
   struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
   if (!tunsrc) {
-    bpf_printk(STR(NAME)"no tunsrc is set");
+    // bpf_printk(STR(NAME)"no tunsrc is set");
     return ignore_packet(ctx);
   }
 
@@ -215,7 +215,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
 #ifdef DEBUG
-    bpf_printk(STR(NAME)"no entry fatal");
+    // bpf_printk(STR(NAME)"no entry fatal");
 #endif
     return ignore_packet(ctx);
   }
@@ -226,7 +226,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
                &ih->daddr, bpf_ntohs(th->dest),
                ih->protocol, &p->addr);
 #ifdef DEBUG
-  bpf_printk(STR(NAME)"dn-flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
+  // bpf_printk(STR(NAME)"dn-flow=[%s] hash=0x%08x idx=%u", tmp, hash, idx);
 #endif
 
   // Adjust packet buffer head pointer
@@ -249,7 +249,7 @@ process_ipv4_tcp(struct xdp_md *ctx)
   __u32 z = 0;
   struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
   if (!tunsrc) {
-    bpf_printk("no tunsrc is set");
+    // bpf_printk("no tunsrc is set");
     return ignore_packet(ctx);
   }
 
@@ -324,7 +324,7 @@ process_ipv6(struct xdp_md *ctx)
     hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
     hash = jhash_2words(in_ih->protocol, in_l4h->icmp_id, hash);
   } else {
-    bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
+    // bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
     return ignore_packet(ctx);
   }
   hash = hash & 0xffff;
@@ -335,7 +335,7 @@ process_ipv6(struct xdp_md *ctx)
   idx = RING_SIZE * val->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, procs), &idx);
   if (!p) {
-    bpf_printk(STR(NAME)"no entry fatal");
+    // bpf_printk(STR(NAME)"no entry fatal");
     return ignore_packet(ctx);
   }
 
@@ -356,7 +356,7 @@ process_ipv6(struct xdp_md *ctx)
   BPF_SNPRINTF(tmpstr, sizeof(tmpstr),
                "up-flow=[%s] hash=0x%08x/%u idx=%u hb=0x%x",
                transport_debug_msg, hash, hash, idx, val->nat_port_hash_bit);
-  bpf_printk(STR(NAME)"%s", tmpstr);
+  // bpf_printk(STR(NAME)"%s", tmpstr);
 #endif
 
   ///////////////////////////////////////////////////
@@ -373,7 +373,7 @@ process_ipv6(struct xdp_md *ctx)
   __u32 z = 0;
   struct in6_addr *tunsrc = bpf_map_lookup_elem(&GLUE(NAME, encap_source), &z);
   if (!tunsrc) {
-    bpf_printk("no tunsrc is set");
+    // bpf_printk("no tunsrc is set");
     return ignore_packet(ctx);
   }
 
