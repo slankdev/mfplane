@@ -13,6 +13,9 @@ RUN CGO_ENABLED=0 go build -o ./bin/mikanectl -ldflags "\
   -X github.com/wide-vsix/linux-flow-exporter/pkg/util.buildDate=$BUILD_DATE \
   " ./cmd/mikanectl/main.go
 
+# NETPERF
+FROM networkstatic/netperf as netperf
+
 # ROOTFS
 FROM ghcr.io/wide-vsix/linux-flow-exporter:branch-main as rootfs
 RUN apt update && apt install -y --no-install-recommends --no-install-suggests \
@@ -23,6 +26,8 @@ RUN useradd syslog
 RUN sed -i -e "s/bgpd=no/bgpd=yes/g" /etc/frr/daemons
 WORKDIR /root
 COPY --from=dist /opt/bin/mikanectl /usr/bin/
+COPY --from=netperf /usr/bin/netperf /usr/bin/netperf
+COPY --from=netperf /usr/bin/netserver /usr/bin/netserver
 RUN echo "source /etc/bash_completion" >> /root/.bashrc
 RUN echo ". <(mikanectl completion bash)" >> /root/.bashrc
 
