@@ -22,9 +22,9 @@ left3 = [x + width for x in left2]
 
 labels = ['1flow']
 
-plt.bar(left1, height_mfplane, color='steelblue', width=width, align='center', label="mfplane-nat", linewidth=0.75, edgecolor='black')
-plt.bar(left2, height_srv6, color='lightblue', width=width, align='center', label="plain-srv6", linewidth=0.75, edgecolor='black')
-plt.bar(left3, height_wirerate, color='darkgray', width=width, align='center', label="wirerate", linewidth=0.75, edgecolor='black')
+plt.bar(left1, height_mfplane, color='steelblue', width=width, align='center', label="MF-nat", linewidth=0.75, edgecolor='black')
+plt.bar(left2, height_srv6, color='lightblue', width=width, align='center', label="Plain SRv6", linewidth=0.75, edgecolor='black')
+plt.bar(left3, height_wirerate, color='darkgray', width=width, align='center', label="Wirerate", linewidth=0.75, edgecolor='black')
 
 #plt.xticks([r + width for r in range(len(height_mfplane))], labels, fontsize=tfs)
 
@@ -37,7 +37,7 @@ plt.tick_params(
 
 plt.yticks(fontsize=tfs)
 plt.xlabel("RTT (msec)", fontsize=fs)
-plt.ylabel(" (Gbps)", fontsize=fs)
+plt.ylabel("Throughput (Gbps)", fontsize=fs)
 plt.tight_layout()
 plt.legend(fontsize=tfs, loc='lower right')
 plt.savefig("mfplane-nat-throughput.drawio.pdf")
