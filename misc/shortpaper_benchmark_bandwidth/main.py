@@ -9,8 +9,8 @@ import pprint
 
 plt.close("all")
 plt.figure(figsize=(5, 5))
-fs = 18
-tfs = 16
+fs = 20
+tfs = 20
 width = 1
 
 height_mfplane = [0, 6.5, 0]
@@ -26,8 +26,6 @@ plt.bar(left1, height_mfplane, color='steelblue', width=width, align='center', l
 plt.bar(left2, height_srv6, color='lightblue', width=width, align='center', label="Plain SRv6", linewidth=0.75, edgecolor='black')
 plt.bar(left3, height_wirerate, color='darkgray', width=width, align='center', label="Wirerate", linewidth=0.75, edgecolor='black')
 
-#plt.xticks([r + width for r in range(len(height_mfplane))], labels, fontsize=tfs)
-
 plt.tick_params(
     axis='x',          # changes apply to the x-axis
     which='both',      # both major and minor ticks are affected
@@ -36,7 +34,6 @@ plt.tick_params(
     labelbottom=False) # labels along the bottom edge are off
 
 plt.yticks(fontsize=tfs)
-plt.xlabel("RTT (msec)", fontsize=fs)
 plt.ylabel("Throughput (Gbps)", fontsize=fs)
 plt.tight_layout()
 plt.legend(fontsize=tfs, loc='lower right')
