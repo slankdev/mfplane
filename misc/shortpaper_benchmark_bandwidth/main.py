@@ -11,11 +11,11 @@ plt.close("all")
 plt.figure(figsize=(5, 5))
 fs = 18
 tfs = 16
-width = 0.01
+width = 1
 
-height_mfplane = [6.5]
-height_srv6 = [7.05]
-height_wirerate = [8.33]
+height_mfplane = [0, 6.5, 0]
+height_srv6 = [0, 7.05, 0]
+height_wirerate = [0, 8.33, 0]
 left1 = np.arange(len(height_srv6))
 left2 = [x + width for x in left1]
 left3 = [x + width for x in left2]
