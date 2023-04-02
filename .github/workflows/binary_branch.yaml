@@ -35,7 +35,7 @@ jobs:
           -X github.com/slankdev/mfplane/pkg/util.gitBranch=$(git symbolic-ref HEAD | sed -e 's#refs/heads/##g') \
           -X github.com/slankdev/mfplane/pkg/util.gitTag=none \
           -X github.com/slankdev/mfplane/pkg/util.buildDate=$(date '+%Y/%m/%d-%H:%M:%S-%Z') \
-          " cmd/flowctl/main.go
+          " cmd/mikanectl/main.go
     - name: upload
       uses: svenstaro/upload-release-action@v2
       with:
