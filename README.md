@@ -1,6 +1,12 @@
 # MF-plane
 
 ```
+curl -o /usr/bin/mikanectl https://github.com/slankdev/mfplane/releases/download/branch-main/mikanectl.linux-amd64
+chmod +x /usr/bin/mikanectl
+. <(mikenactl completion bash)
+```
+
+```
 tinet reconf | sudo sh -xe
 make nat-attach-n1
 make clb-attach-l1
