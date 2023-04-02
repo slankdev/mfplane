@@ -57,6 +57,7 @@ func NewCommand() *cobra.Command {
 	cmd.AddCommand(util.NewCommandVersion())
 	cmd.AddCommand(util.NewCmdCompletion(cmd))
 	cmd.AddCommand(util.NewCmdIfconfigHTTPServer())
+	cmd.AddCommand(util.NewCmdNc())
 	return cmd
 }
 
@@ -64,6 +65,7 @@ func NewCommandBpf() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "bpf",
 	}
+	cmd.AddCommand(ebpf.NewCommandXdpDetach("detach"))
 	cmd.AddCommand(ebpf.NewCommandXdp("nat", "nat_main.c", "xdp-ingress"))
 	cmd.AddCommand(ebpf.NewCommandXdp("clb", "clb_main.c", "xdp-ingress"))
 	return cmd

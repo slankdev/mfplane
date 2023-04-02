@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	"github.com/slankdev/hyperplane/pkg/goroute2"
 	"github.com/slankdev/hyperplane/pkg/util"
 )
 
@@ -41,7 +42,7 @@ func NewCommandXdp(name, file, section string) *cobra.Command {
 		Use: name,
 	}
 	cmd.AddCommand(newCommandXdpAttach("attach", file, section))
-	cmd.AddCommand(newCommandXdpDetach("detach"))
+	cmd.AddCommand(NewCommandXdpDetach("detach"))
 	return cmd
 }
 
@@ -169,7 +170,7 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 	return cmd
 }
 
-func newCommandXdpDetach(name string) *cobra.Command {
+func NewCommandXdpDetach(name string) *cobra.Command {
 	var clioptInterface string
 	var clioptMode string
 	var clioptDebug bool
@@ -182,13 +183,19 @@ func newCommandXdpDetach(name string) *cobra.Command {
 			defer logger.Sync()
 			log := logger.Sugar()
 
-			// detach on specified network interface
-			if _, err := util.LocalExecutef(
-				"ip link set %s %s off", clioptInterface, clioptMode); err != nil {
+			link, err := goroute2.GetLinkDetail("", clioptInterface)
+			if err != nil {
 				return err
 			}
-			if clioptVerbose {
-				log.Info("detach once", "netdev", clioptInterface)
+			if link.Xdp != nil {
+				if _, err := util.LocalExecutef(
+					"ip link set %s %s off", clioptInterface,
+					link.Xdp.Mode.ModeString()); err != nil {
+					return err
+				}
+				if clioptVerbose {
+					log.Info("detach once", "netdev", clioptInterface)
+				}
 			}
 			return nil
 		},

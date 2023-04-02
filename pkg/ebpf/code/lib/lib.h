@@ -99,6 +99,13 @@ struct icmphdr
   __u16 id;
 };
 
+struct udp_hdr {
+  __u16 sport;
+  __u16 dport;
+  __u16 len;
+  __u16 check;
+};
+
 // Special thanks: kametan0730/curo
 // https://github.com/kametan0730/curo/blob/master/nat.cpp
 static inline __u32

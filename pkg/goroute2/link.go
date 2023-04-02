@@ -48,6 +48,17 @@ func (xm XdpMode) String() string {
 	}
 }
 
+func (xm XdpMode) ModeString() string {
+	switch int(xm) {
+	case 2:
+		return "xdpgeneric"
+	case 1:
+		return "xdp"
+	default:
+		return "unknown"
+	}
+}
+
 type LinkDetailXdp struct {
 	Mode XdpMode           `json:"mode"`
 	Prog LinkDetailXdpProg `json:"prog"`
