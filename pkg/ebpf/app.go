@@ -75,6 +75,8 @@ func init() {
 func newCommandXdpAttach(name, file, section string) *cobra.Command {
 	var clioptInterface string
 	var clioptDebug bool
+	var clioptDebugIgnorePacket bool
+	var clioptDebugErrorPacket bool
 	var clioptForce bool
 	var clioptVerbose bool
 	var clioptMode string
@@ -124,6 +126,12 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 			if clioptDebug {
 				cflags += " -DDEBUG"
 			}
+			if clioptDebugIgnorePacket {
+				cflags += " -DDEBUG_IGNORE_PACKET"
+			}
+			if clioptDebugErrorPacket {
+				cflags += " -DDEBUG_ERROR_PACKET"
+			}
 			if _, err := util.LocalExecutef(
 				"clang %s -c %s/code/%s -o %s/bin/out.o",
 				cflags, tmppath, file, tmppath); err != nil {
@@ -167,6 +175,8 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	cmd.Flags().BoolVarP(&clioptForce, "force", "f", false,
 		"if attached, once detach and try force attach the bpf code")
+	cmd.Flags().BoolVar(&clioptDebugIgnorePacket, "debug-ignore-packet", false, "")
+	cmd.Flags().BoolVar(&clioptDebugErrorPacket, "debug-error-packet", false, "")
 	return cmd
 }
 
