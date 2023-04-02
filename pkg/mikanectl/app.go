@@ -57,6 +57,7 @@ func NewCommand() *cobra.Command {
 	cmd.AddCommand(util.NewCommandVersion())
 	cmd.AddCommand(util.NewCmdCompletion(cmd))
 	cmd.AddCommand(util.NewCmdIfconfigHTTPServer())
+	cmd.AddCommand(util.NewCmdNc())
 	return cmd
 }
 
