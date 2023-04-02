@@ -237,6 +237,11 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
     assert_len(in_th, data_end);
     in_th->check = checksum_recalc_addrport(olddest, in_ih->daddr,
       olddestport, in_th->dest, in_th->check);
+  } else if (in_ih->protocol == IPPROTO_UDP) {
+    struct udp_hdr *in_uh = (struct udp_hdr *)((__u8 *)in_ih + in_ih_len);
+    assert_len(in_uh, data_end);
+    in_uh->check = checksum_recalc_addrport(olddest, in_ih->daddr,
+      olddestport, in_uh->dport, in_uh->check);
   } else if (in_ih->protocol == IPPROTO_ICMP) {
     __u16 old_id = in_l4h->icmp_id;
     in_l4h->icmp_id = nval->port;
@@ -422,9 +427,11 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
     }
   case IPPROTO_UDP:
     {
-      struct l4hdr *in_l4h = (struct l4hdr *)((__u8 *)in_ih + in_ih_len);
-      assert_len(in_l4h, data_end);
-      in_l4h->source = sourceport;
+      struct udp_hdr *in_uh = (struct udp_hdr *)((__u8 *)in_ih + in_ih_len);
+      assert_len(in_uh, data_end);
+      in_uh->sport = sourceport;
+      in_uh->check = checksum_recalc_addrport(oldsource, in_ih->saddr,
+        org_sport, in_uh->sport, in_uh->check);
       break;
     }
   case IPPROTO_ICMP:
