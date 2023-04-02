@@ -16,8 +16,8 @@ jobs:
       uses: docker/login-action@v1
       with:
         registry: ghcr.io
-        username: vsix-robot
-        password: ${{ secrets.VSIX_ROBOT }}
+        username: slankdev
+        password: ${{ secrets.GH_SECRET }}
 
     - name: push with branch name
       id: run_docker_push_with_branch_name
