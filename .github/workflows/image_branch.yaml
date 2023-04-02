@@ -1,0 +1,34 @@
+name: branch container-image
+
+on:
+  push:
+    branches: 
+    - main
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: clone repo
+      uses: actions/checkout@v2
+
+    - name: login ghcr
+      id: login_docker
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: vsix-robot
+        password: ${{ secrets.VSIX_ROBOT }}
+
+    - name: push with branch name
+      id: run_docker_push_with_branch_name
+      run: |
+        docker build \
+          --build-arg GIT_SHA=$(git rev-parse HEAD) \
+          --build-arg GIT_BRANCH=$(git symbolic-ref HEAD | sed -e 's#refs/heads/##g') \
+          --build-arg GIT_TAG=none \
+          --build-arg BUILD_DATE=$(date '+%Y/%m/%d-%H:%M:%S-%Z') \
+          --tag ghcr.io/slankdev/mfplane:branch-main .
+        docker push ghcr.io/slankdev/mfplane:branch-main
+      env:
+        BUILDKIT: 1
