@@ -1,7 +1,7 @@
 # MF-plane
 
 ```
-curl -o /usr/bin/mikanectl https://github.com/slankdev/mfplane/releases/download/branch-main/mikanectl.linux-amd64
+curl -Lo /usr/bin/mikanectl https://github.com/slankdev/mfplane/releases/download/branch-main/mikanectl.linux-amd64
 chmod +x /usr/bin/mikanectl
 . <(mikenactl completion bash)
 ```
