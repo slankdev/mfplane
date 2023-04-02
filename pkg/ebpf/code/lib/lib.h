@@ -76,8 +76,8 @@ struct l4hdr {
 static inline int
 ignore_packet(struct xdp_md *ctx)
 {
-#ifdef DEBUG
-  //bpf_printk(STR(NAME)"ignore packet");
+#ifdef DEBUG_IGNORE_PACKET
+  bpf_printk(STR(NAME)"ignore packet");
 #endif
   return XDP_PASS;
 }
@@ -85,8 +85,8 @@ ignore_packet(struct xdp_md *ctx)
 static inline int
 error_packet(struct xdp_md *ctx)
 {
-#ifdef DEBUG
-  // bpf_printk(STR(NAME)"error packet");
+#ifdef DEBUG_ERROR_PACKET
+  bpf_printk(STR(NAME)"error packet");
 #endif
   return XDP_DROP;
 }
