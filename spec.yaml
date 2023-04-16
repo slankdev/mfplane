@@ -69,7 +69,7 @@ postinit:
 
 nodes:
 - name: CLOS
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: hv1, type: direct, args: HV1#net0 }
@@ -97,7 +97,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: HV1
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#hv1 }
@@ -115,7 +115,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: VM1
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: HV1#vm1 }
@@ -127,7 +127,7 @@ nodes:
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
 - name: VM2
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: HV1#vm2 }
@@ -139,7 +139,7 @@ nodes:
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
 - name: VM3
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: HV1#vm3 }
@@ -151,7 +151,7 @@ nodes:
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
 - name: C1
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#c1 }
@@ -166,7 +166,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: C2
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#c2 }
@@ -181,7 +181,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: L1
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#l1 }
@@ -193,7 +193,7 @@ nodes:
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
 - name: L2
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#l2 }
@@ -205,7 +205,7 @@ nodes:
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
 - name: L3
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#l3 }
@@ -217,7 +217,7 @@ nodes:
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
 - name: N1
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n1 }
@@ -232,7 +232,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: N2
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n2 }
@@ -247,7 +247,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: N3
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n3 }
@@ -262,7 +262,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: N4
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n4 }
@@ -277,7 +277,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: N5
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n5 }
@@ -292,7 +292,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: N6
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n6 }
@@ -307,7 +307,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: N7
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n7 }
@@ -322,7 +322,7 @@ nodes:
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
 - name: N8
-  image: tmp
+  image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: CLOS#n8 }
