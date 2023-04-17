@@ -1,11 +1,25 @@
 #!/usr/bin/env python3
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import pandas as pd
 import numpy as np
 from scipy import stats
 import json
 import sys
 import pprint
+
+
+def format_xtick(x, pos=None):
+    if x >= 1000000000:
+        val, unit = float(x) / 1000000000, 'G'
+    elif x >= 1000000:
+        val, unit = float(x) / 1000000, 'M'
+    elif x >= 1000:
+        val, unit = float(x) / 1000, 'K'
+    else:
+        val, unit = x, ''
+    return '{:,.1f}{}'.format(val, unit)
+
 
 plt.close("all")
 fs = 18
@@ -37,7 +51,7 @@ with open("./out.json") as f:
         for stream in interval["streams"]:
             # (iperf3 rtt is usec)
             # https://github.com/esnet/iperf/blob/332c31ee6512514c216077407a725b5b958b1582/src/tcp_info.c#L168
-            y2.append(stream["rtt"] * 1000)
+            y2.append(stream["rtt"] / 1000)
 
 # Plot
 fig, ax_bw = plt.subplots(figsize=(10, 4))
@@ -54,11 +68,11 @@ ax_bw.legend(lines1+lines2, labels1+labels2, fontsize=tfs,
              bbox_to_anchor=(0.5, 1.20),
              frameon=False)
 
+ax_bw.yaxis.set_major_formatter(ticker.FuncFormatter(format_xtick))
 ax_bw.tick_params(axis='both', which='major', labelsize=tfs)
 ax_rtt.tick_params(axis='both', which='major', labelsize=tfs)
 ax_bw.set_xlabel("Time(s)", fontsize=fs)
 ax_bw.set_ylabel("Throughput (bps)", fontsize=fs)
 ax_rtt.set_ylabel("RTT (ms)", fontsize=fs)
 plt.tight_layout()
-#plt.title("test")
 plt.savefig("out.pdf")
