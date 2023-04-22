@@ -17,7 +17,7 @@
 **resources**:<br/>
 - `nodes.mfplane.io`: common resource kind
 - `functions.mfplane.io`: common resource kind
-- `natgateways.mfplane.io`: nf resource kind
+- `nats.mfplane.io`: nf resource kind
 
 ## How to Construct it
 ```

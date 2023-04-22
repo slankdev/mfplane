@@ -34,6 +34,32 @@ rules:
 - apiGroups:
   - mfplane.mfplane.io
   resources:
+  - nats
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - nats/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - nats/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
   - nodes
   verbs:
   - create
