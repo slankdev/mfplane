@@ -8,6 +8,32 @@ rules:
 - apiGroups:
   - mfplane.mfplane.io
   resources:
+  - functions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - functions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - functions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
   - nodes
   verbs:
   - create
