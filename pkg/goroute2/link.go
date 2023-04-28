@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/slankdev/hyperplane/pkg/util"
+	"github.com/slankdev/mfplane/pkg/util"
 )
 
 type LinkDetailXdpProg struct {

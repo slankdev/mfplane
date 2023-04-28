@@ -21,7 +21,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/slankdev/hyperplane/pkg/ip3"
+	"github.com/slankdev/mfplane/pkg/ip3"
 )
 
 func main() {

@@ -72,9 +72,6 @@ func Fn() error {
 		}
 		fmt.Printf("%s: %s", addr, string(buf))
 	}
-
-	return nil
-
 }
 
 func Fn0() error {

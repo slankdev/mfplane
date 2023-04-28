@@ -22,8 +22,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/slankdev/hyperplane/pkg/goroute2"
-	"github.com/slankdev/hyperplane/pkg/util"
+	"github.com/slankdev/mfplane/pkg/goroute2"
+	"github.com/slankdev/mfplane/pkg/util"
 )
 
 func NewCommand() *cobra.Command {

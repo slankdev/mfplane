@@ -21,7 +21,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/slankdev/hyperplane/pkg/mikanectl"
+	"github.com/slankdev/mfplane/pkg/mikanectl"
 )
 
 func main() {

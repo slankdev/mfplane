@@ -5,7 +5,7 @@
 domain: mfplane.io
 layout:
 - go.kubebuilder.io/v4
-projectName: cplane
+projectName: mfplane
 repo: github.com/slankdev/mfplane
 resources:
 - api:

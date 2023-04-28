@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/slankdev/hyperplane/pkg/util"
+	"github.com/slankdev/mfplane/pkg/util"
 )
 
 func ListNetns() ([]string, error) {

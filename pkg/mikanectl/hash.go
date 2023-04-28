@@ -25,8 +25,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/slankdev/hyperplane/pkg/maglev"
-	"github.com/slankdev/hyperplane/pkg/util"
+	"github.com/slankdev/mfplane/pkg/maglev"
+	"github.com/slankdev/mfplane/pkg/util"
 )
 
 func NewCommandHash() *cobra.Command {
