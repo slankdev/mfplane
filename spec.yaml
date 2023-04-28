@@ -66,6 +66,18 @@ postinit:
       docker cp ./bin/$file $c:/usr/bin/;
       done
       done
+  - cmd: |
+      mkdir -p /var/run/netns
+      rm -f /var/run/netns/l1
+      rm -f /var/run/netns/l2
+      rm -f /var/run/netns/n1
+      rm -f /var/run/netns/n2
+      rm -f /var/run/netns/n3
+      ln -s /proc/$(docker inspect L1 -f "{{.State.Pid}}")/ns/net /var/run/netns/l1
+      ln -s /proc/$(docker inspect L2 -f "{{.State.Pid}}")/ns/net /var/run/netns/l2
+      ln -s /proc/$(docker inspect N1 -f "{{.State.Pid}}")/ns/net /var/run/netns/n1
+      ln -s /proc/$(docker inspect N2 -f "{{.State.Pid}}")/ns/net /var/run/netns/n2
+      ln -s /proc/$(docker inspect N3 -f "{{.State.Pid}}")/ns/net /var/run/netns/n3
 
 nodes:
 - name: CLOS
