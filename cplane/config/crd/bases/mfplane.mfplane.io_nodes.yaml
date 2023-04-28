@@ -45,7 +45,7 @@ spec:
                     fib4:
                       items:
                         properties:
-                          hencaps:
+                          hEncaps:
                             properties:
                               mode:
                                 type: string
@@ -70,7 +70,7 @@ spec:
                             properties:
                               natPortHashBit:
                                 type: integer
-                              source:
+                              sources:
                                 items:
                                   type: string
                                 type: array
@@ -82,7 +82,7 @@ spec:
                                 type: string
                             required:
                             - natPortHashBit
-                            - source
+                            - sources
                             - uSidBlockLength
                             - uSidFunctionLength
                             - vip
@@ -93,6 +93,10 @@ spec:
                         - prefix
                         type: object
                       type: array
+                    maxBackends:
+                      type: integer
+                    maxRules:
+                      type: integer
                     name:
                       type: string
                     netns:

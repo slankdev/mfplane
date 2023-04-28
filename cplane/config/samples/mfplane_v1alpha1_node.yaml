@@ -23,7 +23,7 @@ spec:
     encapSource: fc00:3100::0
     fib6:
     - prefix: fc00:3101::/32
-      actionEncapEndMfnNat:
+      endMfnNat:
         vip: 142.0.0.1
         natPortHashBit: 0x00ff
         uSidBlockLength: 16
@@ -32,16 +32,16 @@ spec:
         - 10.0.1.0/24
     fib4:
     - prefix: 10.0.1.0/24
-      action: {encapSeg6: {mode: encap, segs: [fc00:1101::0]}}
+      hEncaps: {mode: encap, segs: [fc00:1101::0]}
     - prefix: 10.0.2.0/24
-      action: {encapSeg6: {mode: encap, segs: [fc00:1102::0]}}
+      hEncaps: {mode: encap, segs: [fc00:1102::0]}
   - name: N2
     netns: N2
     device: net0
     encapSource: fc00:3200::0
     fib6:
     - prefix: fc00:3201::/32 # NAT1
-      actionEncapEndMfnNat:
+      endMfnNat:
         vip: 142.0.0.1
         natPortHashBit: 0x00ff
         uSidBlockLength: 16
@@ -50,6 +50,6 @@ spec:
         - 10.0.1.0/24
     fib4:
     - prefix: 10.0.1.0/24
-      action: {encapSeg6: {mode: encap, segs: [fc00:1101::0]}}
+      hEncaps: {mode: encap, segs: [fc00:1101::0]}
     - prefix: 10.0.2.0/24
-      action: {encapSeg6: {mode: encap, segs: [fc00:1102::0]}}
+      hEncaps: {mode: encap, segs: [fc00:1102::0]}

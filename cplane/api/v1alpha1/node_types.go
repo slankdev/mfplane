@@ -34,6 +34,8 @@ type FunctionSpec struct {
 	Netns       string      `json:"netns,omitempty"`
 	Device      string      `json:"device"`
 	EncapSource string      `json:"encapSource"`
+	MaxRules    int         `json:"maxRules,omitempty"`
+	MaxBackends int         `json:"maxBackends,omitempty"`
 	Fib6        []Fib6Entry `json:"fib6,omitempty"`
 	Fib4        []Fib4Entry `json:"fib4,omitempty"`
 }
@@ -45,7 +47,7 @@ type Fib6Entry struct {
 
 type Fib4Entry struct {
 	Prefix        string   `json:"prefix"`
-	ActionHEncaps *HEncaps `json:"hencaps,omitempty"`
+	ActionHEncaps *HEncaps `json:"hEncaps,omitempty"`
 }
 
 type EndMfnNat struct {
@@ -53,7 +55,7 @@ type EndMfnNat struct {
 	NatPortHashBitMaxk uint16   `json:"natPortHashBit"`
 	UsidBlockLength    int      `json:"uSidBlockLength"`
 	UsidFunctionLength int      `json:"uSidFunctionLength"`
-	Sources            []string `json:"source"`
+	Sources            []string `json:"sources"`
 }
 
 type HEncaps struct {
