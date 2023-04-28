@@ -18,7 +18,7 @@ de VM1 curl 10.255.100.1
 ```
 
 ```
-slankdev:~/git/hyperplane[main]$ de CLOS tcpdump -nni any not icmp6 and not tcp port 179
+slankdev:~/git/mfplane[main]$ de CLOS tcpdump -nni any not icmp6 and not tcp port 179
 tcpdump: data link type LINUX_SLL2
 tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
 listening on any, link-type LINUX_SLL2 (Linux cooked v2), snapshot length 262144 bytes

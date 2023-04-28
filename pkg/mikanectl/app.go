@@ -36,9 +36,9 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
-	"github.com/slankdev/hyperplane/pkg/ebpf"
-	"github.com/slankdev/hyperplane/pkg/maglev"
-	"github.com/slankdev/hyperplane/pkg/util"
+	"github.com/slankdev/mfplane/pkg/ebpf"
+	"github.com/slankdev/mfplane/pkg/maglev"
+	"github.com/slankdev/mfplane/pkg/util"
 )
 
 func NewCommand() *cobra.Command {

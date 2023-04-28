@@ -16,7 +16,7 @@ const (
 	SkipHashSeed   uint64 = 0xdeadbeef
 )
 
-//Maglev :
+// Maglev :
 type Maglev struct {
 	n           uint64 //size of VIP backends
 	m           uint64 //sie of the lookup table
@@ -26,7 +26,7 @@ type Maglev struct {
 	lock        *sync.RWMutex
 }
 
-//NewMaglev :
+// NewMaglev :
 func NewMaglev(backends []string, m uint64) (*Maglev, error) {
 	if !big.NewInt(0).SetUint64(m).ProbablyPrime(1) {
 		return nil, errors.New("lookup table size is not a prime number")
@@ -40,7 +40,7 @@ func NewMaglev(backends []string, m uint64) (*Maglev, error) {
 	return mag, nil
 }
 
-//Add : Return nil if add success, otherwise return error
+// Add : Return nil if add success, otherwise return error
 func (m *Maglev) Add(backend string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -68,7 +68,7 @@ func (m *Maglev) AddOrDie(backend string) {
 	}
 }
 
-//Remove :
+// Remove :
 func (m *Maglev) Remove(backend string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -135,7 +135,7 @@ func (m *Maglev) Dump() {
 	}
 }
 
-//Get :Get node name by object string.
+// Get :Get node name by object string.
 func (m *Maglev) Get(obj string) (string, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()

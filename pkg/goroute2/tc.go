@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/slankdev/hyperplane/pkg/util"
+	"github.com/slankdev/mfplane/pkg/util"
 )
 
 type TcFilterRule struct {
@@ -61,19 +61,21 @@ func ListTcFilterRules(netns, dev, dir string) ([]TcFilterRule, error) {
 
 // $ tc -j qdisc list dev eth1 | jq
 // [
-//   {
-//     "kind": "noqueue",
-//     "handle": "0:",
-//     "root": true,
-//     "refcnt": 2,
-//     "options": {}
-//   },
-//   {
-//     "kind": "clsact",
-//     "handle": "ffff:",
-//     "parent": "ffff:fff1",
-//     "options": {}
-//   }
+//
+//	{
+//	  "kind": "noqueue",
+//	  "handle": "0:",
+//	  "root": true,
+//	  "refcnt": 2,
+//	  "options": {}
+//	},
+//	{
+//	  "kind": "clsact",
+//	  "handle": "ffff:",
+//	  "parent": "ffff:fff1",
+//	  "options": {}
+//	}
+//
 // ]
 type TcQdisc struct {
 	Kind   string `json:"kind"`
