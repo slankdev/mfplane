@@ -77,15 +77,15 @@ nodes:
   - { name: c2 , type: direct, args: C2#net0  }
   - { name: l1 , type: direct, args: L1#net0  }
   - { name: l2 , type: direct, args: L2#net0  }
-  - { name: l3 , type: direct, args: L3#net0  }
+  # - { name: l3 , type: direct, args: L3#net0  }
   - { name: n1 , type: direct, args: N1#net0  }
   - { name: n2 , type: direct, args: N2#net0  }
   - { name: n3 , type: direct, args: N3#net0  }
-  - { name: n4 , type: direct, args: N4#net0  }
-  - { name: n5 , type: direct, args: N5#net0  }
-  - { name: n6 , type: direct, args: N6#net0  }
-  - { name: n7 , type: direct, args: N7#net0  }
-  - { name: n8 , type: direct, args: N8#net0  }
+  # - { name: n4 , type: direct, args: N4#net0  }
+  # - { name: n5 , type: direct, args: N5#net0  }
+  # - { name: n6 , type: direct, args: N6#net0  }
+  # - { name: n7 , type: direct, args: N7#net0  }
+  # - { name: n8 , type: direct, args: N8#net0  }
   sysctls:
   - sysctl: net.vrf.strict_mode=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
@@ -204,18 +204,18 @@ nodes:
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
-- name: L3
-  image: slankdev/mikanectl
-  docker_run_extra_args: --entrypoint bash
-  interfaces:
-  - { name: net0, type: direct, args: CLOS#l3 }
-  sysctls:
-  - sysctl: net.vrf.strict_mode=1
-  - sysctl: net.ipv6.conf.all.disable_ipv6=0
-  - sysctl: net.ipv6.conf.default.disable_ipv6=0
-  - sysctl: net.ipv4.fib_multipath_hash_policy=1
-  - sysctl: net.ipv4.ip_forward=1
-  - sysctl: net.ipv6.conf.all.forwarding=1
+# - name: L3
+#   image: slankdev/mikanectl
+#   docker_run_extra_args: --entrypoint bash
+#   interfaces:
+#   - { name: net0, type: direct, args: CLOS#l3 }
+#   sysctls:
+#   - sysctl: net.vrf.strict_mode=1
+#   - sysctl: net.ipv6.conf.all.disable_ipv6=0
+#   - sysctl: net.ipv6.conf.default.disable_ipv6=0
+#   - sysctl: net.ipv4.fib_multipath_hash_policy=1
+#   - sysctl: net.ipv4.ip_forward=1
+#   - sysctl: net.ipv6.conf.all.forwarding=1
 - name: N1
   image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
@@ -261,81 +261,81 @@ nodes:
   - sysctl: net.ipv4.conf.all.rp_filter=0
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
-- name: N4
-  image: slankdev/mikanectl
-  docker_run_extra_args: --entrypoint bash
-  interfaces:
-  - { name: net0, type: direct, args: CLOS#n4 }
-  sysctls:
-  - sysctl: net.vrf.strict_mode=1
-  - sysctl: net.ipv6.conf.all.disable_ipv6=0
-  - sysctl: net.ipv6.conf.default.disable_ipv6=0
-  - sysctl: net.ipv4.fib_multipath_hash_policy=1
-  - sysctl: net.ipv4.ip_forward=1
-  - sysctl: net.ipv6.conf.all.forwarding=1
-  - sysctl: net.ipv4.conf.all.rp_filter=0
-  - sysctl: net.ipv4.conf.default.rp_filter=0
-  - sysctl: net.ipv4.conf.lo.rp_filter=0
-- name: N5
-  image: slankdev/mikanectl
-  docker_run_extra_args: --entrypoint bash
-  interfaces:
-  - { name: net0, type: direct, args: CLOS#n5 }
-  sysctls:
-  - sysctl: net.vrf.strict_mode=1
-  - sysctl: net.ipv6.conf.all.disable_ipv6=0
-  - sysctl: net.ipv6.conf.default.disable_ipv6=0
-  - sysctl: net.ipv4.fib_multipath_hash_policy=1
-  - sysctl: net.ipv4.ip_forward=1
-  - sysctl: net.ipv6.conf.all.forwarding=1
-  - sysctl: net.ipv4.conf.all.rp_filter=0
-  - sysctl: net.ipv4.conf.default.rp_filter=0
-  - sysctl: net.ipv4.conf.lo.rp_filter=0
-- name: N6
-  image: slankdev/mikanectl
-  docker_run_extra_args: --entrypoint bash
-  interfaces:
-  - { name: net0, type: direct, args: CLOS#n6 }
-  sysctls:
-  - sysctl: net.vrf.strict_mode=1
-  - sysctl: net.ipv6.conf.all.disable_ipv6=0
-  - sysctl: net.ipv6.conf.default.disable_ipv6=0
-  - sysctl: net.ipv4.fib_multipath_hash_policy=1
-  - sysctl: net.ipv4.ip_forward=1
-  - sysctl: net.ipv6.conf.all.forwarding=1
-  - sysctl: net.ipv4.conf.all.rp_filter=0
-  - sysctl: net.ipv4.conf.default.rp_filter=0
-  - sysctl: net.ipv4.conf.lo.rp_filter=0
-- name: N7
-  image: slankdev/mikanectl
-  docker_run_extra_args: --entrypoint bash
-  interfaces:
-  - { name: net0, type: direct, args: CLOS#n7 }
-  sysctls:
-  - sysctl: net.vrf.strict_mode=1
-  - sysctl: net.ipv6.conf.all.disable_ipv6=0
-  - sysctl: net.ipv6.conf.default.disable_ipv6=0
-  - sysctl: net.ipv4.fib_multipath_hash_policy=1
-  - sysctl: net.ipv4.ip_forward=1
-  - sysctl: net.ipv6.conf.all.forwarding=1
-  - sysctl: net.ipv4.conf.all.rp_filter=0
-  - sysctl: net.ipv4.conf.default.rp_filter=0
-  - sysctl: net.ipv4.conf.lo.rp_filter=0
-- name: N8
-  image: slankdev/mikanectl
-  docker_run_extra_args: --entrypoint bash
-  interfaces:
-  - { name: net0, type: direct, args: CLOS#n8 }
-  sysctls:
-  - sysctl: net.vrf.strict_mode=1
-  - sysctl: net.ipv6.conf.all.disable_ipv6=0
-  - sysctl: net.ipv6.conf.default.disable_ipv6=0
-  - sysctl: net.ipv4.fib_multipath_hash_policy=1
-  - sysctl: net.ipv4.ip_forward=1
-  - sysctl: net.ipv6.conf.all.forwarding=1
-  - sysctl: net.ipv4.conf.all.rp_filter=0
-  - sysctl: net.ipv4.conf.default.rp_filter=0
-  - sysctl: net.ipv4.conf.lo.rp_filter=0
+# - name: N4
+#   image: slankdev/mikanectl
+#   docker_run_extra_args: --entrypoint bash
+#   interfaces:
+#   - { name: net0, type: direct, args: CLOS#n4 }
+#   sysctls:
+#   - sysctl: net.vrf.strict_mode=1
+#   - sysctl: net.ipv6.conf.all.disable_ipv6=0
+#   - sysctl: net.ipv6.conf.default.disable_ipv6=0
+#   - sysctl: net.ipv4.fib_multipath_hash_policy=1
+#   - sysctl: net.ipv4.ip_forward=1
+#   - sysctl: net.ipv6.conf.all.forwarding=1
+#   - sysctl: net.ipv4.conf.all.rp_filter=0
+#   - sysctl: net.ipv4.conf.default.rp_filter=0
+#   - sysctl: net.ipv4.conf.lo.rp_filter=0
+# - name: N5
+#   image: slankdev/mikanectl
+#   docker_run_extra_args: --entrypoint bash
+#   interfaces:
+#   - { name: net0, type: direct, args: CLOS#n5 }
+#   sysctls:
+#   - sysctl: net.vrf.strict_mode=1
+#   - sysctl: net.ipv6.conf.all.disable_ipv6=0
+#   - sysctl: net.ipv6.conf.default.disable_ipv6=0
+#   - sysctl: net.ipv4.fib_multipath_hash_policy=1
+#   - sysctl: net.ipv4.ip_forward=1
+#   - sysctl: net.ipv6.conf.all.forwarding=1
+#   - sysctl: net.ipv4.conf.all.rp_filter=0
+#   - sysctl: net.ipv4.conf.default.rp_filter=0
+#   - sysctl: net.ipv4.conf.lo.rp_filter=0
+# - name: N6
+#   image: slankdev/mikanectl
+#   docker_run_extra_args: --entrypoint bash
+#   interfaces:
+#   - { name: net0, type: direct, args: CLOS#n6 }
+#   sysctls:
+#   - sysctl: net.vrf.strict_mode=1
+#   - sysctl: net.ipv6.conf.all.disable_ipv6=0
+#   - sysctl: net.ipv6.conf.default.disable_ipv6=0
+#   - sysctl: net.ipv4.fib_multipath_hash_policy=1
+#   - sysctl: net.ipv4.ip_forward=1
+#   - sysctl: net.ipv6.conf.all.forwarding=1
+#   - sysctl: net.ipv4.conf.all.rp_filter=0
+#   - sysctl: net.ipv4.conf.default.rp_filter=0
+#   - sysctl: net.ipv4.conf.lo.rp_filter=0
+# - name: N7
+#   image: slankdev/mikanectl
+#   docker_run_extra_args: --entrypoint bash
+#   interfaces:
+#   - { name: net0, type: direct, args: CLOS#n7 }
+#   sysctls:
+#   - sysctl: net.vrf.strict_mode=1
+#   - sysctl: net.ipv6.conf.all.disable_ipv6=0
+#   - sysctl: net.ipv6.conf.default.disable_ipv6=0
+#   - sysctl: net.ipv4.fib_multipath_hash_policy=1
+#   - sysctl: net.ipv4.ip_forward=1
+#   - sysctl: net.ipv6.conf.all.forwarding=1
+#   - sysctl: net.ipv4.conf.all.rp_filter=0
+#   - sysctl: net.ipv4.conf.default.rp_filter=0
+#   - sysctl: net.ipv4.conf.lo.rp_filter=0
+# - name: N8
+#   image: slankdev/mikanectl
+#   docker_run_extra_args: --entrypoint bash
+#   interfaces:
+#   - { name: net0, type: direct, args: CLOS#n8 }
+#   sysctls:
+#   - sysctl: net.vrf.strict_mode=1
+#   - sysctl: net.ipv6.conf.all.disable_ipv6=0
+#   - sysctl: net.ipv6.conf.default.disable_ipv6=0
+#   - sysctl: net.ipv4.fib_multipath_hash_policy=1
+#   - sysctl: net.ipv4.ip_forward=1
+#   - sysctl: net.ipv6.conf.all.forwarding=1
+#   - sysctl: net.ipv4.conf.all.rp_filter=0
+#   - sysctl: net.ipv4.conf.default.rp_filter=0
+#   - sysctl: net.ipv4.conf.lo.rp_filter=0
 
 node_configs:
 - name: CLOS
@@ -345,15 +345,15 @@ node_configs:
   - cmd: ip link set c2  mtu 9000
   - cmd: ip link set l1  mtu 9000
   - cmd: ip link set l2  mtu 9000
-  - cmd: ip link set l3  mtu 9000
+  # - cmd: ip link set l3  mtu 9000
   - cmd: ip link set n1  mtu 9000
   - cmd: ip link set n2  mtu 9000
   - cmd: ip link set n3  mtu 9000
-  - cmd: ip link set n4  mtu 9000
-  - cmd: ip link set n5  mtu 9000
-  - cmd: ip link set n6  mtu 9000
-  - cmd: ip link set n7  mtu 9000
-  - cmd: ip link set n8  mtu 9000
+  # - cmd: ip link set n4  mtu 9000
+  # - cmd: ip link set n5  mtu 9000
+  # - cmd: ip link set n6  mtu 9000
+  # - cmd: ip link set n7  mtu 9000
+  # - cmd: ip link set n8  mtu 9000
   - cmd: /usr/lib/frr/frrinit.sh start
   - cmd: ip -4 route add blackhole 0.0.0.0/0
   - cmd: ip -6 route add blackhole ::/0
@@ -383,15 +383,15 @@ node_configs:
       -c ' neighbor c2 interface peer-group PEER'
       -c ' neighbor l1 interface peer-group PEER'
       -c ' neighbor l2 interface peer-group PEER'
-      -c ' neighbor l3 interface peer-group PEER'
+      -c ' !neighbor l3 interface peer-group PEER'
       -c ' neighbor n1 interface peer-group PEER'
       -c ' neighbor n2 interface peer-group PEER'
       -c ' neighbor n3 interface peer-group PEER'
-      -c ' neighbor n4 interface peer-group PEER'
-      -c ' neighbor n5 interface peer-group PEER'
-      -c ' neighbor n6 interface peer-group PEER'
-      -c ' neighbor n7 interface peer-group PEER'
-      -c ' neighbor n8 interface peer-group PEER'
+      -c ' !neighbor n4 interface peer-group PEER'
+      -c ' !neighbor n5 interface peer-group PEER'
+      -c ' !neighbor n6 interface peer-group PEER'
+      -c ' !neighbor n7 interface peer-group PEER'
+      -c ' !neighbor n8 interface peer-group PEER'
       -c ' !'
       -c ' address-family ipv4 unicast'
       -c '  redistribute connected'
@@ -510,27 +510,27 @@ node_configs:
       -c ' exit-address-family'
   - cmd: ip link set net0 down
 
-- name: L3
-  cmds:
-  - cmd: ip link set net0 mtu 9000
-  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
-  - cmd: ip route add blackhole 10.0.1.0/24
-  - cmd: ip route add blackhole 10.0.2.0/24
-  - cmd: ip route add blackhole fc00:ff00::/24
-  - cmd: >-
-      vtysh -c 'conf te'
-      -c 'ip route 142.0.0.1/24 Null0'
-      -c '!'
-      -c 'router bgp'
-      -c ' address-family ipv4 unicast'
-      -c ' network 142.0.0.1/24'
-      -c ' exit-address-family'
-      -c ' !'
-      -c ' address-family ipv6 unicast'
-      -c '  neighbor PEER activate'
-      -c '  redistribute kernel'
-      -c ' exit-address-family'
-  - cmd: ip link set net0 down
+# - name: L3
+#   cmds:
+#   - cmd: ip link set net0 mtu 9000
+#   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
+#   - cmd: ip route add blackhole 10.0.1.0/24
+#   - cmd: ip route add blackhole 10.0.2.0/24
+#   - cmd: ip route add blackhole fc00:ff00::/24
+#   - cmd: >-
+#       vtysh -c 'conf te'
+#       -c 'ip route 142.0.0.1/24 Null0'
+#       -c '!'
+#       -c 'router bgp'
+#       -c ' address-family ipv4 unicast'
+#       -c ' network 142.0.0.1/24'
+#       -c ' exit-address-family'
+#       -c ' !'
+#       -c ' address-family ipv6 unicast'
+#       -c '  neighbor PEER activate'
+#       -c '  redistribute kernel'
+#       -c ' exit-address-family'
+#   - cmd: ip link set net0 down
 
 - name: N1
   cmds:
@@ -541,12 +541,12 @@ node_configs:
 - name: N3
   cmds:
   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.13 65013 fc00:3300::/24
-- name: N4
-  cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.14 65014 fc00:3400::/24
-- name: N5
-  cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.15 65015 fc00:3500::/24
-- name: N6
-  cmds:
-  - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.16 65016 fc00:3600::/24
+# - name: N4
+#   cmds:
+#   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.14 65014 fc00:3400::/24
+# - name: N5
+#   cmds:
+#   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.15 65015 fc00:3500::/24
+# - name: N6
+#   cmds:
+#   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.16 65016 fc00:3600::/24
