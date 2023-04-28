@@ -34,6 +34,7 @@ sudo curl -Lo /usr/bin/kubectl https://dl.k8s.io/v1.27.1/bin/linux/amd64/kubectl
 sudo chmod +x /usr/bin/kubectl
 sudo curl -Lo /usr/bin/kind https://kind.sigs.k8s.io/dl/v0.18.0/kind-linux-amd64
 sudo chmod +x /usr/bin/kind
+kind create cluster
 ```
 ```
 . <(kubectl completion bash)
