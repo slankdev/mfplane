@@ -1,0 +1,6 @@
+## Append samples of your project ##
+resources:
+- mfplane_v1alpha1_node.yaml
+- mfplane_v1alpha1_function.yaml
+- mfplane_v1alpha1_nat.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

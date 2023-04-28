@@ -1,0 +1,32 @@
+apiVersion: mfplane.mfplane.io/v1alpha1
+kind: Nat
+metadata:
+  labels:
+    app.kubernetes.io/name: nat
+    app.kubernetes.io/instance: nat-sample
+    app.kubernetes.io/part-of: cplane
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: cplane
+  name: nat-sample1
+spec:
+  sources:
+  - 10.0.0.0/24
+  - 10.2.0.10/32
+  natVip: 142.0.0.1
+  natPortHashBit: 0x00ff
+  natMapping: endpointIndependentMapping
+  natFiltering: endpointIndependentFiltering
+  uSid: ff01::0
+  uSidBlock: fc00::0
+  uSidBlockLength: 16
+  uSidFunctionLength: 16
+  uSidFunctionRevisions:
+    backends:
+    - sid: 3101::0
+    - sid: 3201::0
+  # TODO(slankdev):
+  # more declaretive worker election, but it's not needed
+  # functions:
+  #   labelSelector:
+  #     matchExpressions:
+  #     - {key: nat, operator: Exist}

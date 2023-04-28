@@ -1,0 +1,55 @@
+apiVersion: mfplane.mfplane.io/v1alpha1
+kind: Node
+metadata:
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/instance: node-sample
+    app.kubernetes.io/part-of: cplane
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: cplane
+  name: node-sample1
+spec:
+  hostname: common
+  functions:
+  - name: L1
+    netns: L1
+    device: net0
+    maxRules: 2
+    maxBackends: 7
+    encapSource: fc00:2100::0
+  - name: N1
+    netns: N1
+    device: net0
+    encapSource: fc00:3100::0
+    fib6:
+    - prefix: fc00:3101::/32
+      endMfnNat:
+        vip: 142.0.0.1
+        natPortHashBit: 0x00ff
+        uSidBlockLength: 16
+        uSidFunctionLength: 16
+        sources:
+        - 10.0.1.0/24
+    fib4:
+    - prefix: 10.0.1.0/24
+      hEncaps: {mode: encap, segs: [fc00:1101::0]}
+    - prefix: 10.0.2.0/24
+      hEncaps: {mode: encap, segs: [fc00:1102::0]}
+  - name: N2
+    netns: N2
+    device: net0
+    encapSource: fc00:3200::0
+    fib6:
+    - prefix: fc00:3201::/32 # NAT1
+      endMfnNat:
+        vip: 142.0.0.1
+        natPortHashBit: 0x00ff
+        uSidBlockLength: 16
+        uSidFunctionLength: 16
+        sources:
+        - 10.0.1.0/24
+    fib4:
+    - prefix: 10.0.1.0/24
+      hEncaps: {mode: encap, segs: [fc00:1101::0]}
+    - prefix: 10.0.2.0/24
+      hEncaps: {mode: encap, segs: [fc00:1102::0]}

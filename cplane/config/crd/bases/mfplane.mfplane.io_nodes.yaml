@@ -1,0 +1,122 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.3
+  creationTimestamp: null
+  name: nodes.mfplane.mfplane.io
+spec:
+  group: mfplane.mfplane.io
+  names:
+    kind: Node
+    listKind: NodeList
+    plural: nodes
+    singular: node
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Node is the Schema for the nodes API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NodeSpec defines the desired state of Node
+            properties:
+              functions:
+                items:
+                  properties:
+                    device:
+                      type: string
+                    encapSource:
+                      type: string
+                    fib4:
+                      items:
+                        properties:
+                          hEncaps:
+                            properties:
+                              mode:
+                                type: string
+                              segs:
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - mode
+                            - segs
+                            type: object
+                          prefix:
+                            type: string
+                        required:
+                        - prefix
+                        type: object
+                      type: array
+                    fib6:
+                      items:
+                        properties:
+                          endMfnNat:
+                            properties:
+                              natPortHashBit:
+                                type: integer
+                              sources:
+                                items:
+                                  type: string
+                                type: array
+                              uSidBlockLength:
+                                type: integer
+                              uSidFunctionLength:
+                                type: integer
+                              vip:
+                                type: string
+                            required:
+                            - natPortHashBit
+                            - sources
+                            - uSidBlockLength
+                            - uSidFunctionLength
+                            - vip
+                            type: object
+                          prefix:
+                            type: string
+                        required:
+                        - prefix
+                        type: object
+                      type: array
+                    maxBackends:
+                      type: integer
+                    maxRules:
+                      type: integer
+                    name:
+                      type: string
+                    netns:
+                      type: string
+                  required:
+                  - device
+                  - encapSource
+                  - name
+                  type: object
+                type: array
+              hostname:
+                type: string
+            required:
+            - hostname
+            type: object
+          status:
+            description: NodeStatus defines the observed state of Node
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
