@@ -96,13 +96,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Node")
 		os.Exit(1)
 	}
-	if err = (&controller.FunctionReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Function")
-		os.Exit(1)
-	}
 	if err = (&controller.NatReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

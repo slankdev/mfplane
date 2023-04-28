@@ -35,10 +35,78 @@ spec:
           spec:
             description: NodeSpec defines the desired state of Node
             properties:
-              foo:
-                description: Foo is an example field of Node. Edit node_types.go to
-                  remove/update
+              functions:
+                items:
+                  properties:
+                    device:
+                      type: string
+                    encapSource:
+                      type: string
+                    fib4:
+                      items:
+                        properties:
+                          hencaps:
+                            properties:
+                              mode:
+                                type: string
+                              segs:
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - mode
+                            - segs
+                            type: object
+                          prefix:
+                            type: string
+                        required:
+                        - prefix
+                        type: object
+                      type: array
+                    fib6:
+                      items:
+                        properties:
+                          endMfnNat:
+                            properties:
+                              natPortHashBit:
+                                type: integer
+                              source:
+                                items:
+                                  type: string
+                                type: array
+                              uSidBlockLength:
+                                type: integer
+                              uSidFunctionLength:
+                                type: integer
+                              vip:
+                                type: string
+                            required:
+                            - natPortHashBit
+                            - source
+                            - uSidBlockLength
+                            - uSidFunctionLength
+                            - vip
+                            type: object
+                          prefix:
+                            type: string
+                        required:
+                        - prefix
+                        type: object
+                      type: array
+                    name:
+                      type: string
+                    netns:
+                      type: string
+                  required:
+                  - device
+                  - encapSource
+                  - name
+                  type: object
+                type: array
+              hostname:
                 type: string
+            required:
+            - hostname
             type: object
           status:
             description: NodeStatus defines the observed state of Node

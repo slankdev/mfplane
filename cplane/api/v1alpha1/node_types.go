@@ -25,11 +25,40 @@ import (
 
 // NodeSpec defines the desired state of Node
 type NodeSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Hostname  string         `json:"hostname"`
+	Functions []FunctionSpec `json:"functions,omitempty"`
+}
 
-	// Foo is an example field of Node. Edit node_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type FunctionSpec struct {
+	Name        string      `json:"name"`
+	Netns       string      `json:"netns,omitempty"`
+	Device      string      `json:"device"`
+	EncapSource string      `json:"encapSource"`
+	Fib6        []Fib6Entry `json:"fib6,omitempty"`
+	Fib4        []Fib4Entry `json:"fib4,omitempty"`
+}
+
+type Fib6Entry struct {
+	Prefix          string     `json:"prefix"`
+	ActionEndMfnNat *EndMfnNat `json:"endMfnNat,omitempty"`
+}
+
+type Fib4Entry struct {
+	Prefix        string   `json:"prefix"`
+	ActionHEncaps *HEncaps `json:"hencaps,omitempty"`
+}
+
+type EndMfnNat struct {
+	Vip                string   `json:"vip"`
+	NatPortHashBitMaxk uint16   `json:"natPortHashBit"`
+	UsidBlockLength    int      `json:"uSidBlockLength"`
+	UsidFunctionLength int      `json:"uSidFunctionLength"`
+	Sources            []string `json:"source"`
+}
+
+type HEncaps struct {
+	Mode string   `json:"mode"`
+	Segs []string `json:"segs"`
 }
 
 // NodeStatus defines the observed state of Node

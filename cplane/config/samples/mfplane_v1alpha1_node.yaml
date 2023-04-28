@@ -48,7 +48,6 @@ spec:
         uSidFunctionLength: 16
         sources:
         - 10.0.1.0/24
-
     fib4:
     - prefix: 10.0.1.0/24
       action: {encapSeg6: {mode: encap, segs: [fc00:1101::0]}}

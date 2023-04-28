@@ -23,15 +23,6 @@ resources:
   controller: true
   domain: mfplane.io
   group: mfplane
-  kind: Function
-  path: github.com/slankdev/mfplane/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: mfplane.io
-  group: mfplane
   kind: Nat
   path: github.com/slankdev/mfplane/api/v1alpha1
   version: v1alpha1
