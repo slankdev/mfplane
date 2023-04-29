@@ -161,5 +161,5 @@ ifeq ($(shell test -e local.mk && echo -n yes),yes)
 include local.mk
 endif
 
-r:
+apply:
 	kubectl apply -f config/samples/mfplane_v1alpha1_node.yaml
