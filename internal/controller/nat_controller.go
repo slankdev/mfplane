@@ -88,11 +88,12 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				Kind: nat.Kind,
 				Name: nat.Name,
 			},
-			EndMflNat: &mfplanev1alpha1.EndMflNat{
+			EndMfnNat: &mfplanev1alpha1.EndMfnNat{
 				Vip:                nat.Spec.Vip,
 				NatPortHashBitMaxk: nat.Spec.NatPortHashBit,
 				UsidBlockLength:    nat.Spec.UsidBlockLength,
 				UsidFunctionLength: nat.Spec.UsidFunctionLength,
+				Sources:            nat.Spec.Sources,
 			},
 		})
 	}
