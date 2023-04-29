@@ -15,6 +15,8 @@ spec:
     netns: l1
     device: net0
     type: clb
+    labels:
+      lbGroup: lbGroup1
     configFile: |
       namePrefix: L1
       maxRules: 2
@@ -37,6 +39,8 @@ spec:
     netns: n1
     device: net0
     type: nat
+    labels:
+      natGroup: natGroup1
     configFile: |
       namePrefix: N1
       encapSource: fc00:3100::0
@@ -63,6 +67,8 @@ spec:
     netns: n2
     device: net0
     type: nat
+    labels:
+      natGroup: natGroup1
     configFile: |
       namePrefix: N2
       encapSource: fc00:3200::0

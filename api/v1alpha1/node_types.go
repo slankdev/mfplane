@@ -30,11 +30,12 @@ type NodeSpec struct {
 }
 
 type FunctionSpec struct {
-	Name       string `json:"name"`
-	Netns      string `json:"netns,omitempty"`
-	Device     string `json:"device"`
-	Type       string `json:"type"`
-	ConfigFile string `json:"configFile,omitempty"`
+	Name       string            `json:"name"`
+	Netns      string            `json:"netns,omitempty"`
+	Device     string            `json:"device"`
+	Type       string            `json:"type"`
+	ConfigFile string            `json:"configFile,omitempty"`
+	Labels     map[string]string `json:"labels,omitempty"`
 }
 
 type Fib6Entry struct {

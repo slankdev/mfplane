@@ -42,6 +42,10 @@ spec:
                       type: string
                     device:
                       type: string
+                    labels:
+                      additionalProperties:
+                        type: string
+                      type: object
                     name:
                       type: string
                     netns:
