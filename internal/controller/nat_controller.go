@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 )
 
@@ -47,10 +48,81 @@ type NatReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	nat := mfplanev1alpha1.Nat{}
+	if err := r.Get(ctx, req.NamespacedName, &nat); err != nil {
+		return ctrl.Result{}, err
+	}
 
+	// Schedule L-node Segments
+	lbSegments := []mfplanev1alpha1.Segment{}
+	for i := 0; i < nat.Spec.LoadBalancer.Replicas; i++ {
+		lbSegments = append(lbSegments, mfplanev1alpha1.Segment{
+			Owner: mfplanev1alpha1.SegmentOwner{
+				Kind: nat.Kind,
+				Name: nat.Name,
+			},
+			EndMflNat: &mfplanev1alpha1.EndMflNat{
+				Vip:                nat.Spec.Vip,
+				NatPortHashBitMaxk: nat.Spec.NatPortHashBit,
+				UsidBlockLength:    nat.Spec.UsidBlockLength,
+				UsidFunctionLength: nat.Spec.UsidFunctionLength,
+			},
+		})
+	}
+	// XXX(slankdev)
+	lbSegments[0].NodeName = "node-sample1"
+	lbSegments[0].FuncName = "L1"
+	lbSegments[0].Locator = "anycast"
+	lbSegments[0].Sid = "fc00:ff:1::/48"
+
+	// Schedule N-node Segments
+	nfSegments := []mfplanev1alpha1.Segment{}
+	for i := 0; i < nat.Spec.NetworkFunction.Replicas; i++ {
+		nfSegments = append(nfSegments, mfplanev1alpha1.Segment{
+			Locator: "anycast",
+			Sid:     "",
+			Owner: mfplanev1alpha1.SegmentOwner{
+				Kind: nat.Kind,
+				Name: nat.Name,
+			},
+			EndMflNat: &mfplanev1alpha1.EndMflNat{
+				Vip:                nat.Spec.Vip,
+				NatPortHashBitMaxk: nat.Spec.NatPortHashBit,
+				UsidBlockLength:    nat.Spec.UsidBlockLength,
+				UsidFunctionLength: nat.Spec.UsidFunctionLength,
+			},
+		})
+	}
+	// XXX(slankdev)
+	nfSegments[0].NodeName = "node-sample1"
+	nfSegments[0].FuncName = "N1"
+	nfSegments[0].Locator = "default"
+	nfSegments[0].Sid = "fc00:3101::/32"
+	nfSegments[1].NodeName = "node-sample1"
+	nfSegments[1].FuncName = "N2"
+	nfSegments[1].Locator = "default"
+	nfSegments[1].Sid = "fc00:3201::/32"
+
+	// Reconcile for L-node
+	log.Info("RECONCILE_L_NODE")
+	nodeList := mfplanev1alpha1.NodeList{}
+	if err := r.List(ctx, &nodeList); err != nil {
+		return ctrl.Result{}, err
+	}
+	for _, node := range nodeList.Items {
+		for _, fn := range node.Spec.Functions {
+			pp.Println(fn.Name)
+		}
+	}
+
+	// Reconcile for N-node
+	// TODO(slankdev): implement me
+	// log.Info("RECONCILE_N_NODE")
+
+	pp.Println("L-node", lbSegments)
+	pp.Println("N-node", nfSegments)
 	return ctrl.Result{}, nil
 }
 
