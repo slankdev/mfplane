@@ -17,6 +17,13 @@ spec:
     type: clb
     labels:
       lbGroup: lbGroup1
+    segmentRoutingSrv6:
+      locators:
+      - name: default
+        prefix: fc00:2100::/24
+      - name: anycast
+        prefix: fc00:ff00::/24
+        anycast: true
     configFile: |
       namePrefix: L1
       maxRules: 2
@@ -41,6 +48,10 @@ spec:
     type: nat
     labels:
       natGroup: natGroup1
+    segmentRoutingSrv6:
+      locators:
+      - name: default
+        prefix: fc00:3100::/24
     configFile: |
       namePrefix: N1
       encapSource: fc00:3100::0
@@ -69,6 +80,10 @@ spec:
     type: nat
     labels:
       natGroup: natGroup1
+    segmentRoutingSrv6:
+      locators:
+      - name: default
+        prefix: fc00:3200::/24
     configFile: |
       namePrefix: N2
       encapSource: fc00:3200::0
