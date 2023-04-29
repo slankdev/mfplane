@@ -82,9 +82,26 @@ status:
   - name: L1
     segments:
     - locator: anycast
-      sid: fc00:00ff:0001::/48
+      sid: fc00:ff01::/32
       endMflNat:
         vip: 142.0.0.1
         natPortHashBit: 0x00ff
         uSidBlockLength: 16
         uSidFunctionLength: 32
+  - name: N1
+    segments:
+    - locator: default
+    - sid: fc00:3101::/32
+      endMflNat:
+        vip: 142.0.0.1
+        natPortHashBit: 0x00ff
+        uSidBlockLength: 16
+        uSidFunctionLength: 32
+  - name: N2
+    segments:
+    - sid: fc00:3201::/32
+      End_MFN_NAT:
+        vip: 142.0.0.1
+        natPortHashBit: 0x00ff
+        uSidBlockLength: 16
+        uSidFunctionLength: 16
