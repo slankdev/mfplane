@@ -15,9 +15,9 @@ spec:
     netns: l1
     device: net0
     type: clb
+    encapSource: fc00:2100::0
     # maxRules: 2
     # maxBackends: 7
-    encapSource: fc00:2100::0
   - name: N1
     netns: n1
     device: net0
