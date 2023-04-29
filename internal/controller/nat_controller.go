@@ -56,10 +56,28 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	}
 	log.Info("RECONCILE_L_NODE")
 
+	// TODO(slankdev): support scale-in. currently it doesn't support such case.
+	// Need to consider using sub-resource/scale.
+
 	// Schedule L-node Segments
+	nbCreateLb := nat.Spec.LoadBalancer.Replicas
+	nodeList0 := mfplanev1alpha1.NodeList{}
+	if err := r.List(ctx, &nodeList0); err != nil {
+		return ctrl.Result{}, err
+	}
+	for _, node := range nodeList0.Items {
+		for _, fn := range node.Status.Functions {
+			for _, seg := range fn.Segments {
+				if seg.Owner.Kind == "Nat" && seg.Owner.Name == nat.Name &&
+					seg.EndMflNat != nil {
+					nbCreateLb--
+				}
+			}
+		}
+	}
 	lbSegments := []mfplanev1alpha1.Segment{}
-	for i := 0; i < nat.Spec.LoadBalancer.Replicas; i++ {
-		lbSegments = append(lbSegments, mfplanev1alpha1.Segment{
+	for i := 0; i < nbCreateLb; i++ {
+		newSeg := mfplanev1alpha1.Segment{
 			Locator: "anycast",
 			Owner: mfplanev1alpha1.SegmentOwner{
 				Kind: nat.Kind,
@@ -71,13 +89,37 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				UsidBlockLength:    nat.Spec.UsidBlockLength,
 				UsidFunctionLength: nat.Spec.UsidFunctionLength,
 			},
-		})
+		}
+
+		// XXX(slankdev)
+		if i == 0 {
+			newSeg.NodeName = "node-sample1"
+			newSeg.FuncName = "L1"
+			newSeg.Sid = "fc00:ff:1::/48"
+		}
+
+		lbSegments = append(lbSegments, newSeg)
 	}
 
 	// Schedule N-node Segments
+	nbCreateNf := nat.Spec.NetworkFunction.Replicas
+	nodeList1 := mfplanev1alpha1.NodeList{}
+	if err := r.List(ctx, &nodeList1); err != nil {
+		return ctrl.Result{}, err
+	}
+	for _, node := range nodeList1.Items {
+		for _, fn := range node.Status.Functions {
+			for _, seg := range fn.Segments {
+				if seg.Owner.Kind == "Nat" && seg.Owner.Name == nat.Name &&
+					seg.EndMfnNat != nil {
+					nbCreateNf--
+				}
+			}
+		}
+	}
 	nfSegments := []mfplanev1alpha1.Segment{}
-	for i := 0; i < nat.Spec.NetworkFunction.Replicas; i++ {
-		nfSegments = append(nfSegments, mfplanev1alpha1.Segment{
+	for i := 0; i < nbCreateNf; i++ {
+		newSeg := mfplanev1alpha1.Segment{
 			Locator: "default",
 			Owner: mfplanev1alpha1.SegmentOwner{
 				Kind: nat.Kind,
@@ -90,19 +132,22 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				UsidFunctionLength: nat.Spec.UsidFunctionLength,
 				Sources:            nat.Spec.Sources,
 			},
-		})
-	}
+		}
 
-	// XXX(slankdev)
-	lbSegments[0].NodeName = "node-sample1"
-	lbSegments[0].FuncName = "L1"
-	lbSegments[0].Sid = "fc00:ff:1::/48"
-	nfSegments[0].NodeName = "node-sample1"
-	nfSegments[0].FuncName = "N1"
-	nfSegments[0].Sid = "fc00:3101::/32"
-	nfSegments[1].NodeName = "node-sample1"
-	nfSegments[1].FuncName = "N2"
-	nfSegments[1].Sid = "fc00:3201::/32"
+		// XXX(slankdev)
+		if i == 0 {
+			newSeg.NodeName = "node-sample1"
+			newSeg.FuncName = "N1"
+			newSeg.Sid = "fc00:3101::/32"
+		}
+		if i == 1 {
+			newSeg.NodeName = "node-sample1"
+			newSeg.FuncName = "N2"
+			newSeg.Sid = "fc00:3201::/32"
+		}
+
+		nfSegments = append(nfSegments, newSeg)
+	}
 
 	// Reconcile for Node resource
 	nodeList := mfplanev1alpha1.NodeList{}
