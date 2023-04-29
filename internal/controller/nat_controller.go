@@ -94,7 +94,7 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		if i == 0 {
 			newSeg.NodeName = "node-sample1"
 			newSeg.FuncName = "L1"
-			newSeg.Sid = "fc00:ff:1::/48"
+			newSeg.Sid = "fc00:ff01::/32"
 		}
 
 		lbSegments = append(lbSegments, newSeg)
