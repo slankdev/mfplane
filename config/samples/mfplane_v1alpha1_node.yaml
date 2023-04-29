@@ -77,3 +77,14 @@ spec:
           encapSeg6:
             mode: encap
             segs: [fc00:1102::0]
+status:
+  functions:
+  - name: L1
+    segments:
+    - locator: anycast
+      sid: fc00:00ff:0001::/48
+      endMflNat:
+        vip: 142.0.0.1
+        natPortHashBit: 0x00ff
+        uSidBlockLength: 16
+        uSidFunctionLength: 32
