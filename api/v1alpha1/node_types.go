@@ -63,6 +63,8 @@ type FunctionStatus struct {
 }
 
 type Segment struct {
+	NodeName  string       `json:"nodeName"`
+	FuncName  string       `json:"funcName"`
 	Locator   string       `json:"locator"`
 	Sid       string       `json:"sid"`
 	EndMfnNat *EndMfnNat   `json:"endMfnNat,omitempty"`
