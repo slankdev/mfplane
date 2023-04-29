@@ -53,7 +53,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	node := mfplanev1alpha1.Node{}
 	if err := r.Get(ctx, req.NamespacedName, &node); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	log.Info("RECONCILE")

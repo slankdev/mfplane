@@ -52,7 +52,7 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	nat := mfplanev1alpha1.Nat{}
 	if err := r.Get(ctx, req.NamespacedName, &nat); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	log.Info("RECONCILE_L_NODE")
 
