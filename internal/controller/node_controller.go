@@ -26,6 +26,7 @@ import (
 
 	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
+	"github.com/slankdev/mfplane/pkg/util"
 )
 
 // NodeReconciler reconciles a Node object
@@ -48,11 +49,23 @@ type NodeReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
 
-	pp.Println("NODE KOKOKARA")
+	node := mfplanev1alpha1.Node{}
+	if err := r.Get(ctx, req.NamespacedName, &node); err != nil {
+		return ctrl.Result{}, err
+	}
 
-	// TODO(user): your logic here
+	log.Info("RECONCILE")
+	for _, fn := range node.Spec.Functions {
+		pp.Println("NODE KOKOKARA", fn.Name)
+		util.SetLogger(log)
+		if _, err := util.LocalExecutef("sudo ip netns exec %s "+
+			"./bin/mikanectl bpf %s attach -i %s -f -n %s",
+			fn.Netns, fn.Type, fn.Device, fn.Name); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
