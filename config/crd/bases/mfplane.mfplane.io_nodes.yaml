@@ -101,10 +101,13 @@ spec:
                       type: string
                     netns:
                       type: string
+                    type:
+                      type: string
                   required:
                   - device
                   - encapSource
                   - name
+                  - type
                   type: object
                 type: array
               hostname:

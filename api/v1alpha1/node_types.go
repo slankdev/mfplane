@@ -33,6 +33,7 @@ type FunctionSpec struct {
 	Name        string      `json:"name"`
 	Netns       string      `json:"netns,omitempty"`
 	Device      string      `json:"device"`
+	Type        string      `json:"type"`
 	EncapSource string      `json:"encapSource"`
 	MaxRules    int         `json:"maxRules,omitempty"`
 	MaxBackends int         `json:"maxBackends,omitempty"`
