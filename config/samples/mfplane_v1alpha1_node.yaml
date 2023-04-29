@@ -16,6 +16,7 @@ spec:
     device: net0
     type: clb
     configFile: |
+      namePrefix: L1
       maxRules: 2
       maxBackends: 7
       encapSource: fc00:2100::0
@@ -30,18 +31,19 @@ spec:
           uSidBlockLength: 16
           uSidFunctionLength: 16
           uSidFunctionRevisions:
+          - backends: [3101::0]
           # - backends: [3601::0]
           # - backends: [3501::0]
           # - backends: [3401::0]
           # - backends: [3301::0]
-          - backends: [3201::0]
-          - backends: [3101::0]
-          - backends: [3201::0]
+          # - backends: [3101::0]
+          # - backends: [3201::0]
   - name: N1
     netns: n1
     device: net0
     type: nat
     configFile: |
+      namePrefix: N1
       encapSource: fc00:3100::0
       localSids:
       - sid: fc00:3101::/32 # NAT1
