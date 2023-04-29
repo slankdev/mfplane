@@ -46,6 +46,8 @@ spec:
                       additionalProperties:
                         type: string
                       type: object
+                    mode:
+                      type: string
                     name:
                       type: string
                     netns:
@@ -79,6 +81,7 @@ spec:
                       type: string
                   required:
                   - device
+                  - mode
                   - name
                   - type
                   type: object
@@ -140,7 +143,11 @@ spec:
                             - uSidFunctionLength
                             - vip
                             type: object
+                          funcName:
+                            type: string
                           locator:
+                            type: string
+                          nodeName:
                             type: string
                           owner:
                             properties:
@@ -155,7 +162,9 @@ spec:
                           sid:
                             type: string
                         required:
+                        - funcName
                         - locator
+                        - nodeName
                         - owner
                         - sid
                         type: object

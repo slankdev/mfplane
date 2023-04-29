@@ -34,6 +34,7 @@ type FunctionSpec struct {
 	Netns              string                 `json:"netns,omitempty"`
 	Device             string                 `json:"device"`
 	Type               string                 `json:"type"`
+	Mode               string                 `json:"mode"`
 	ConfigFile         string                 `json:"configFile,omitempty"`
 	Labels             map[string]string      `json:"labels,omitempty"`
 	SegmentRoutingSrv6 SegmentRoutingSrv6Spec `json:"segmentRoutingSrv6,omitempty"`

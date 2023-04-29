@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
+	"github.com/slankdev/mfplane/pkg/goroute2"
 	"github.com/slankdev/mfplane/pkg/util"
 )
 
@@ -59,11 +60,23 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	log.Info("RECONCILE")
 	for _, fn := range node.Spec.Functions {
 		util.SetLogger(log)
-		// Attach XDP program
-		if _, err := util.LocalExecutef("sudo ip netns exec %s "+
-			"./bin/mikanectl bpf %s attach -i %s -f -n %s",
-			fn.Netns, fn.Type, fn.Device, fn.Name); err != nil {
+
+		// Check XDP program
+		linkDetail, err := goroute2.GetLinkDetail(fn.Netns, fn.Device)
+		if err != nil {
 			return ctrl.Result{}, err
+		}
+		if linkDetail == nil {
+			return ctrl.Result{}, fmt.Errorf("link %s not found", fn.Device)
+		}
+
+		// Attach XDP program
+		if linkDetail.Xdp == nil {
+			if _, err := util.LocalExecutef("sudo ip netns exec %s "+
+				"./bin/mikanectl bpf %s attach -i %s -n %s -m %s",
+				fn.Netns, fn.Type, fn.Device, fn.Name, fn.Mode); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 
 		// Prepare config

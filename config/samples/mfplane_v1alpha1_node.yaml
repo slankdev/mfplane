@@ -15,6 +15,7 @@ spec:
     netns: l1
     device: net0
     type: clb
+    mode: xdpgeneric
     labels:
       lbGroup: lbGroup1
       lbMaxRules: "2"
@@ -33,6 +34,7 @@ spec:
     netns: n1
     device: net0
     type: nat
+    mode: xdpgeneric
     labels:
       natGroup: natGroup1
     segmentRoutingSrv6:
@@ -57,6 +59,7 @@ spec:
     netns: n2
     device: net0
     type: nat
+    mode: xdpgeneric
     labels:
       natGroup: natGroup1
     segmentRoutingSrv6:
