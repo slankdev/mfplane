@@ -114,12 +114,24 @@ spec:
                                 type: integer
                               uSidFunctionLength:
                                 type: integer
+                              uSidFunctionRevisions:
+                                items:
+                                  properties:
+                                    backends:
+                                      items:
+                                        type: string
+                                      type: array
+                                  required:
+                                  - backends
+                                  type: object
+                                type: array
                               vip:
                                 type: string
                             required:
                             - natPortHashBit
                             - uSidBlockLength
                             - uSidFunctionLength
+                            - uSidFunctionRevisions
                             - vip
                             type: object
                           endMfnNat:

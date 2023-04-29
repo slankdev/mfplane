@@ -89,10 +89,15 @@ type EndMfnNat struct {
 }
 
 type EndMflNat struct {
-	Vip                string `json:"vip"`
-	NatPortHashBitMaxk uint16 `json:"natPortHashBit"`
-	UsidBlockLength    int    `json:"uSidBlockLength"`
-	UsidFunctionLength int    `json:"uSidFunctionLength"`
+	Vip                   string              `json:"vip"`
+	NatPortHashBitMaxk    uint16              `json:"natPortHashBit"`
+	UsidBlockLength       int                 `json:"uSidBlockLength"`
+	UsidFunctionLength    int                 `json:"uSidFunctionLength"`
+	USidFunctionRevisions []EndMflNatRevision `json:"uSidFunctionRevisions"`
+}
+
+type EndMflNatRevision struct {
+	Backends []string `json:"backends"`
 }
 
 type HEncaps struct {
