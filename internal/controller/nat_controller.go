@@ -60,6 +60,7 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	lbSegments := []mfplanev1alpha1.Segment{}
 	for i := 0; i < nat.Spec.LoadBalancer.Replicas; i++ {
 		lbSegments = append(lbSegments, mfplanev1alpha1.Segment{
+			Locator: "anycast",
 			Owner: mfplanev1alpha1.SegmentOwner{
 				Kind: nat.Kind,
 				Name: nat.Name,
@@ -72,18 +73,12 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			},
 		})
 	}
-	// XXX(slankdev)
-	lbSegments[0].NodeName = "node-sample1"
-	lbSegments[0].FuncName = "L1"
-	lbSegments[0].Locator = "anycast"
-	lbSegments[0].Sid = "fc00:ff:1::/48"
 
 	// Schedule N-node Segments
 	nfSegments := []mfplanev1alpha1.Segment{}
 	for i := 0; i < nat.Spec.NetworkFunction.Replicas; i++ {
 		nfSegments = append(nfSegments, mfplanev1alpha1.Segment{
-			Locator: "anycast",
-			Sid:     "",
+			Locator: "default",
 			Owner: mfplanev1alpha1.SegmentOwner{
 				Kind: nat.Kind,
 				Name: nat.Name,
@@ -97,14 +92,16 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			},
 		})
 	}
+
 	// XXX(slankdev)
+	lbSegments[0].NodeName = "node-sample1"
+	lbSegments[0].FuncName = "L1"
+	lbSegments[0].Sid = "fc00:ff:1::/48"
 	nfSegments[0].NodeName = "node-sample1"
 	nfSegments[0].FuncName = "N1"
-	nfSegments[0].Locator = "default"
 	nfSegments[0].Sid = "fc00:3101::/32"
 	nfSegments[1].NodeName = "node-sample1"
 	nfSegments[1].FuncName = "N2"
-	nfSegments[1].Locator = "default"
 	nfSegments[1].Sid = "fc00:3201::/32"
 
 	// Reconcile for Node resource
