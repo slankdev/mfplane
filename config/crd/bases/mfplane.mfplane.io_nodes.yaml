@@ -50,6 +50,31 @@ spec:
                       type: string
                     netns:
                       type: string
+                    segmentRoutingSrv6:
+                      properties:
+                        encapSource:
+                          type: string
+                        locators:
+                          items:
+                            properties:
+                              anycast:
+                                type: boolean
+                              block:
+                                type: string
+                              name:
+                                type: string
+                              prefix:
+                                type: string
+                            required:
+                            - block
+                            - name
+                            - prefix
+                            type: object
+                          type: array
+                      required:
+                      - encapSource
+                      - locators
+                      type: object
                     type:
                       type: string
                   required:
@@ -78,6 +103,27 @@ spec:
                     segment:
                       items:
                         properties:
+                          endMfnNat:
+                            properties:
+                              natPortHashBit:
+                                type: integer
+                              sources:
+                                items:
+                                  type: string
+                                type: array
+                              uSidBlockLength:
+                                type: integer
+                              uSidFunctionLength:
+                                type: integer
+                              vip:
+                                type: string
+                            required:
+                            - natPortHashBit
+                            - sources
+                            - uSidBlockLength
+                            - uSidFunctionLength
+                            - vip
+                            type: object
                           locator:
                             type: string
                           sid:
