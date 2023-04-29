@@ -54,6 +54,7 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	if err := r.Get(ctx, req.NamespacedName, &nat); err != nil {
 		return ctrl.Result{}, err
 	}
+	log.Info("RECONCILE_L_NODE")
 
 	// Schedule L-node Segments
 	lbSegments := []mfplanev1alpha1.Segment{}
@@ -105,22 +106,62 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	nfSegments[1].Locator = "default"
 	nfSegments[1].Sid = "fc00:3201::/32"
 
-	// Reconcile for L-node
-	log.Info("RECONCILE_L_NODE")
+	// Reconcile for Node resource
 	nodeList := mfplanev1alpha1.NodeList{}
 	if err := r.List(ctx, &nodeList); err != nil {
 		return ctrl.Result{}, err
 	}
 	for _, node := range nodeList.Items {
+		// Resource init
+		if node.Status.Functions == nil {
+			node.Status.Functions = []mfplanev1alpha1.FunctionStatus{}
+		}
 		for _, fn := range node.Spec.Functions {
-			pp.Println(fn.Name)
+			found := false
+			for _, statusFn := range node.Status.Functions {
+				if statusFn.Name == fn.Name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				node.Status.Functions = append(node.Status.Functions,
+					mfplanev1alpha1.FunctionStatus{
+						Name:     fn.Name,
+						Segments: []mfplanev1alpha1.Segment{},
+					})
+			}
+		}
+
+		// Fill allocated segment
+		updated := false
+		for fnIdx, fn := range node.Status.Functions {
+			for _, seg := range lbSegments {
+				if seg.NodeName == node.Name && seg.FuncName == fn.Name {
+					fn.Segments = append(fn.Segments, seg)
+					node.Status.Functions[fnIdx].Segments = fn.Segments
+					updated = true
+				}
+			}
+			for _, seg := range nfSegments {
+				if seg.NodeName == node.Name && seg.FuncName == fn.Name {
+					fn.Segments = append(fn.Segments, seg)
+					node.Status.Functions[fnIdx].Segments = fn.Segments
+					updated = true
+				}
+			}
+		}
+
+		// Update node resource
+		if updated {
+			if err := r.Status().Update(ctx, &node); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
-	// Reconcile for N-node
-	// TODO(slankdev): implement me
-	// log.Info("RECONCILE_N_NODE")
-
+	// Finish
+	log.Info("RECONCILE_DONE")
 	pp.Println("L-node", lbSegments)
 	pp.Println("N-node", nfSegments)
 	return ctrl.Result{}, nil
