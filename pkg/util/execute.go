@@ -24,12 +24,27 @@ import (
 	"os/exec"
 
 	"github.com/fatih/color"
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var silence = true
+var (
+	silence = true
+	logger  logr.Logger
+	logging = false
+)
 
 func SetLocalExecuteSilence(v bool) {
 	silence = v
+}
+
+func SetLogger(l logr.Logger) {
+	logger = l
+	logging = true
+}
+
+func UnsetLogger() {
+	logging = false
 }
 
 func LocalExecute(cmdstr string) (string, error) {
@@ -53,6 +68,9 @@ func LocalExecute(cmdstr string) (string, error) {
 		str := fmt.Sprintf("CommandExecute [%s] ", cmd)
 		str += color.GreenString("Success")
 		fmt.Printf("%s\n", str)
+	}
+	if logging {
+		log.Log.Info("CMD", "command", cmdstr, "return", 0)
 	}
 	return stdoutbuf.String(), nil
 }
