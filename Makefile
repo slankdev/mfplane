@@ -163,5 +163,6 @@ endif
 
 apply:
 	kubectl apply -f config/samples/mfplane_v1alpha1_node.yaml
+	kubectl apply -f config/samples/mfplane_v1alpha1_nat.yaml
 delete:
-	kubectl delete -f config/samples/mfplane_v1alpha1_node.yaml
+	kubectl delete -f config/samples/mfplane_v1alpha1_nat.yaml
