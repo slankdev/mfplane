@@ -24,7 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/util"
 )
@@ -58,7 +57,6 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	log.Info("RECONCILE")
 	for _, fn := range node.Spec.Functions {
-		pp.Println("NODE KOKOKARA", fn.Name)
 		util.SetLogger(log)
 		if _, err := util.LocalExecutef("sudo ip netns exec %s "+
 			"./bin/mikanectl bpf %s attach -i %s -f -n %s",
