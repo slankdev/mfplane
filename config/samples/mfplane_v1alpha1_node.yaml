@@ -15,28 +15,54 @@ spec:
     netns: l1
     device: net0
     type: clb
-    encapSource: fc00:2100::0
-    # maxRules: 2
-    # maxBackends: 7
+    configFile: |
+      maxRules: 2
+      maxBackends: 7
+      encapSource: fc00:2100::0
+      localSids:
+      - sid: fc00:ff01::/32 # NAT1
+        End_MFL:
+          vip: 142.0.0.1
+          natPortHashBit: 0x00ff
+          natMapping: endpointIndependentMapping
+          natFiltering: endpointIndependentFiltering
+          uSidBlock: fc00::0
+          uSidBlockLength: 16
+          uSidFunctionLength: 16
+          uSidFunctionRevisions:
+          # - backends: [3601::0]
+          # - backends: [3501::0]
+          # - backends: [3401::0]
+          # - backends: [3301::0]
+          - backends: [3201::0]
+          - backends: [3101::0]
+          - backends: [3201::0]
   - name: N1
     netns: n1
     device: net0
     type: nat
-    encapSource: fc00:3100::0
-  #   fib6:
-  #   - prefix: fc00:3101::/32
-  #     endMfnNat:
-  #       vip: 142.0.0.1
-  #       natPortHashBit: 0x00ff
-  #       uSidBlockLength: 16
-  #       uSidFunctionLength: 16
-  #       sources:
-  #       - 10.0.1.0/24
-  #   fib4:
-  #   - prefix: 10.0.1.0/24
-  #     hEncaps: {mode: encap, segs: [fc00:1101::0]}
-  #   - prefix: 10.0.2.0/24
-  #     hEncaps: {mode: encap, segs: [fc00:1102::0]}
+    configFile: |
+      encapSource: fc00:3100::0
+      localSids:
+      - sid: fc00:3101::/32 # NAT1
+        End_MFN_NAT:
+          vip: 142.0.0.1
+          natPortHashBit: 0x00ff
+          uSidBlockLength: 16
+          uSidFunctionLength: 16
+          sources: [10.0.1.0/24]
+      fib4:
+      - prefix: 10.0.1.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1101::0]
+      - prefix: 10.0.2.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1102::0]
+
   # - name: N2
   #   netns: n2
   #   device: net0

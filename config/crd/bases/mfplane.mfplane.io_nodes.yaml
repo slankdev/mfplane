@@ -38,65 +38,10 @@ spec:
               functions:
                 items:
                   properties:
+                    configFile:
+                      type: string
                     device:
                       type: string
-                    encapSource:
-                      type: string
-                    fib4:
-                      items:
-                        properties:
-                          hEncaps:
-                            properties:
-                              mode:
-                                type: string
-                              segs:
-                                items:
-                                  type: string
-                                type: array
-                            required:
-                            - mode
-                            - segs
-                            type: object
-                          prefix:
-                            type: string
-                        required:
-                        - prefix
-                        type: object
-                      type: array
-                    fib6:
-                      items:
-                        properties:
-                          endMfnNat:
-                            properties:
-                              natPortHashBit:
-                                type: integer
-                              sources:
-                                items:
-                                  type: string
-                                type: array
-                              uSidBlockLength:
-                                type: integer
-                              uSidFunctionLength:
-                                type: integer
-                              vip:
-                                type: string
-                            required:
-                            - natPortHashBit
-                            - sources
-                            - uSidBlockLength
-                            - uSidFunctionLength
-                            - vip
-                            type: object
-                          prefix:
-                            type: string
-                        required:
-                        - prefix
-                        type: object
-                      type: array
-                    maxBackends:
-                      type: integer
-                    maxRules:
-                      type: integer
                     name:
                       type: string
                     netns:
@@ -105,7 +50,6 @@ spec:
                       type: string
                   required:
                   - device
-                  - encapSource
                   - name
                   - type
                   type: object

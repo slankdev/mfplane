@@ -30,15 +30,11 @@ type NodeSpec struct {
 }
 
 type FunctionSpec struct {
-	Name        string      `json:"name"`
-	Netns       string      `json:"netns,omitempty"`
-	Device      string      `json:"device"`
-	Type        string      `json:"type"`
-	EncapSource string      `json:"encapSource"`
-	MaxRules    int         `json:"maxRules,omitempty"`
-	MaxBackends int         `json:"maxBackends,omitempty"`
-	Fib6        []Fib6Entry `json:"fib6,omitempty"`
-	Fib4        []Fib4Entry `json:"fib4,omitempty"`
+	Name       string `json:"name"`
+	Netns      string `json:"netns,omitempty"`
+	Device     string `json:"device"`
+	Type       string `json:"type"`
+	ConfigFile string `json:"configFile,omitempty"`
 }
 
 type Fib6Entry struct {
