@@ -51,14 +51,22 @@ type Srv6Locator struct {
 	Anycast bool   `json:"anycast,omitempty"`
 }
 
-type Fib6Entry struct {
-	Prefix          string     `json:"prefix"`
-	ActionEndMfnNat *EndMfnNat `json:"endMfnNat,omitempty"`
+// NodeStatus defines the observed state of Node
+type NodeStatus struct {
+	Functions []FunctionStatus `json:"functions,omitempty"`
 }
 
-type Fib4Entry struct {
-	Prefix        string   `json:"prefix"`
-	ActionHEncaps *HEncaps `json:"hEncaps,omitempty"`
+type FunctionStatus struct {
+	Name     string            `json:"name"`
+	Labels   map[string]string `json:"labels,omitempty"`
+	Segments []Segment         `json:"segments"`
+}
+
+type Segment struct {
+	Locator   string     `json:"locator"`
+	Sid       string     `json:"sid"`
+	EndMfnNat *EndMfnNat `json:"endMfnNat,omitempty"`
+	EndMflNat *EndMflNat `json:"endMflNat,omitempty"`
 }
 
 type EndMfnNat struct {
@@ -79,23 +87,6 @@ type EndMflNat struct {
 type HEncaps struct {
 	Mode string   `json:"mode"`
 	Segs []string `json:"segs"`
-}
-
-// NodeStatus defines the observed state of Node
-type NodeStatus struct {
-	Functions []FunctionStatus `json:"functions,omitempty"`
-}
-
-type FunctionStatus struct {
-	Name     string            `json:"name"`
-	Labels   map[string]string `json:"labels,omitempty"`
-	Segments []Segment         `json:"segment"`
-}
-
-type Segment struct {
-	Locator   string     `json:"locator"`
-	Sid       string     `json:"sid"`
-	EndMfnNat *EndMfnNat `json:"endMfnNat,omitempty"`
 }
 
 //+kubebuilder:object:root=true
