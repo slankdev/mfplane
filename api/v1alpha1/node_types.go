@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -121,4 +123,24 @@ type NodeList struct {
 
 func init() {
 	SchemeBuilder.Register(&Node{}, &NodeList{})
+}
+
+func (n Node) GetFunctionSpec(name string, spec *FunctionSpec) error {
+	for _, fn := range n.Spec.Functions {
+		if fn.Name == name {
+			*spec = fn
+			return nil
+		}
+	}
+	return fmt.Errorf("not found")
+}
+
+func (n Node) GetFunctionStatus(name string, spec *FunctionStatus) error {
+	for _, fn := range n.Status.Functions {
+		if fn.Name == name {
+			*spec = fn
+			return nil
+		}
+	}
+	return fmt.Errorf("not found")
 }
