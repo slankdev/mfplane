@@ -24,7 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 )
 
@@ -205,8 +204,6 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	// Finish
 	log.Info("RECONCILE_DONE")
-	pp.Println("L-node", lbSegments)
-	pp.Println("N-node", nfSegments)
 	return ctrl.Result{}, nil
 }
 
