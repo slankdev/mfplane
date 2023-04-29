@@ -17,31 +17,18 @@ spec:
     type: clb
     labels:
       lbGroup: lbGroup1
+      lbMaxRules: "2"
+      lbMaxBackends: "7"
     segmentRoutingSrv6:
+      encapSource: fc00:2100::0
       locators:
       - name: default
         prefix: fc00:2100::/24
+        block: fc00::0
       - name: anycast
         prefix: fc00:ff00::/24
+        block: fc00::0
         anycast: true
-    configFile: |
-      namePrefix: L1
-      maxRules: 2
-      maxBackends: 7
-      encapSource: fc00:2100::0
-      localSids:
-      - sid: fc00:ff01::/32 # NAT1
-        End_MFL:
-          vip: 142.0.0.1
-          natPortHashBit: 0x00ff
-          natMapping: endpointIndependentMapping
-          natFiltering: endpointIndependentFiltering
-          uSidBlock: fc00::0
-          uSidBlockLength: 16
-          uSidFunctionLength: 16
-          uSidFunctionRevisions:
-          - backends: [3101::0]
-          #- backends: [3101::0,3201::0]
   - name: N1
     netns: n1
     device: net0
@@ -49,20 +36,12 @@ spec:
     labels:
       natGroup: natGroup1
     segmentRoutingSrv6:
+      encapSource: fc00:3100::0
       locators:
       - name: default
         prefix: fc00:3100::/24
+        block: fc00::0
     configFile: |
-      namePrefix: N1
-      encapSource: fc00:3100::0
-      localSids:
-      - sid: fc00:3101::/32 # NAT1
-        End_MFN_NAT:
-          vip: 142.0.0.1
-          natPortHashBit: 0x00ff
-          uSidBlockLength: 16
-          uSidFunctionLength: 16
-          sources: [10.0.1.0/24]
       fib4:
       - prefix: 10.0.1.0/24
         action:
@@ -81,20 +60,12 @@ spec:
     labels:
       natGroup: natGroup1
     segmentRoutingSrv6:
+      encapSource: fc00:3200::0
       locators:
       - name: default
         prefix: fc00:3200::/24
+        block: fc00::0
     configFile: |
-      namePrefix: N2
-      encapSource: fc00:3200::0
-      localSids:
-      - sid: fc00:3201::/32 # NAT1
-        End_MFN_NAT:
-          vip: 142.0.0.1
-          natPortHashBit: 0x00ff
-          uSidBlockLength: 16
-          uSidFunctionLength: 16
-          sources: [10.0.1.0/24]
       fib4:
       - prefix: 10.0.1.0/24
         action:
