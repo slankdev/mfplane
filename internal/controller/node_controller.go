@@ -116,37 +116,52 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
 	fnStatus mfplanev1alpha1.FunctionStatus) (string, error) {
-	switch fnSpec.Type {
-	case "clb":
-		c := mikanectl.Config{
-			NamePrefix:  fnSpec.Name,
-			MaxRules:    2,
-			MaxBackends: 7,
-			EncapSource: fnSpec.SegmentRoutingSrv6.EncapSource,
-		}
-		out, err := yaml.Marshal(c)
-		if err != nil {
-			return "", err
-		}
-		sout := string(out) + "\n" + fnSpec.ConfigFile
-		return sout, nil
-	case "nat":
-		c := mikanectl.Config{
-			NamePrefix:  fnSpec.Name,
-			MaxRules:    2,
-			MaxBackends: 7,
-			EncapSource: fnSpec.SegmentRoutingSrv6.EncapSource,
-		}
-		out, err := yaml.Marshal(c)
-		if err != nil {
-			return "", err
-		}
-		sout := string(out) + "\n" + fnSpec.ConfigFile
-		return sout, nil
-	default:
-		return "", fmt.Errorf("unknown type %s", fnSpec.Type)
+	c := mikanectl.Config{
+		NamePrefix:  fnSpec.Name,
+		MaxRules:    2,
+		MaxBackends: 7,
+		EncapSource: fnSpec.SegmentRoutingSrv6.EncapSource,
 	}
-	// return s, nil
+	for _, seg := range fnStatus.Segments {
+		sid := mikanectl.ConfigLocalSid{}
+		sid.Sid = seg.Sid
+		switch {
+		case seg.EndMflNat != nil:
+			sid.End_MFL = &mikanectl.ConfigLocalSid_End_MFL{
+				Vip:                seg.EndMflNat.Vip,
+				NatPortHashBit:     seg.EndMflNat.NatPortHashBitMaxk, // XXX: typo
+				USidBlock:          "fc00::0",                        // TODO(slankdev)
+				USidBlockLength:    seg.EndMflNat.UsidBlockLength,
+				USidFunctionLength: seg.EndMflNat.UsidFunctionLength,
+				NatMapping:         "endpointIndependentMapping",   // TODO(slankdev)
+				NatFiltering:       "endpointIndependentFiltering", // TODO(slankdev)
+				USidFunctionRevisions: []mikanectl.FunctionRevision{
+					{
+						Backends: []string{
+							"3201::0",
+						},
+					},
+				},
+			}
+		case seg.EndMfnNat != nil:
+			sid.End_MFN_NAT = &mikanectl.ConfigLocalSid_End_MFN_NAT{
+				Vip:                seg.EndMfnNat.Vip,
+				NatPortHashBit:     seg.EndMfnNat.NatPortHashBitMaxk, // XXX: typo
+				USidBlockLength:    seg.EndMfnNat.UsidBlockLength,
+				USidFunctionLength: seg.EndMfnNat.UsidFunctionLength,
+				Sources:            seg.EndMfnNat.Sources,
+			}
+		default:
+			return "", fmt.Errorf("no sid activated")
+		}
+		c.LocalSids = append(c.LocalSids, sid)
+	}
+	out, err := yaml.Marshal(c)
+	if err != nil {
+		return "", err
+	}
+	sout := string(out) + "\n" + fnSpec.ConfigFile
+	return sout, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
