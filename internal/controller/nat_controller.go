@@ -95,6 +95,14 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			newSeg.NodeName = "node-sample1"
 			newSeg.FuncName = "L1"
 			newSeg.Sid = "fc00:ff01::/32"
+			newSeg.EndMflNat.USidFunctionRevisions = []mfplanev1alpha1.EndMflNatRevision{
+				{
+					Backends: []string{
+						"fc00:3101::/32",
+						"fc00:3201::/32",
+					},
+				},
+			}
 		}
 
 		lbSegments = append(lbSegments, newSeg)
