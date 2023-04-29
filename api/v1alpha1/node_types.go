@@ -30,12 +30,25 @@ type NodeSpec struct {
 }
 
 type FunctionSpec struct {
-	Name       string            `json:"name"`
-	Netns      string            `json:"netns,omitempty"`
-	Device     string            `json:"device"`
-	Type       string            `json:"type"`
-	ConfigFile string            `json:"configFile,omitempty"`
-	Labels     map[string]string `json:"labels,omitempty"`
+	Name               string                 `json:"name"`
+	Netns              string                 `json:"netns,omitempty"`
+	Device             string                 `json:"device"`
+	Type               string                 `json:"type"`
+	ConfigFile         string                 `json:"configFile,omitempty"`
+	Labels             map[string]string      `json:"labels,omitempty"`
+	SegmentRoutingSrv6 SegmentRoutingSrv6Spec `json:"segmentRoutingSrv6,omitempty"`
+}
+
+type SegmentRoutingSrv6Spec struct {
+	EncapSource string        `json:"encapSource"`
+	Locators    []Srv6Locator `json:"locators"`
+}
+
+type Srv6Locator struct {
+	Name    string `json:"name"`
+	Prefix  string `json:"prefix"`
+	Block   string `json:"block"`
+	Anycast bool   `json:"anycast,omitempty"`
 }
 
 type Fib6Entry struct {
@@ -56,6 +69,13 @@ type EndMfnNat struct {
 	Sources            []string `json:"sources"`
 }
 
+type EndMflNat struct {
+	Vip                string `json:"vip"`
+	NatPortHashBitMaxk uint16 `json:"natPortHashBit"`
+	UsidBlockLength    int    `json:"uSidBlockLength"`
+	UsidFunctionLength int    `json:"uSidFunctionLength"`
+}
+
 type HEncaps struct {
 	Mode string   `json:"mode"`
 	Segs []string `json:"segs"`
@@ -63,8 +83,19 @@ type HEncaps struct {
 
 // NodeStatus defines the observed state of Node
 type NodeStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Functions []FunctionStatus `json:"functions,omitempty"`
+}
+
+type FunctionStatus struct {
+	Name     string            `json:"name"`
+	Labels   map[string]string `json:"labels,omitempty"`
+	Segments []Segment         `json:"segment"`
+}
+
+type Segment struct {
+	Locator   string     `json:"locator"`
+	Sid       string     `json:"sid"`
+	EndMfnNat *EndMfnNat `json:"endMfnNat,omitempty"`
 }
 
 //+kubebuilder:object:root=true
