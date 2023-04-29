@@ -37,11 +37,11 @@ spec:
   #     hEncaps: {mode: encap, segs: [fc00:1101::0]}
   #   - prefix: 10.0.2.0/24
   #     hEncaps: {mode: encap, segs: [fc00:1102::0]}
-  - name: N2
-    netns: n2
-    device: net0
-    type: nat
-    encapSource: fc00:3200::0
+  # - name: N2
+  #   netns: n2
+  #   device: net0
+  #   type: nat
+  #   encapSource: fc00:3200::0
   #   fib6:
   #   - prefix: fc00:3201::/32 # NAT1
   #     endMfnNat:
