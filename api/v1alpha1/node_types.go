@@ -63,10 +63,16 @@ type FunctionStatus struct {
 }
 
 type Segment struct {
-	Locator   string     `json:"locator"`
-	Sid       string     `json:"sid"`
-	EndMfnNat *EndMfnNat `json:"endMfnNat,omitempty"`
-	EndMflNat *EndMflNat `json:"endMflNat,omitempty"`
+	Locator   string       `json:"locator"`
+	Sid       string       `json:"sid"`
+	EndMfnNat *EndMfnNat   `json:"endMfnNat,omitempty"`
+	EndMflNat *EndMflNat   `json:"endMflNat,omitempty"`
+	Owner     SegmentOwner `json:"owner"`
+}
+
+type SegmentOwner struct {
+	Kind string `json:"kind"`
+	Name string `json:"name"`
 }
 
 type EndMfnNat struct {

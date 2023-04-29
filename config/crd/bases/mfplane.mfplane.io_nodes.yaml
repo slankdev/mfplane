@@ -142,10 +142,21 @@ spec:
                             type: object
                           locator:
                             type: string
+                          owner:
+                            properties:
+                              kind:
+                                type: string
+                              name:
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
                           sid:
                             type: string
                         required:
                         - locator
+                        - owner
                         - sid
                         type: object
                       type: array
