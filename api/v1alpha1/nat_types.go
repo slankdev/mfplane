@@ -20,16 +20,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // NatSpec defines the desired state of Nat
 type NatSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Vip                string             `json:"vip"`
+	Sources            []string           `json:"sources"`
+	NatPortHashBit     uint16             `json:"natPortHashBit"`
+	NatMapping         string             `json:"natMapping"`
+	NatFiltering       string             `json:"natFiltering"`
+	UsidBlockLength    int                `json:"uSidBlockLength"`
+	UsidFunctionLength int                `json:"uSidFunctionLength"`
+	LoadBalancer       MfpNodeSpecifySpec `json:"loadBalancer"`
+	NetworkFunction    MfpNodeSpecifySpec `json:"networkFunction"`
+}
 
-	// Foo is an example field of Nat. Edit nat_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type MfpNodeSpecifySpec struct {
+	Replicas int                     `json:"replicas"`
+	Selector *MfpNodeSpecifySelector `json:"selector,omitempty"`
+}
+
+type MfpNodeSpecifySelector struct {
+	MatchLabels map[string]string `json:"matchLabels,omitempty"`
 }
 
 // NatStatus defines the observed state of Nat
