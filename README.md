@@ -31,6 +31,7 @@ sudo curl -Lo /usr/bin/kind https://kind.sigs.k8s.io/dl/v0.18.0/kind-linux-amd64
 sudo chmod +x /usr/bin/kind
 curl -Lo /usr/bin/mikanectl https://github.com/slankdev/mfplane/releases/download/branch-main/mikanectl.linux-amd64
 chmod +x /usr/bin/mikanectl
+curl -L https://github.com/ulucinar/kubectl-edit-status/releases/download/v0.3.0/kubectl-edit-status_v0.3.0_linux_amd64.tar.gz | sudo tar zx -C /usr/bin
 ```
 ```
 kind create cluster
