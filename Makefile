@@ -166,3 +166,4 @@ apply:
 	kubectl apply -f config/samples/mfplane_v1alpha1_nat.yaml
 delete:
 	kubectl delete -f config/samples/mfplane_v1alpha1_nat.yaml
+	kubectl delete -f config/samples/mfplane_v1alpha1_nat.yaml
