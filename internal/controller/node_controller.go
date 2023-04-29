@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -58,9 +59,21 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	log.Info("RECONCILE")
 	for _, fn := range node.Spec.Functions {
 		util.SetLogger(log)
+		// Attach XDP program
 		if _, err := util.LocalExecutef("sudo ip netns exec %s "+
 			"./bin/mikanectl bpf %s attach -i %s -f -n %s",
 			fn.Netns, fn.Type, fn.Device, fn.Name); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// Prepare config
+		if err := util.WriteFile(fmt.Sprintf("/tmp/%s.config.yaml", fn.Name),
+			[]byte(fn.ConfigFile)); err != nil {
+			return ctrl.Result{}, err
+		}
+		if _, err := util.LocalExecutef("sudo ip netns exec %s "+
+			"./bin/mikanectl map-load -f /tmp/%s.config.yaml",
+			fn.Netns, fn.Name); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
