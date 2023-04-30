@@ -221,3 +221,7 @@ func (r *NatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&mfplanev1alpha1.Nat{}).
 		Complete(r)
 }
+
+func (r *NatReconciler) ScheduleFilter() error {
+	return nil
+}
