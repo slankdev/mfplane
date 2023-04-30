@@ -19,8 +19,8 @@ package v1alpha1
 import (
 	"context"
 
-	"golang.org/x/vuln/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Srv6SegmentSpec defines the desired state of Srv6Segment
