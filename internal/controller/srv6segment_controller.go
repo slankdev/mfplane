@@ -62,10 +62,6 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if err := r.Get(ctx, req.NamespacedName, &seg); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	if seg.Spec.Sid != "" {
-		log.Info("ALREADY_ALLOCATED_SKIP")
-		return ctrl.Result{}, nil
-	}
 
 	specUpdated := false
 	statusUpdated := false
