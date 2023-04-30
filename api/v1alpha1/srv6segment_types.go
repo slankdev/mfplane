@@ -17,6 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+
+	"golang.org/x/vuln/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -85,4 +88,19 @@ type Srv6SegmentList struct {
 
 func init() {
 	SchemeBuilder.Register(&Srv6Segment{}, &Srv6SegmentList{})
+}
+
+func ListSegmentsNodeFunc(ctx context.Context, cli client.Client,
+	nodeName, funcName string, list *Srv6SegmentList) error {
+	segList := Srv6SegmentList{}
+	if err := cli.List(ctx, &segList); err != nil {
+		return err
+	}
+	for _, seg := range segList.Items {
+		if seg.Status.NodeName == nodeName &&
+			seg.Status.FuncName == funcName {
+			list.Items = append(list.Items, seg)
+		}
+	}
+	return nil
 }
