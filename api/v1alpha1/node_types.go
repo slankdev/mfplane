@@ -60,49 +60,8 @@ type NodeStatus struct {
 }
 
 type FunctionStatus struct {
-	Name     string            `json:"name"`
-	Labels   map[string]string `json:"labels,omitempty"`
-	Segments []Segment         `json:"segments,omitempty"`
-}
-
-type Segment struct {
-	NodeName  string       `json:"nodeName"`
-	FuncName  string       `json:"funcName"`
-	Locator   string       `json:"locator"`
-	Sid       string       `json:"sid"`
-	EndMfnNat *EndMfnNat   `json:"endMfnNat,omitempty"`
-	EndMflNat *EndMflNat   `json:"endMflNat,omitempty"`
-	Owner     SegmentOwner `json:"owner"`
-}
-
-type SegmentOwner struct {
-	Kind string `json:"kind"`
-	Name string `json:"name"`
-}
-
-type EndMfnNat struct {
-	Vip                string   `json:"vip"`
-	NatPortHashBit     uint16   `json:"natPortHashBit"`
-	UsidBlockLength    int      `json:"uSidBlockLength"`
-	UsidFunctionLength int      `json:"uSidFunctionLength"`
-	Sources            []string `json:"sources"`
-}
-
-type EndMflNat struct {
-	Vip                   string              `json:"vip"`
-	NatPortHashBit        uint16              `json:"natPortHashBit"`
-	UsidBlockLength       int                 `json:"uSidBlockLength"`
-	UsidFunctionLength    int                 `json:"uSidFunctionLength"`
-	USidFunctionRevisions []EndMflNatRevision `json:"uSidFunctionRevisions"`
-}
-
-type EndMflNatRevision struct {
-	Backends []string `json:"backends"`
-}
-
-type HEncaps struct {
-	Mode string   `json:"mode"`
-	Segs []string `json:"segs"`
+	Name   string            `json:"name"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 //+kubebuilder:object:root=true

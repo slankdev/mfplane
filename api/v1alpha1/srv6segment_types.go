@@ -22,13 +22,33 @@ import (
 
 // Srv6SegmentSpec defines the desired state of Srv6Segment
 type Srv6SegmentSpec struct {
-	NodeName  string       `json:"nodeName,omitempty"`
-	FuncName  string       `json:"funcName,omitempty"`
-	Locator   string       `json:"locator"`
-	Sid       string       `json:"sid"`
-	EndMfnNat *EndMfnNat   `json:"endMfnNat,omitempty"`
-	EndMflNat *EndMflNat   `json:"endMflNat,omitempty"`
-	Owner     SegmentOwner `json:"owner"`
+	NodeName  string                 `json:"nodeName,omitempty"`
+	FuncName  string                 `json:"funcName,omitempty"`
+	Locator   string                 `json:"locator"`
+	Sid       string                 `json:"sid,omitempty"`
+	EndMfnNat *EndMfnNat             `json:"endMfnNat,omitempty"`
+	EndMflNat *EndMflNat             `json:"endMflNat,omitempty"`
+	Selector  MfpNodeSpecifySelector `json:"selector,omitempty"`
+}
+
+type EndMfnNat struct {
+	Vip                string   `json:"vip"`
+	NatPortHashBit     uint16   `json:"natPortHashBit"`
+	UsidBlockLength    int      `json:"uSidBlockLength"`
+	UsidFunctionLength int      `json:"uSidFunctionLength"`
+	Sources            []string `json:"sources"`
+}
+
+type EndMflNat struct {
+	Vip                   string              `json:"vip"`
+	NatPortHashBit        uint16              `json:"natPortHashBit"`
+	UsidBlockLength       int                 `json:"uSidBlockLength"`
+	UsidFunctionLength    int                 `json:"uSidFunctionLength"`
+	USidFunctionRevisions []EndMflNatRevision `json:"uSidFunctionRevisions"`
+}
+
+type EndMflNatRevision struct {
+	Backends []string `json:"backends"`
 }
 
 // Srv6SegmentStatus defines the observed state of Srv6Segment

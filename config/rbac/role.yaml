@@ -57,3 +57,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - srv6segments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - srv6segments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - srv6segments/status
+  verbs:
+  - get
+  - patch
+  - update

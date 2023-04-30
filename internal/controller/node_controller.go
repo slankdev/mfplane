@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"net"
 
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -125,55 +124,55 @@ func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
 		MaxBackends: 7,
 		EncapSource: fnSpec.SegmentRoutingSrv6.EncapSource,
 	}
-	for _, seg := range fnStatus.Segments {
-		sid := mikanectl.ConfigLocalSid{}
-		sid.Sid = seg.Sid
-		switch {
-		case seg.EndMflNat != nil:
-			sid.End_MFL = &mikanectl.ConfigLocalSid_End_MFL{
-				Vip:                seg.EndMflNat.Vip,
-				NatPortHashBit:     seg.EndMflNat.NatPortHashBit, // XXX: typo
-				USidBlock:          "fc00::0",                    // TODO(slankdev)
-				USidBlockLength:    seg.EndMflNat.UsidBlockLength,
-				USidFunctionLength: seg.EndMflNat.UsidFunctionLength,
-				NatMapping:         "endpointIndependentMapping",   // TODO(slankdev)
-				NatFiltering:       "endpointIndependentFiltering", // TODO(slankdev)
-			}
-			for _, rev := range seg.EndMflNat.USidFunctionRevisions {
-				backends := []string{}
-				for _, b := range rev.Backends {
-					_, ipnet, err := net.ParseCIDR(b)
-					if err != nil {
-						return "", err
-					}
-					u8 := [16]uint8{}
-					copy(u8[:], ipnet.IP)
-					u8 = util.BitShiftLeft8(u8)
-					u8 = util.BitShiftLeft8(u8)
-					newip := net.IP(u8[:])
-					backends = append(backends, newip.String())
-				}
+	// for _, seg := range fnStatus.Segments {
+	// 	sid := mikanectl.ConfigLocalSid{}
+	// 	sid.Sid = seg.Sid
+	// 	switch {
+	// 	case seg.EndMflNat != nil:
+	// 		sid.End_MFL = &mikanectl.ConfigLocalSid_End_MFL{
+	// 			Vip:                seg.EndMflNat.Vip,
+	// 			NatPortHashBit:     seg.EndMflNat.NatPortHashBit, // XXX: typo
+	// 			USidBlock:          "fc00::0",                    // TODO(slankdev)
+	// 			USidBlockLength:    seg.EndMflNat.UsidBlockLength,
+	// 			USidFunctionLength: seg.EndMflNat.UsidFunctionLength,
+	// 			NatMapping:         "endpointIndependentMapping",   // TODO(slankdev)
+	// 			NatFiltering:       "endpointIndependentFiltering", // TODO(slankdev)
+	// 		}
+	// 		for _, rev := range seg.EndMflNat.USidFunctionRevisions {
+	// 			backends := []string{}
+	// 			for _, b := range rev.Backends {
+	// 				_, ipnet, err := net.ParseCIDR(b)
+	// 				if err != nil {
+	// 					return "", err
+	// 				}
+	// 				u8 := [16]uint8{}
+	// 				copy(u8[:], ipnet.IP)
+	// 				u8 = util.BitShiftLeft8(u8)
+	// 				u8 = util.BitShiftLeft8(u8)
+	// 				newip := net.IP(u8[:])
+	// 				backends = append(backends, newip.String())
+	// 			}
 
-				sid.End_MFL.USidFunctionRevisions = append(
-					sid.End_MFL.USidFunctionRevisions,
-					mikanectl.FunctionRevision{
-						Backends: backends,
-					},
-				)
-			}
-		case seg.EndMfnNat != nil:
-			sid.End_MFN_NAT = &mikanectl.ConfigLocalSid_End_MFN_NAT{
-				Vip:                seg.EndMfnNat.Vip,
-				NatPortHashBit:     seg.EndMfnNat.NatPortHashBit, // XXX: typo
-				USidBlockLength:    seg.EndMfnNat.UsidBlockLength,
-				USidFunctionLength: seg.EndMfnNat.UsidFunctionLength,
-				Sources:            seg.EndMfnNat.Sources,
-			}
-		default:
-			return "", fmt.Errorf("no sid activated")
-		}
-		c.LocalSids = append(c.LocalSids, sid)
-	}
+	// 			sid.End_MFL.USidFunctionRevisions = append(
+	// 				sid.End_MFL.USidFunctionRevisions,
+	// 				mikanectl.FunctionRevision{
+	// 					Backends: backends,
+	// 				},
+	// 			)
+	// 		}
+	// 	case seg.EndMfnNat != nil:
+	// 		sid.End_MFN_NAT = &mikanectl.ConfigLocalSid_End_MFN_NAT{
+	// 			Vip:                seg.EndMfnNat.Vip,
+	// 			NatPortHashBit:     seg.EndMfnNat.NatPortHashBit, // XXX: typo
+	// 			USidBlockLength:    seg.EndMfnNat.UsidBlockLength,
+	// 			USidFunctionLength: seg.EndMfnNat.UsidFunctionLength,
+	// 			Sources:            seg.EndMfnNat.Sources,
+	// 		}
+	// 	default:
+	// 		return "", fmt.Errorf("no sid activated")
+	// 	}
+	// 	c.LocalSids = append(c.LocalSids, sid)
+	// }
 	out, err := yaml.Marshal(c)
 	if err != nil {
 		return "", err

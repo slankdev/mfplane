@@ -1,23 +1,33 @@
 apiVersion: mfplane.mfplane.io/v1alpha1
 kind: Srv6Segment
 metadata:
-  labels:
-    app.kubernetes.io/name: srv6segment
-    app.kubernetes.io/instance: srv6segment-sample
-    app.kubernetes.io/part-of: mfplane
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: mfplane
-  name: srv6segment-sample
+  name: group1-seg1
 spec:
-  sid: "::"
   locator: "default"
   endMfnNat:
-    natPortHashBit: 255
+    vip: 142.0.0.1
     sources:
     - 10.0.1.0/24
+    natPortHashBit: 255
     uSidBlockLength: 16
     uSidFunctionLength: 16
+  selector:
+    matchLabels:
+      group: group1
+---
+apiVersion: mfplane.mfplane.io/v1alpha1
+kind: Srv6Segment
+metadata:
+  name: group1-seg2
+spec:
+  locator: "default"
+  endMfnNat:
     vip: 142.0.0.1
-  owner:
-    kind: Nat
-    name: nat-sample1
+    sources:
+    - 10.0.1.0/24
+    natPortHashBit: 255
+    uSidBlockLength: 16
+    uSidFunctionLength: 16
+  selector:
+    matchLabels:
+      group: group1
