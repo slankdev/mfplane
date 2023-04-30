@@ -84,7 +84,7 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			},
 			EndMflNat: &mfplanev1alpha1.EndMflNat{
 				Vip:                nat.Spec.Vip,
-				NatPortHashBitMaxk: nat.Spec.NatPortHashBit,
+				NatPortHashBit:     nat.Spec.NatPortHashBit,
 				UsidBlockLength:    nat.Spec.UsidBlockLength,
 				UsidFunctionLength: nat.Spec.UsidFunctionLength,
 			},
@@ -134,7 +134,7 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			},
 			EndMfnNat: &mfplanev1alpha1.EndMfnNat{
 				Vip:                nat.Spec.Vip,
-				NatPortHashBitMaxk: nat.Spec.NatPortHashBit,
+				NatPortHashBit:     nat.Spec.NatPortHashBit,
 				UsidBlockLength:    nat.Spec.UsidBlockLength,
 				UsidFunctionLength: nat.Spec.UsidFunctionLength,
 				Sources:            nat.Spec.Sources,

@@ -82,7 +82,7 @@ type SegmentOwner struct {
 
 type EndMfnNat struct {
 	Vip                string   `json:"vip"`
-	NatPortHashBitMaxk uint16   `json:"natPortHashBit"`
+	NatPortHashBit     uint16   `json:"natPortHashBit"`
 	UsidBlockLength    int      `json:"uSidBlockLength"`
 	UsidFunctionLength int      `json:"uSidFunctionLength"`
 	Sources            []string `json:"sources"`
@@ -90,7 +90,7 @@ type EndMfnNat struct {
 
 type EndMflNat struct {
 	Vip                   string              `json:"vip"`
-	NatPortHashBitMaxk    uint16              `json:"natPortHashBit"`
+	NatPortHashBit        uint16              `json:"natPortHashBit"`
 	UsidBlockLength       int                 `json:"uSidBlockLength"`
 	UsidFunctionLength    int                 `json:"uSidFunctionLength"`
 	USidFunctionRevisions []EndMflNatRevision `json:"uSidFunctionRevisions"`

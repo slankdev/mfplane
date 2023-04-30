@@ -130,8 +130,8 @@ func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
 		case seg.EndMflNat != nil:
 			sid.End_MFL = &mikanectl.ConfigLocalSid_End_MFL{
 				Vip:                seg.EndMflNat.Vip,
-				NatPortHashBit:     seg.EndMflNat.NatPortHashBitMaxk, // XXX: typo
-				USidBlock:          "fc00::0",                        // TODO(slankdev)
+				NatPortHashBit:     seg.EndMflNat.NatPortHashBit, // XXX: typo
+				USidBlock:          "fc00::0",                    // TODO(slankdev)
 				USidBlockLength:    seg.EndMflNat.UsidBlockLength,
 				USidFunctionLength: seg.EndMflNat.UsidFunctionLength,
 				NatMapping:         "endpointIndependentMapping",   // TODO(slankdev)
@@ -162,7 +162,7 @@ func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
 		case seg.EndMfnNat != nil:
 			sid.End_MFN_NAT = &mikanectl.ConfigLocalSid_End_MFN_NAT{
 				Vip:                seg.EndMfnNat.Vip,
-				NatPortHashBit:     seg.EndMfnNat.NatPortHashBitMaxk, // XXX: typo
+				NatPortHashBit:     seg.EndMfnNat.NatPortHashBit, // XXX: typo
 				USidBlockLength:    seg.EndMfnNat.UsidBlockLength,
 				USidFunctionLength: seg.EndMfnNat.UsidFunctionLength,
 				Sources:            seg.EndMfnNat.Sources,
