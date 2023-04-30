@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"net"
 
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -139,8 +140,16 @@ func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
 			for _, rev := range seg.EndMflNat.USidFunctionRevisions {
 				backends := []string{}
 				for _, b := range rev.Backends {
-					// KOKOk
-					backends = append(backends, b+"hoge")
+					_, ipnet, err := net.ParseCIDR(b)
+					if err != nil {
+						return "", err
+					}
+					u8 := [16]uint8{}
+					copy(u8[:], ipnet.IP)
+					u8 = util.BitShiftLeft8(u8)
+					u8 = util.BitShiftLeft8(u8)
+					newip := net.IP(u8[:])
+					backends = append(backends, newip.String())
 				}
 
 				sid.End_MFL.USidFunctionRevisions = append(
