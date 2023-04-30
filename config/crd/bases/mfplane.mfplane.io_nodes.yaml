@@ -183,7 +183,6 @@ spec:
                       type: array
                   required:
                   - name
-                  - segments
                   type: object
                 type: array
             type: object

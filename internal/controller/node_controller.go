@@ -55,6 +55,8 @@ type NodeReconciler struct {
 func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
+	return ctrl.Result{}, nil
+
 	node := mfplanev1alpha1.Node{}
 	if err := r.Get(ctx, req.NamespacedName, &node); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)

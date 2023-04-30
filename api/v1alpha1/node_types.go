@@ -62,7 +62,7 @@ type NodeStatus struct {
 type FunctionStatus struct {
 	Name     string            `json:"name"`
 	Labels   map[string]string `json:"labels,omitempty"`
-	Segments []Segment         `json:"segments"`
+	Segments []Segment         `json:"segments,omitempty"`
 }
 
 type Segment struct {
@@ -137,7 +137,7 @@ func (n Node) GetFunctionSpec(name string, spec *FunctionSpec) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("not found")
+	return fmt.Errorf("GetFunctionSpec not found")
 }
 
 func (n Node) GetFunctionStatus(name string, spec *FunctionStatus) error {
@@ -147,5 +147,15 @@ func (n Node) GetFunctionStatus(name string, spec *FunctionStatus) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("not found")
+	return fmt.Errorf("GetFunctionStatu not found")
+}
+
+func (n *Node) SetFunctionStatus(name string, fnStatus *FunctionStatus) error {
+	for idx, fn := range n.Status.Functions {
+		if fn.Name == name {
+			n.Status.Functions[idx] = *fnStatus
+			return nil
+		}
+	}
+	return fmt.Errorf("SetFunctionStatu not found")
 }

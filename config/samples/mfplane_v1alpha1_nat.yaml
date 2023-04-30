@@ -23,7 +23,7 @@ spec:
       matchLabels:
         lbGroup: lbGroup1
   networkFunction:
-    replicas: 2
+    replicas: 3
     selector:
       matchLabels:
         natGroup: natGroup1
