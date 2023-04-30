@@ -71,6 +71,7 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	log.Info("RECONCILE_START")
 
 	if seg.Status.NodeName == "" || seg.Status.FuncName == "" {
+		log.Info("SCHEDULING")
 		funcType := "unknown"
 		switch {
 		case seg.Spec.EndMflNat != nil:
