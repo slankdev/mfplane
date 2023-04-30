@@ -143,3 +143,16 @@ func GetKernelVersion() (string, error) {
 	}
 	return semverVal, nil
 }
+
+func VerifyMatchLabels(target, expression map[string]string) bool {
+	for key, val := range expression {
+		tval, ok := target[key]
+		if !ok {
+			return false
+		}
+		if tval != val {
+			return false
+		}
+	}
+	return true
+}
