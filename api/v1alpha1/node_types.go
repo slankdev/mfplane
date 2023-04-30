@@ -47,6 +47,15 @@ type SegmentRoutingSrv6Spec struct {
 	Locators    []Srv6Locator `json:"locators"`
 }
 
+func (s SegmentRoutingSrv6Spec) GetLocator(name string) *Srv6Locator {
+	for _, loc := range s.Locators {
+		if loc.Name == name {
+			return &loc
+		}
+	}
+	return nil
+}
+
 type Srv6Locator struct {
 	Name    string `json:"name"`
 	Prefix  string `json:"prefix"`
