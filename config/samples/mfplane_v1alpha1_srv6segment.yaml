@@ -2,6 +2,8 @@ apiVersion: mfplane.mfplane.io/v1alpha1
 kind: Srv6Segment
 metadata:
   name: group1-seg1
+  labels:
+    group: group1
 spec:
   locator: "default"
   endMfnNat:
@@ -19,6 +21,8 @@ apiVersion: mfplane.mfplane.io/v1alpha1
 kind: Srv6Segment
 metadata:
   name: group1-seg2
+  labels:
+    group: group1
 spec:
   locator: "default"
   endMfnNat:
