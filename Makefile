@@ -161,7 +161,9 @@ ifeq ($(shell test -e local.mk && echo -n yes),yes)
 include local.mk
 endif
 
-r: mikanectl-build
-	docker cp ./bin/mikanectl N1:/usr/bin/mikanectl
-	docker cp ./bin/mikanectl N2:/usr/bin/mikanectl
-	docker cp ./bin/mikanectl N3:/usr/bin/mikanectl
+apply:
+	kubectl apply -f config/samples/mfplane_v1alpha1_node.yaml
+	kubectl apply -f config/samples/mfplane_v1alpha1_nat.yaml
+delete:
+	kubectl delete -f config/samples/mfplane_v1alpha1_node.yaml || true
+	kubectl delete -f config/samples/mfplane_v1alpha1_nat.yaml || true

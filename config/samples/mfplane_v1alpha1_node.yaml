@@ -12,44 +12,109 @@ spec:
   hostname: common
   functions:
   - name: L1
-    netns: L1
+    netns: l1
     device: net0
-    maxRules: 2
-    maxBackends: 7
-    encapSource: fc00:2100::0
+    type: clb
+    mode: xdpgeneric
+    labels:
+      lbGroup: lbGroup1
+      lbMaxRules: "2"
+      lbMaxBackends: "7"
+    segmentRoutingSrv6:
+      encapSource: fc00:2100::0
+      locators:
+      - name: default
+        prefix: fc00:2100::/24
+        block: fc00::0
+      - name: anycast
+        prefix: fc00:ff00::/24
+        block: fc00::0
+        anycast: true
   - name: N1
-    netns: N1
+    netns: n1
     device: net0
-    encapSource: fc00:3100::0
-    fib6:
-    - prefix: fc00:3101::/32
-      endMfnNat:
-        vip: 142.0.0.1
-        natPortHashBit: 0x00ff
-        uSidBlockLength: 16
-        uSidFunctionLength: 16
-        sources:
-        - 10.0.1.0/24
-    fib4:
-    - prefix: 10.0.1.0/24
-      hEncaps: {mode: encap, segs: [fc00:1101::0]}
-    - prefix: 10.0.2.0/24
-      hEncaps: {mode: encap, segs: [fc00:1102::0]}
+    type: nat
+    mode: xdpgeneric
+    labels:
+      natGroup: natGroup1
+    segmentRoutingSrv6:
+      encapSource: fc00:3100::0
+      locators:
+      - name: default
+        prefix: fc00:3100::/24
+        block: fc00::0
+    configFile: |
+      fib4:
+      - prefix: 10.0.1.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1101::0]
+      - prefix: 10.0.2.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1102::0]
   - name: N2
-    netns: N2
+    netns: n2
     device: net0
-    encapSource: fc00:3200::0
-    fib6:
-    - prefix: fc00:3201::/32 # NAT1
+    type: nat
+    mode: xdpgeneric
+    labels:
+      natGroup: natGroup1
+    segmentRoutingSrv6:
+      encapSource: fc00:3200::0
+      locators:
+      - name: default
+        prefix: fc00:3200::/24
+        block: fc00::0
+    configFile: |
+      fib4:
+      - prefix: 10.0.1.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1101::0]
+      - prefix: 10.0.2.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1102::0]
+status:
+  functions:
+  - name: L1
+    segments:
+    - locator: anycast
+      sid: fc00:ff01::/32
+      endMflNat:
+        vip: 142.0.0.1
+        natPortHashBit: 0x00ff
+        uSidBlockLength: 16
+        uSidFunctionLength: 32
+      owner:
+        kind: Nat
+        name: nat-sample1
+  - name: N1
+    segments:
+    - locator: default
+      sid: fc00:3101::/32
+      endMfnNat:
+        vip: 142.0.0.1
+        natPortHashBit: 0x00ff
+        uSidBlockLength: 16
+        uSidFunctionLength: 32
+      owner:
+        kind: Nat
+        name: nat-sample1
+  - name: N2
+    segments:
+    - locator: default
+      sid: fc00:3201::/32
       endMfnNat:
         vip: 142.0.0.1
         natPortHashBit: 0x00ff
         uSidBlockLength: 16
         uSidFunctionLength: 16
-        sources:
-        - 10.0.1.0/24
-    fib4:
-    - prefix: 10.0.1.0/24
-      hEncaps: {mode: encap, segs: [fc00:1101::0]}
-    - prefix: 10.0.2.0/24
-      hEncaps: {mode: encap, segs: [fc00:1102::0]}
+      owner:
+        kind: Nat
+        name: nat-sample1

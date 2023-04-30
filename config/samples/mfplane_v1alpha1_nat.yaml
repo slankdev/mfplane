@@ -9,24 +9,21 @@ metadata:
     app.kubernetes.io/created-by: cplane
   name: nat-sample1
 spec:
+  vip: 142.0.0.1
   sources:
-  - 10.0.0.0/24
-  - 10.2.0.10/32
-  natVip: 142.0.0.1
+  - 10.0.1.0/24
   natPortHashBit: 0x00ff
   natMapping: endpointIndependentMapping
   natFiltering: endpointIndependentFiltering
-  uSid: ff01::0
-  uSidBlock: fc00::0
   uSidBlockLength: 16
   uSidFunctionLength: 16
-  uSidFunctionRevisions:
-    backends:
-    - sid: 3101::0
-    - sid: 3201::0
-  # TODO(slankdev):
-  # more declaretive worker election, but it's not needed
-  # functions:
-  #   labelSelector:
-  #     matchExpressions:
-  #     - {key: nat, operator: Exist}
+  loadBalancer:
+    replicas: 1
+    selector:
+      matchLabels:
+        lbGroup: lbGroup1
+  networkFunction:
+    replicas: 2
+    selector:
+      matchLabels:
+        natGroup: natGroup1

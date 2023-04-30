@@ -35,10 +35,60 @@ spec:
           spec:
             description: NatSpec defines the desired state of Nat
             properties:
-              foo:
-                description: Foo is an example field of Nat. Edit nat_types.go to
-                  remove/update
+              loadBalancer:
+                properties:
+                  replicas:
+                    type: integer
+                  selector:
+                    properties:
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                required:
+                - replicas
+                type: object
+              natFiltering:
                 type: string
+              natMapping:
+                type: string
+              natPortHashBit:
+                type: integer
+              networkFunction:
+                properties:
+                  replicas:
+                    type: integer
+                  selector:
+                    properties:
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                required:
+                - replicas
+                type: object
+              sources:
+                items:
+                  type: string
+                type: array
+              uSidBlockLength:
+                type: integer
+              uSidFunctionLength:
+                type: integer
+              vip:
+                type: string
+            required:
+            - loadBalancer
+            - natFiltering
+            - natMapping
+            - natPortHashBit
+            - networkFunction
+            - sources
+            - uSidBlockLength
+            - uSidFunctionLength
+            - vip
             type: object
           status:
             description: NatStatus defines the observed state of Nat

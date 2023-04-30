@@ -159,30 +159,6 @@ func FullIPv6(ip net.IP) string {
 		string(dst[28:])
 }
 
-func BitShiftLeft8(u8 [16]uint8) [16]uint8 {
-	ret := [16]uint8{}
-	for i := 0; i <= 15; i++ {
-		if i == 15 {
-			ret[i] = 0
-		} else {
-			ret[i] = u8[i+1]
-		}
-	}
-	return ret
-}
-
-func BitShiftRight8(u8 [16]uint8) [16]uint8 {
-	ret := [16]uint8{}
-	for i := 15; i >= 0; i-- {
-		if i == 0 {
-			ret[i] = 0
-		} else {
-			ret[i] = u8[i-1]
-		}
-	}
-	return ret
-}
-
 func CopyFromTo(dst, src *net.IP, octFrom, octTo int) {
 	dst8 := [16]uint8{}
 	src8 := [16]uint8{}
@@ -226,11 +202,11 @@ func compute(end_MFL ConfigLocalSid_End_MFL, nBackends int) ([]net.IP, error) {
 
 			// bit shift
 			for j := 0; j < uSidBlockOctedOffset; j++ {
-				u8 = BitShiftRight8(u8)
+				u8 = util.BitShiftRight8(u8)
 			}
 			for i := 0; i < revIdx; i++ {
 				for j := 0; j < uSidBlockOctedSize; j++ {
-					u8 = BitShiftRight8(u8)
+					u8 = util.BitShiftRight8(u8)
 				}
 			}
 
@@ -938,8 +914,8 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 	u8 := [16]uint8{}
 	copy(u8[:], sid)
 	copy(head[:], sid)
-	u8 = BitShiftLeft8(u8)
-	u8 = BitShiftLeft8(u8)
+	u8 = util.BitShiftLeft8(u8)
+	u8 = util.BitShiftLeft8(u8)
 	u8[0] = head[0]
 	u8[1] = head[1]
 	copy(sid, u8[:])

@@ -38,34 +38,102 @@ spec:
               functions:
                 items:
                   properties:
+                    configFile:
+                      type: string
                     device:
                       type: string
-                    encapSource:
+                    labels:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    mode:
                       type: string
-                    fib4:
-                      items:
-                        properties:
-                          hEncaps:
+                    name:
+                      type: string
+                    netns:
+                      type: string
+                    segmentRoutingSrv6:
+                      properties:
+                        encapSource:
+                          type: string
+                        locators:
+                          items:
                             properties:
-                              mode:
+                              anycast:
+                                type: boolean
+                              block:
                                 type: string
-                              segs:
-                                items:
-                                  type: string
-                                type: array
+                              name:
+                                type: string
+                              prefix:
+                                type: string
                             required:
-                            - mode
-                            - segs
+                            - block
+                            - name
+                            - prefix
                             type: object
-                          prefix:
-                            type: string
-                        required:
-                        - prefix
-                        type: object
-                      type: array
-                    fib6:
+                          type: array
+                      required:
+                      - encapSource
+                      - locators
+                      type: object
+                    type:
+                      type: string
+                  required:
+                  - device
+                  - mode
+                  - name
+                  - type
+                  type: object
+                type: array
+              hostname:
+                type: string
+            required:
+            - hostname
+            type: object
+          status:
+            description: NodeStatus defines the observed state of Node
+            properties:
+              functions:
+                items:
+                  properties:
+                    labels:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    name:
+                      type: string
+                    segments:
                       items:
                         properties:
+                          endMflNat:
+                            properties:
+                              natPortHashBit:
+                                type: integer
+                              uSidBlockLength:
+                                type: integer
+                              uSidFunctionLength:
+                                type: integer
+                              uSidFunctionRevisions:
+                                items:
+                                  properties:
+                                    backends:
+                                      items:
+                                        type: string
+                                      type: array
+                                  required:
+                                  - backends
+                                  type: object
+                                type: array
+                              vip:
+                                type: string
+                            required:
+                            - natPortHashBit
+                            - uSidBlockLength
+                            - uSidFunctionLength
+                            - uSidFunctionRevisions
+                            - vip
+                            type: object
                           endMfnNat:
                             properties:
                               natPortHashBit:
@@ -87,33 +155,37 @@ spec:
                             - uSidFunctionLength
                             - vip
                             type: object
-                          prefix:
+                          funcName:
+                            type: string
+                          locator:
+                            type: string
+                          nodeName:
+                            type: string
+                          owner:
+                            properties:
+                              kind:
+                                type: string
+                              name:
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                          sid:
                             type: string
                         required:
-                        - prefix
+                        - funcName
+                        - locator
+                        - nodeName
+                        - owner
+                        - sid
                         type: object
                       type: array
-                    maxBackends:
-                      type: integer
-                    maxRules:
-                      type: integer
-                    name:
-                      type: string
-                    netns:
-                      type: string
                   required:
-                  - device
-                  - encapSource
                   - name
+                  - segments
                   type: object
                 type: array
-              hostname:
-                type: string
-            required:
-            - hostname
-            type: object
-          status:
-            description: NodeStatus defines the observed state of Node
             type: object
         type: object
     served: true

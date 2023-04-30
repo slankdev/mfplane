@@ -19,3 +19,27 @@ func Uint32toBytes(val uint32) []byte {
 	}
 	return r
 }
+
+func BitShiftLeft8(u8 [16]uint8) [16]uint8 {
+	ret := [16]uint8{}
+	for i := 0; i <= 15; i++ {
+		if i == 15 {
+			ret[i] = 0
+		} else {
+			ret[i] = u8[i+1]
+		}
+	}
+	return ret
+}
+
+func BitShiftRight8(u8 [16]uint8) [16]uint8 {
+	ret := [16]uint8{}
+	for i := 15; i >= 0; i-- {
+		if i == 0 {
+			ret[i] = 0
+		} else {
+			ret[i] = u8[i-1]
+		}
+	}
+	return ret
+}

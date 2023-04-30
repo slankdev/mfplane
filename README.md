@@ -1,22 +1,5 @@
 # MF-plane
 
-```
-curl -Lo /usr/bin/mikanectl https://github.com/slankdev/mfplane/releases/download/branch-main/mikanectl.linux-amd64
-chmod +x /usr/bin/mikanectl
-. <(mikenactl completion bash)
-```
-
-```
-tinet reconf | sudo sh -xe
-make nat-attach-n1
-make clb-attach-l1
-mikanectl hash bpftoolcli -t 17 -b fc00:11:1::1 -n l1 | sudo sh -xe
-
-sudo bpftool prog tracelog
-de CLOS tcpdump -nni any not icmp6 and not tcp port 179
-de VM1 curl 10.255.100.1
-```
-
 ## Requirements
 
 - **network function agnostic**: Supports multiple types of network functions.
@@ -29,7 +12,6 @@ de VM1 curl 10.255.100.1
 
 **resources**:<br/>
 - `nodes.mfplane.io`: common resource kind
-- `functions.mfplane.io`: common resource kind
 - `nats.mfplane.io`: nf resource kind
 
 ## How to Construct it
@@ -47,11 +29,18 @@ sudo curl -Lo /usr/bin/kubectl https://dl.k8s.io/v1.27.1/bin/linux/amd64/kubectl
 sudo chmod +x /usr/bin/kubectl
 sudo curl -Lo /usr/bin/kind https://kind.sigs.k8s.io/dl/v0.18.0/kind-linux-amd64
 sudo chmod +x /usr/bin/kind
+curl -Lo /usr/bin/mikanectl https://github.com/slankdev/mfplane/releases/download/branch-main/mikanectl.linux-amd64
+chmod +x /usr/bin/mikanectl
+curl -L https://github.com/ulucinar/kubectl-edit-status/releases/download/v0.3.0/kubectl-edit-status_v0.3.0_linux_amd64.tar.gz | sudo tar zx -C /usr/bin
+```
+```
 kind create cluster
+tinet reconf | sudo sh -xe
 ```
 ```
 . <(kubectl completion bash)
 . <(kind completion bash)
+. <(mikenactl completion bash)
 ```
 
 ## Experiment Memo

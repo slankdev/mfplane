@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,43 +32,77 @@ type NodeSpec struct {
 }
 
 type FunctionSpec struct {
-	Name        string      `json:"name"`
-	Netns       string      `json:"netns,omitempty"`
-	Device      string      `json:"device"`
-	EncapSource string      `json:"encapSource"`
-	MaxRules    int         `json:"maxRules,omitempty"`
-	MaxBackends int         `json:"maxBackends,omitempty"`
-	Fib6        []Fib6Entry `json:"fib6,omitempty"`
-	Fib4        []Fib4Entry `json:"fib4,omitempty"`
+	Name               string                 `json:"name"`
+	Netns              string                 `json:"netns,omitempty"`
+	Device             string                 `json:"device"`
+	Type               string                 `json:"type"`
+	Mode               string                 `json:"mode"`
+	ConfigFile         string                 `json:"configFile,omitempty"`
+	Labels             map[string]string      `json:"labels,omitempty"`
+	SegmentRoutingSrv6 SegmentRoutingSrv6Spec `json:"segmentRoutingSrv6,omitempty"`
 }
 
-type Fib6Entry struct {
-	Prefix          string     `json:"prefix"`
-	ActionEndMfnNat *EndMfnNat `json:"endMfnNat,omitempty"`
+type SegmentRoutingSrv6Spec struct {
+	EncapSource string        `json:"encapSource"`
+	Locators    []Srv6Locator `json:"locators"`
 }
 
-type Fib4Entry struct {
-	Prefix        string   `json:"prefix"`
-	ActionHEncaps *HEncaps `json:"hEncaps,omitempty"`
+type Srv6Locator struct {
+	Name    string `json:"name"`
+	Prefix  string `json:"prefix"`
+	Block   string `json:"block"`
+	Anycast bool   `json:"anycast,omitempty"`
+}
+
+// NodeStatus defines the observed state of Node
+type NodeStatus struct {
+	Functions []FunctionStatus `json:"functions,omitempty"`
+}
+
+type FunctionStatus struct {
+	Name     string            `json:"name"`
+	Labels   map[string]string `json:"labels,omitempty"`
+	Segments []Segment         `json:"segments"`
+}
+
+type Segment struct {
+	NodeName  string       `json:"nodeName"`
+	FuncName  string       `json:"funcName"`
+	Locator   string       `json:"locator"`
+	Sid       string       `json:"sid"`
+	EndMfnNat *EndMfnNat   `json:"endMfnNat,omitempty"`
+	EndMflNat *EndMflNat   `json:"endMflNat,omitempty"`
+	Owner     SegmentOwner `json:"owner"`
+}
+
+type SegmentOwner struct {
+	Kind string `json:"kind"`
+	Name string `json:"name"`
 }
 
 type EndMfnNat struct {
 	Vip                string   `json:"vip"`
-	NatPortHashBitMaxk uint16   `json:"natPortHashBit"`
+	NatPortHashBit     uint16   `json:"natPortHashBit"`
 	UsidBlockLength    int      `json:"uSidBlockLength"`
 	UsidFunctionLength int      `json:"uSidFunctionLength"`
 	Sources            []string `json:"sources"`
 }
 
+type EndMflNat struct {
+	Vip                   string              `json:"vip"`
+	NatPortHashBit        uint16              `json:"natPortHashBit"`
+	UsidBlockLength       int                 `json:"uSidBlockLength"`
+	UsidFunctionLength    int                 `json:"uSidFunctionLength"`
+	USidFunctionRevisions []EndMflNatRevision `json:"uSidFunctionRevisions"`
+}
+
+type EndMflNatRevision struct {
+	Backends []string `json:"backends"`
+}
+
 type HEncaps struct {
 	Mode string   `json:"mode"`
 	Segs []string `json:"segs"`
-}
-
-// NodeStatus defines the observed state of Node
-type NodeStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 }
 
 //+kubebuilder:object:root=true
@@ -92,4 +128,24 @@ type NodeList struct {
 
 func init() {
 	SchemeBuilder.Register(&Node{}, &NodeList{})
+}
+
+func (n Node) GetFunctionSpec(name string, spec *FunctionSpec) error {
+	for _, fn := range n.Spec.Functions {
+		if fn.Name == name {
+			*spec = fn
+			return nil
+		}
+	}
+	return fmt.Errorf("not found")
+}
+
+func (n Node) GetFunctionStatus(name string, spec *FunctionStatus) error {
+	for _, fn := range n.Status.Functions {
+		if fn.Name == name {
+			*spec = fn
+			return nil
+		}
+	}
+	return fmt.Errorf("not found")
 }
