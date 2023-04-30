@@ -135,13 +135,20 @@ func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
 				USidFunctionLength: seg.EndMflNat.UsidFunctionLength,
 				NatMapping:         "endpointIndependentMapping",   // TODO(slankdev)
 				NatFiltering:       "endpointIndependentFiltering", // TODO(slankdev)
-				USidFunctionRevisions: []mikanectl.FunctionRevision{
-					{
-						Backends: []string{
-							"3201::0",
-						},
+			}
+			for _, rev := range seg.EndMflNat.USidFunctionRevisions {
+				backends := []string{}
+				for _, b := range rev.Backends {
+					// KOKOk
+					backends = append(backends, b+"hoge")
+				}
+
+				sid.End_MFL.USidFunctionRevisions = append(
+					sid.End_MFL.USidFunctionRevisions,
+					mikanectl.FunctionRevision{
+						Backends: backends,
 					},
-				},
+				)
 			}
 		case seg.EndMfnNat != nil:
 			sid.End_MFN_NAT = &mikanectl.ConfigLocalSid_End_MFN_NAT{
