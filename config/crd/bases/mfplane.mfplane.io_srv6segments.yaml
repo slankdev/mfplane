@@ -12,10 +12,27 @@ spec:
     kind: Srv6Segment
     listKind: Srv6SegmentList
     plural: srv6segments
+    shortNames:
+    - seg
     singular: srv6segment
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.sid
+      name: SID
+      type: string
+    - jsonPath: .status.nodeName
+      name: NODE
+      priority: 1
+      type: string
+    - jsonPath: .status.funcName
+      name: FUNC
+      priority: 1
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Srv6Segment is the Schema for the srv6segments API
@@ -104,6 +121,11 @@ spec:
             type: object
           status:
             description: Srv6SegmentStatus defines the observed state of Srv6Segment
+            properties:
+              funcName:
+                type: string
+              nodeName:
+                type: string
             type: object
         type: object
     served: true

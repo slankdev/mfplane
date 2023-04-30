@@ -53,10 +53,17 @@ type EndMflNatRevision struct {
 
 // Srv6SegmentStatus defines the observed state of Srv6Segment
 type Srv6SegmentStatus struct {
+	NodeName string `json:"nodeName,omitempty"`
+	FuncName string `json:"funcName,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:shortName=seg
+//+kubebuilder:printcolumn:name=SID,type=string,JSONPath=.spec.sid
+//+kubebuilder:printcolumn:name=NODE,type=string,priority=1,JSONPath=.status.nodeName
+//+kubebuilder:printcolumn:name=FUNC,type=string,priority=1,JSONPath=.status.funcName
+//+kubebuilder:printcolumn:name=AGE,type=date,JSONPath=.metadata.creationTimestamp
 
 // Srv6Segment is the Schema for the srv6segments API
 type Srv6Segment struct {
