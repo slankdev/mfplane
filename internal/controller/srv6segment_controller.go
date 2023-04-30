@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -104,6 +105,54 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			seg.Status.FuncName = c.FuncName
 			statusUpdated = true
 		}
+	}
+
+	if seg.Status.NodeName != "" && seg.Status.FuncName != "" &&
+		seg.Spec.Sid == "" {
+		log.Info("SID_ALLOCATION")
+
+		node := mfplanev1alpha1.Node{}
+		if err := r.Get(ctx, types.NamespacedName{Namespace: seg.Namespace,
+			Name: seg.Status.NodeName}, &node); err != nil {
+			return ctrl.Result{}, err
+		}
+		fnSpec := mfplanev1alpha1.FunctionSpec{}
+		if err := node.GetFunctionSpec(seg.Status.FuncName, &fnSpec); err != nil {
+			return ctrl.Result{}, err
+		}
+		loc := fnSpec.SegmentRoutingSrv6.GetLocator(seg.Spec.Locator)
+		if loc == nil {
+			return ctrl.Result{}, fmt.Errorf("locator '%s' not found",
+				seg.Spec.Locator)
+		}
+
+		sids, err := util.GetSubnet(loc.Prefix, 32)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		availableSids := []string{}
+		segList := mfplanev1alpha1.Srv6SegmentList{}
+		if err := r.List(ctx, &segList); err != nil {
+			return ctrl.Result{}, err
+		}
+		for _, sid := range sids {
+			exist := false
+			for _, seg := range segList.Items {
+				if seg.Spec.Sid == sid {
+					exist = true
+					break
+				}
+			}
+			if !exist {
+				availableSids = append(availableSids, sid)
+			}
+		}
+
+		if len(availableSids) == 0 {
+			return ctrl.Result{}, fmt.Errorf("no available sid")
+		}
+		seg.Spec.Sid = availableSids[0]
+		specUpdated = true
 	}
 
 	// Write back changes
