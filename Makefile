@@ -165,9 +165,9 @@ apply-all: apply-node apply-nat
 delete-all: delete-nat delete-node
 apply-node:
 	kubectl apply -f config/samples/mfplane_v1alpha1_node.yaml
-delete-node:
-	kubectl delete -f config/samples/mfplane_v1alpha1_node.yaml || true
 apply-nat:
 	kubectl apply -f config/samples/mfplane_v1alpha1_nat.yaml
+delete-node:
+	kubectl delete -f config/samples/mfplane_v1alpha1_node.yaml || true
 delete-nat:
 	kubectl delete -f config/samples/mfplane_v1alpha1_nat.yaml || true

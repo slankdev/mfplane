@@ -1,0 +1,27 @@
+# permissions for end users to view srv6segments.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: srv6segment-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: mfplane
+    app.kubernetes.io/part-of: mfplane
+    app.kubernetes.io/managed-by: kustomize
+  name: srv6segment-viewer-role
+rules:
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - srv6segments
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - srv6segments/status
+  verbs:
+  - get

@@ -3,4 +3,5 @@ resources:
 - mfplane_v1alpha1_node.yaml
 - mfplane_v1alpha1_function.yaml
 - mfplane_v1alpha1_nat.yaml
+- mfplane_v1alpha1_srv6segment.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

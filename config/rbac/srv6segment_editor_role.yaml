@@ -1,0 +1,31 @@
+# permissions for end users to edit srv6segments.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: srv6segment-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: mfplane
+    app.kubernetes.io/part-of: mfplane
+    app.kubernetes.io/managed-by: kustomize
+  name: srv6segment-editor-role
+rules:
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - srv6segments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mfplane.mfplane.io
+  resources:
+  - srv6segments/status
+  verbs:
+  - get
