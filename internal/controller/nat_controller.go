@@ -213,5 +213,6 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 func (r *NatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&mfplanev1alpha1.Nat{}).
+		Owns(&mfplanev1alpha1.Srv6Segment{}).
 		Complete(r)
 }
