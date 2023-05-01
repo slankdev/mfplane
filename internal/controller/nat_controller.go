@@ -147,7 +147,7 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 	}
 	sidList := []string{}
 	for _, item := range nfSegList.Items {
-		sidList = append(sidList, item.Spec.Sid)
+		sidList = append(sidList, item.Status.Sid)
 	}
 
 	// Create Desired additional segments

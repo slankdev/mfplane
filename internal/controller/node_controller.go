@@ -148,7 +148,24 @@ func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
 			log.Error(err, "map-load")
 			return err
 		}
+
+		// Ensure Finalizer
+		for _, item := range segList.Items {
+			f := fmt.Sprintf("%s.%s.nodes.mfplane.io", fn.Name, node.Name)
+			diff := false
+			if item.DeletionTimestamp.IsZero() {
+				diff = util.SetFinalizer(&item, f)
+			} else {
+				diff = util.UnsetFinalizer(&item, f)
+			}
+			if diff {
+				if err := r.Update(ctx, &item); err != nil {
+					return err
+				}
+			}
+		}
 	}
+
 	return nil
 }
 
@@ -163,64 +180,79 @@ func craftConfig(ctx context.Context,
 		EncapSource: fnSpec.SegmentRoutingSrv6.EncapSource,
 	}
 	for _, seg := range segList.Items {
-		sid := mikanectl.ConfigLocalSid{}
-		sid.Sid = seg.Spec.Sid
-		switch {
-		case seg.Spec.EndMflNat != nil:
-			sid.End_MFL = &mikanectl.ConfigLocalSid_End_MFL{
-				Vip:                seg.Spec.EndMflNat.Vip,
-				NatPortHashBit:     seg.Spec.EndMflNat.NatPortHashBit, // XXX: typo
-				USidBlock:          "fc00::0",                         // TODO(slankdev)
-				USidBlockLength:    seg.Spec.EndMflNat.UsidBlockLength,
-				USidFunctionLength: seg.Spec.EndMflNat.UsidFunctionLength,
-				NatMapping:         "endpointIndependentMapping",   // TODO(slankdev)
-				NatFiltering:       "endpointIndependentFiltering", // TODO(slankdev)
+		if !seg.DeletionTimestamp.IsZero() {
+			_, _ = util.LocalExecutef(
+				"sudo ip netns exec %s ip -6 route del blackhole %s",
+				fnSpec.Netns, seg.Status.Sid)
+			switch {
+			case seg.Spec.EndMflNat != nil:
+				_, _ = util.LocalExecutef(
+					"sudo ip netns exec %s ip -4 route del blackhole %s",
+					fnSpec.Netns, seg.Spec.EndMflNat.Vip)
+			case seg.Spec.EndMfnNat != nil:
+				// Do nothing
 			}
-
-			for _, rev := range seg.Spec.EndMflNat.USidFunctionRevisions {
-				backends := []string{}
-				for _, b := range rev.Backends {
-					_, ipnet, err := net.ParseCIDR(b)
-					if err != nil {
-						log.Error(err, "net.ParseCIDR")
-						return "", err
-					}
-					u8 := [16]uint8{}
-					copy(u8[:], ipnet.IP)
-					u8 = util.BitShiftLeft8(u8)
-					u8 = util.BitShiftLeft8(u8)
-					newip := net.IP(u8[:])
-					backends = append(backends, newip.String())
+			continue
+		} else {
+			sid := mikanectl.ConfigLocalSid{}
+			sid.Sid = seg.Status.Sid
+			switch {
+			case seg.Spec.EndMflNat != nil:
+				sid.End_MFL = &mikanectl.ConfigLocalSid_End_MFL{
+					Vip:                seg.Spec.EndMflNat.Vip,
+					NatPortHashBit:     seg.Spec.EndMflNat.NatPortHashBit, // XXX: typo
+					USidBlock:          "fc00::0",                         // TODO(slankdev)
+					USidBlockLength:    seg.Spec.EndMflNat.UsidBlockLength,
+					USidFunctionLength: seg.Spec.EndMflNat.UsidFunctionLength,
+					NatMapping:         "endpointIndependentMapping",   // TODO(slankdev)
+					NatFiltering:       "endpointIndependentFiltering", // TODO(slankdev)
 				}
 
-				sid.End_MFL.USidFunctionRevisions = append(
-					sid.End_MFL.USidFunctionRevisions,
-					mikanectl.FunctionRevision{
-						Backends: backends,
-					},
-				)
+				for _, rev := range seg.Spec.EndMflNat.USidFunctionRevisions {
+					backends := []string{}
+					for _, b := range rev.Backends {
+						_, ipnet, err := net.ParseCIDR(b)
+						if err != nil {
+							log.Error(err, "net.ParseCIDR")
+							return "", err
+						}
+						u8 := [16]uint8{}
+						copy(u8[:], ipnet.IP)
+						u8 = util.BitShiftLeft8(u8)
+						u8 = util.BitShiftLeft8(u8)
+						newip := net.IP(u8[:])
+						backends = append(backends, newip.String())
+					}
+
+					sid.End_MFL.USidFunctionRevisions = append(
+						sid.End_MFL.USidFunctionRevisions,
+						mikanectl.FunctionRevision{
+							Backends: backends,
+						},
+					)
+				}
+				if _, err := util.LocalExecutef(
+					"sudo ip netns exec %s ip -4 route replace blackhole %s",
+					fnSpec.Netns, seg.Spec.EndMflNat.Vip); err != nil {
+					return "", err
+				}
+			case seg.Spec.EndMfnNat != nil:
+				sid.End_MFN_NAT = &mikanectl.ConfigLocalSid_End_MFN_NAT{
+					Vip:                seg.Spec.EndMfnNat.Vip,
+					NatPortHashBit:     seg.Spec.EndMfnNat.NatPortHashBit, // XXX: typo
+					USidBlockLength:    seg.Spec.EndMfnNat.UsidBlockLength,
+					USidFunctionLength: seg.Spec.EndMfnNat.UsidFunctionLength,
+					Sources:            seg.Spec.EndMfnNat.Sources,
+				}
+			default:
+				return "", fmt.Errorf("no sid activated")
 			}
+			c.LocalSids = append(c.LocalSids, sid)
 			if _, err := util.LocalExecutef(
-				"sudo ip netns exec %s ip -4 route replace blackhole %s",
-				fnSpec.Netns, seg.Spec.EndMflNat.Vip); err != nil {
+				"sudo ip netns exec %s ip -6 route replace blackhole %s",
+				fnSpec.Netns, seg.Status.Sid); err != nil {
 				return "", err
 			}
-		case seg.Spec.EndMfnNat != nil:
-			sid.End_MFN_NAT = &mikanectl.ConfigLocalSid_End_MFN_NAT{
-				Vip:                seg.Spec.EndMfnNat.Vip,
-				NatPortHashBit:     seg.Spec.EndMfnNat.NatPortHashBit, // XXX: typo
-				USidBlockLength:    seg.Spec.EndMfnNat.UsidBlockLength,
-				USidFunctionLength: seg.Spec.EndMfnNat.UsidFunctionLength,
-				Sources:            seg.Spec.EndMfnNat.Sources,
-			}
-		default:
-			return "", fmt.Errorf("no sid activated")
-		}
-		c.LocalSids = append(c.LocalSids, sid)
-		if _, err := util.LocalExecutef(
-			"sudo ip netns exec %s ip -6 route replace blackhole %s",
-			fnSpec.Netns, seg.Spec.Sid); err != nil {
-			return "", err
 		}
 	}
 	out, err := yaml.Marshal(c)

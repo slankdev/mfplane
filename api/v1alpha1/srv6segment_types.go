@@ -25,10 +25,7 @@ import (
 
 // Srv6SegmentSpec defines the desired state of Srv6Segment
 type Srv6SegmentSpec struct {
-	NodeName  string                 `json:"nodeName,omitempty"`
-	FuncName  string                 `json:"funcName,omitempty"`
 	Locator   string                 `json:"locator"`
-	Sid       string                 `json:"sid,omitempty"`
 	EndMfnNat *EndMfnNat             `json:"endMfnNat,omitempty"`
 	EndMflNat *EndMflNat             `json:"endMflNat,omitempty"`
 	Selector  MfpNodeSpecifySelector `json:"selector,omitempty"`
@@ -56,14 +53,29 @@ type EndMflNatRevision struct {
 
 // Srv6SegmentStatus defines the observed state of Srv6Segment
 type Srv6SegmentStatus struct {
+	Sid      string `json:"sid,omitempty"`
 	NodeName string `json:"nodeName,omitempty"`
 	FuncName string `json:"funcName,omitempty"`
+	// State indicates the current Segment state. The behavior of reconcile
+	// changes accordingly.
+	State Srv6SegmentState `json:"state"`
 }
+
+//+kubebuilder:validation:Enum=Terminating;Active;Configuring;Pending
+type Srv6SegmentState string
+
+const (
+	Srv6SegmentStateTerminating = Srv6SegmentState("Terminating")
+	Srv6SegmentStateActive      = Srv6SegmentState("Active")
+	Srv6SegmentStateConfiguring = Srv6SegmentState("Configuring")
+	Srv6SegmentStatePending     = Srv6SegmentState("Pending")
+)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=seg
-//+kubebuilder:printcolumn:name=SID,type=string,JSONPath=.spec.sid
+//+kubebuilder:printcolumn:name=STATE,type=string,JSONPath=.status.state
+//+kubebuilder:printcolumn:name=SID,type=string,JSONPath=.status.sid
 //+kubebuilder:printcolumn:name=NODE,type=string,priority=1,JSONPath=.status.nodeName
 //+kubebuilder:printcolumn:name=FUNC,type=string,priority=1,JSONPath=.status.funcName
 //+kubebuilder:printcolumn:name=AGE,type=date,JSONPath=.metadata.creationTimestamp

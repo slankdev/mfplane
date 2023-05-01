@@ -60,27 +60,61 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Main reconciles
-	log.Info("RECONCILE_START")
-	if err := r.reconcileNodeFuncSchedule(ctx, req, &seg, res); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	if seg.Status.NodeName == "" || seg.Status.FuncName == "" ||
+		seg.Status.Sid == "" {
+		seg.Status.State = mfplanev1alpha1.Srv6SegmentStatePending
+		res.StatusUpdated = true
 	}
-	if err := r.reconcileSidAllocation(ctx, req, &seg, res); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	if !seg.ObjectMeta.DeletionTimestamp.IsZero() {
+		seg.Status.State = mfplanev1alpha1.Srv6SegmentStateTerminating
+		res.StatusUpdated = true
 	}
 
-	// Bit labelling
+	log.Info("START_RECONCILE", "state", seg.Status.State)
+	switch seg.Status.State {
+	case mfplanev1alpha1.Srv6SegmentStateConfiguring:
+		if len(seg.ObjectMeta.Finalizers) > 0 {
+			seg.Status.State = mfplanev1alpha1.Srv6SegmentStateActive
+			res.StatusUpdated = true
+		}
+	case mfplanev1alpha1.Srv6SegmentStatePending:
+		if err := r.reconcileNodeFuncSchedule(ctx, req, &seg, res); err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		if err := r.reconcileSidAllocation(ctx, req, &seg, res); err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		if seg.Status.NodeName != "" && seg.Status.FuncName != "" &&
+			seg.Status.Sid != "" {
+			seg.Status.State = mfplanev1alpha1.Srv6SegmentStateConfiguring
+			res.StatusUpdated = true
+		}
+	case mfplanev1alpha1.Srv6SegmentStateActive:
+		log.Info("Active Do nothing")
+	case mfplanev1alpha1.Srv6SegmentStateTerminating:
+		log.Info("Terminatin Do nothing")
+	default:
+		seg.Status.State = mfplanev1alpha1.Srv6SegmentStatePending
+		res.StatusUpdated = true
+	}
+	log.Info("FINISH_RECONCILE", "state", seg.Status.State)
+
+	r.reconcileCommonState(&seg, res)
+	return res.ReconcileUpdate(ctx, r.Client, &seg)
+}
+
+func (r *Srv6SegmentReconciler) reconcileCommonState(
+	seg *mfplanev1alpha1.Srv6Segment,
+	res *util.ReconcileStatus) {
 	updated := false
 	seg.Labels, updated = util.MergeLabelsDiff(seg.Labels, map[string]string{
 		"nodeName":     seg.Status.NodeName,
 		"funcName":     seg.Status.FuncName,
-		"sidAllocated": strconv.FormatBool(seg.Spec.Sid != ""),
+		"sidAllocated": strconv.FormatBool(seg.Status.Sid != ""),
 	})
 	if updated {
 		res.SpecUpdated = true
 	}
-
-	return res.ReconcileUpdate(ctx, r.Client, &seg)
 }
 
 func (r *Srv6SegmentReconciler) reconcileNodeFuncSchedule(ctx context.Context,
@@ -132,7 +166,7 @@ func (r *Srv6SegmentReconciler) reconcileSidAllocation(ctx context.Context,
 
 	// Skip for "not func scheduled" or "already sid allocated"
 	if seg.Status.NodeName == "" || seg.Status.FuncName == "" ||
-		seg.Spec.Sid != "" {
+		seg.Status.Sid != "" {
 		return nil
 	}
 
@@ -150,8 +184,8 @@ func (r *Srv6SegmentReconciler) reconcileSidAllocation(ctx context.Context,
 			return err
 		}
 		if len(otherSegList.Items) > 0 {
-			log.Info("ANYCAST_SID", "value", seg.Spec.Sid)
-			seg.Spec.Sid = otherSegList.Items[0].Spec.Sid
+			log.Info("ANYCAST_SID", "value", seg.Status.Sid)
+			seg.Status.Sid = otherSegList.Items[0].Status.Sid
 			res.SpecUpdated = true
 			return nil
 		}
@@ -183,7 +217,7 @@ func (r *Srv6SegmentReconciler) reconcileSidAllocation(ctx context.Context,
 	for _, sid := range sids {
 		exist := false
 		for _, seg := range segList.Items {
-			if seg.Spec.Sid == sid {
+			if seg.Status.Sid == sid {
 				exist = true
 				break
 			}
@@ -196,8 +230,8 @@ func (r *Srv6SegmentReconciler) reconcileSidAllocation(ctx context.Context,
 	if len(availableSids) == 0 {
 		return fmt.Errorf("no available sid")
 	}
-	seg.Spec.Sid = availableSids[0]
-	res.SpecUpdated = true
+	seg.Status.Sid = availableSids[0]
+	res.StatusUpdated = true
 	return nil
 }
 

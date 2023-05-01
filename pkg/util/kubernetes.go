@@ -40,16 +40,50 @@ func (res *ReconcileStatus) ReconcileUpdate(ctx context.Context,
 	cli client.Client, obj client.Object) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	if res.StatusUpdated {
+		log.Info("STATUS_UPDATE")
 		if err := cli.Status().Update(ctx, obj); err != nil {
 			log.Info("SKIPPABLE_ERROR", "error", err.Error())
 			return ctrl.Result{}, err
 		}
 	}
 	if res.SpecUpdated {
+		log.Info("SPEC_UPDATE")
 		if err := cli.Update(ctx, obj); err != nil {
 			log.Info("SKIPPABLE_ERROR", "error", err.Error())
 			return ctrl.Result{}, err
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+func SetFinalizer(obj client.Object, name string) bool {
+	finalizers := obj.GetFinalizers()
+	exist := false
+	for _, f := range finalizers {
+		if f == name {
+			exist = true
+			break
+		}
+	}
+	if !exist {
+		finalizers = append(finalizers, name)
+		obj.SetFinalizers(finalizers)
+		return true
+	}
+	return false
+}
+
+func UnsetFinalizer(obj client.Object, name string) bool {
+	updated := false
+	finalizers := obj.GetFinalizers()
+	for i, f := range finalizers {
+		if f == name {
+			finalizers[i] = finalizers[len(finalizers)-1]
+			finalizers = finalizers[:len(finalizers)-1]
+			updated = true
+			break
+		}
+	}
+	obj.SetFinalizers(finalizers)
+	return updated
 }
