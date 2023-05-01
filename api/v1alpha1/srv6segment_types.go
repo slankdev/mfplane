@@ -56,9 +56,11 @@ type EndMflNatRevision struct {
 
 // Srv6SegmentStatus defines the observed state of Srv6Segment
 type Srv6SegmentStatus struct {
-	State    Srv6SegmentState `json:"state"`
-	NodeName string           `json:"nodeName,omitempty"`
-	FuncName string           `json:"funcName,omitempty"`
+	NodeName string `json:"nodeName,omitempty"`
+	FuncName string `json:"funcName,omitempty"`
+	// State indicates the current Segment state. The behavior of reconcile
+	// changes accordingly.
+	State Srv6SegmentState `json:"state"`
 }
 
 //+kubebuilder:validation:Enum=Terminating;Active;Configuring;Pending
