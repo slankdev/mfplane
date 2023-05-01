@@ -164,7 +164,7 @@ func craftConfig(ctx context.Context,
 	}
 	for _, seg := range segList.Items {
 		sid := mikanectl.ConfigLocalSid{}
-		sid.Sid = seg.Spec.Sid
+		sid.Sid = seg.Status.Sid
 		switch {
 		case seg.Spec.EndMflNat != nil:
 			sid.End_MFL = &mikanectl.ConfigLocalSid_End_MFL{
@@ -219,7 +219,7 @@ func craftConfig(ctx context.Context,
 		c.LocalSids = append(c.LocalSids, sid)
 		if _, err := util.LocalExecutef(
 			"sudo ip netns exec %s ip -6 route replace blackhole %s",
-			fnSpec.Netns, seg.Spec.Sid); err != nil {
+			fnSpec.Netns, seg.Status.Sid); err != nil {
 			return "", err
 		}
 	}
