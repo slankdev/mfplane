@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -144,11 +145,15 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 		res.SpecUpdated = true
 	}
 
-	seg.Labels = util.MergeLabels(seg.Labels, map[string]string{
-		"nodeName": seg.Status.NodeName,
-		"funcName": seg.Status.FuncName,
+	updated := false
+	seg.Labels, updated = util.MergeLabelsDiff(seg.Labels, map[string]string{
+		"nodeName":     seg.Status.NodeName,
+		"funcName":     seg.Status.FuncName,
+		"sidAllocated": strconv.FormatBool(seg.Spec.Sid != ""),
 	})
-	res.SpecUpdated = true
+	if updated {
+		res.SpecUpdated = true
+	}
 
 	return res.ReconcileUpdate(ctx, r.Client, &seg)
 }
