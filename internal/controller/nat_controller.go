@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"math/rand"
 	"reflect"
 	"sort"
 	"strconv"
@@ -29,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/util"
 )
@@ -86,7 +88,7 @@ func (r *NatReconciler) reconcileChildNf(ctx context.Context,
 	}
 
 	diff := nat.Spec.NetworkFunction.Replicas - len(segList.Items)
-	if diff != 0 {
+	if diff > 0 {
 		seg := mfplanev1alpha1.Srv6Segment{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: nat.GetName() + "-nnode-",
@@ -125,6 +127,14 @@ func (r *NatReconciler) reconcileChildNf(ctx context.Context,
 			}
 			log.Info("CreateOrUpdate", "op", op)
 		}
+	} else if diff < 0 {
+		pp.Println("DELETEDELETE ", diff)
+		deleteIdx := rand.Intn(len(segList.Items))
+		log.Info("DELETE ONE SEGMENT", "segName", segList.Items[deleteIdx].Name)
+		if err := r.Delete(ctx, &segList.Items[deleteIdx]); err != nil {
+			log.Error(err, "r.Delete")
+			return err
+		}
 	}
 	return nil
 }
@@ -160,6 +170,10 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 			nat.Status.Revisions...)
 		res.StatusUpdated = true
 	}
+	if len(nat.Status.Revisions) > 4 {
+		nat.Status.Revisions = nat.Status.Revisions[:4]
+		res.StatusUpdated = true
+	}
 
 	// Create Desired additional segments
 	lbSegList := mfplanev1alpha1.Srv6SegmentList{}
@@ -175,7 +189,7 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 	}
 
 	diff := nat.Spec.LoadBalancer.Replicas - len(lbSegList.Items)
-	if diff != 0 {
+	if diff > 0 {
 		for i := 0; i < diff; i++ {
 			seg := mfplanev1alpha1.Srv6Segment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -213,6 +227,13 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 				return err
 			}
 			log.Info("CreateOrUpdate", "op", op)
+		}
+	} else if diff < 0 {
+		deleteIdx := rand.Intn(len(lbSegList.Items))
+		log.Info("DELETE ONE SEGMENT", "segName", lbSegList.Items[deleteIdx].Name)
+		if err := r.Delete(ctx, &lbSegList.Items[deleteIdx]); err != nil {
+			log.Error(err, "r.Delete")
+			return err
 		}
 	}
 
