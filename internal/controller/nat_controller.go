@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"reflect"
+	"sort"
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -148,6 +149,16 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 	sidList := []string{}
 	for _, item := range nfSegList.Items {
 		sidList = append(sidList, item.Status.Sid)
+	}
+	sort.Slice(sidList, func(i, j int) bool { return sidList[i] < sidList[j] })
+	revision := mfplanev1alpha1.EndMflNatRevision{
+		Backends: sidList,
+	}
+	if len(nat.Status.Revisions) == 0 ||
+		!reflect.DeepEqual(nat.Status.Revisions[0], revision) {
+		nat.Status.Revisions = append([]mfplanev1alpha1.EndMflNatRevision{revision},
+			nat.Status.Revisions...)
+		res.StatusUpdated = true
 	}
 
 	// Create Desired additional segments
