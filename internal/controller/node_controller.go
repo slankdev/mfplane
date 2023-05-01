@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/labels"
@@ -117,18 +118,20 @@ func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
 	log.Info("RECONCILE_XDP_MAP_LOAD")
 	for _, fn := range node.Spec.Functions {
 
-		// KOKO
 		segList := mfplanev1alpha1.Srv6SegmentList{}
 		if err := r.List(ctx, &segList, &client.ListOptions{
 			Namespace: node.GetNamespace(),
 			LabelSelector: labels.SelectorFromSet(map[string]string{
-				"nodeName": node.Name,
-				"funcName": fn.Name,
+				"nodeName":     node.Name,
+				"funcName":     fn.Name,
+				"sidAllocated": strconv.FormatBool(true),
 			}),
 		}); err != nil {
 			return err
 		}
-		pp.Println(node.Name, fn.Name, segList)
+		for _, seg := range segList.Items {
+			pp.Println(node.Name, fn.Name, seg.Name)
+		}
 		print("\n")
 
 		// KOKOKARA
