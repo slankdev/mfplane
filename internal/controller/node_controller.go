@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/goroute2"
 	"github.com/slankdev/mfplane/pkg/mikanectl"
@@ -117,7 +116,7 @@ func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
 	log := log.FromContext(ctx)
 	log.Info("RECONCILE_XDP_MAP_LOAD")
 	for _, fn := range node.Spec.Functions {
-
+		// Fetch SID(s) which is allocated and bound on node:fn
 		segList := mfplanev1alpha1.Srv6SegmentList{}
 		if err := r.List(ctx, &segList, &client.ListOptions{
 			Namespace: node.GetNamespace(),
