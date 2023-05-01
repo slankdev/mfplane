@@ -56,9 +56,20 @@ type EndMflNatRevision struct {
 
 // Srv6SegmentStatus defines the observed state of Srv6Segment
 type Srv6SegmentStatus struct {
-	NodeName string `json:"nodeName,omitempty"`
-	FuncName string `json:"funcName,omitempty"`
+	State    Srv6SegmentState `json:"state"`
+	NodeName string           `json:"nodeName,omitempty"`
+	FuncName string           `json:"funcName,omitempty"`
 }
+
+//+kubebuilder:validation:Enum=Terminating;Active;Configuring;Pending
+type Srv6SegmentState string
+
+const (
+	Srv6SegmentStateTerminating = Srv6SegmentState("Terminating")
+	Srv6SegmentStateActive      = Srv6SegmentState("Active")
+	Srv6SegmentStateConfiguring = Srv6SegmentState("Configuring")
+	Srv6SegmentStatePending     = Srv6SegmentState("Pending")
+)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
