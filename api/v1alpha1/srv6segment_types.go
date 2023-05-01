@@ -76,6 +76,7 @@ const (
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=seg
+//+kubebuilder:printcolumn:name=STATE,type=string,JSONPath=.status.state
 //+kubebuilder:printcolumn:name=SID,type=string,JSONPath=.spec.sid
 //+kubebuilder:printcolumn:name=NODE,type=string,priority=1,JSONPath=.status.nodeName
 //+kubebuilder:printcolumn:name=FUNC,type=string,priority=1,JSONPath=.status.funcName

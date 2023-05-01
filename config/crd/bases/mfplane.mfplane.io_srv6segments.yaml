@@ -18,6 +18,9 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .status.state
+      name: STATE
+      type: string
     - jsonPath: .spec.sid
       name: SID
       type: string
@@ -125,6 +128,17 @@ spec:
                 type: string
               nodeName:
                 type: string
+              state:
+                description: State indicates the current Segment state. The behavior
+                  of reconcile changes accordingly.
+                enum:
+                - Terminating
+                - Active
+                - Configuring
+                - Pending
+                type: string
+            required:
+            - state
             type: object
         type: object
     served: true
