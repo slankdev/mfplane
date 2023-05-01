@@ -128,6 +128,7 @@ nodes:
   - sysctl: net.ipv4.conf.all.rp_filter=0
   - sysctl: net.ipv4.conf.default.rp_filter=0
   - sysctl: net.ipv4.conf.lo.rp_filter=0
+  - sysctl: net.ipv6.seg6_flowlabel=1
 - name: VM1
   image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
