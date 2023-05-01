@@ -55,3 +55,18 @@ func (res *ReconcileStatus) ReconcileUpdate(ctx context.Context,
 	}
 	return ctrl.Result{}, nil
 }
+
+func SetFinalizer(obj client.Object, name string) {
+	finalizers := obj.GetFinalizers()
+	exist := false
+	for _, f := range finalizers {
+		if f == name {
+			exist = true
+			break
+		}
+	}
+	if !exist {
+		finalizers = append(finalizers, name)
+		obj.SetFinalizers(finalizers)
+	}
+}

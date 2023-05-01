@@ -148,7 +148,16 @@ func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
 			log.Error(err, "map-load")
 			return err
 		}
+
+		for _, item := range segList.Items {
+			util.SetFinalizer(&item, fmt.Sprintf(
+				"%s.%s.nodes.mfplane.io", fn.Name, node.Name))
+			if r.Update(ctx, &item); err != nil {
+				return err
+			}
+		}
 	}
+
 	return nil
 }
 
