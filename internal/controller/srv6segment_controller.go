@@ -48,14 +48,8 @@ type ScheduleCandidate struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Srv6Segment object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
+	req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	res := util.NewReconcileStatus()
 
