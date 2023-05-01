@@ -20,12 +20,20 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
 
 	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/goroute2"
@@ -54,24 +62,41 @@ type NodeReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+	res := util.NewReconcileStatus()
 
+	// Fetch Resource
 	node := mfplanev1alpha1.Node{}
 	if err := r.Get(ctx, req.NamespacedName, &node); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Reconcile1
+	// Do Reconcile
+	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
+	if err := r.reconcileXdpAttach(ctx, req, &node, res); err != nil {
+		return ctrl.Result{}, err
+	}
+	if err := r.reconcileXdpMapLoad(ctx, req, &node, res); err != nil {
+		return ctrl.Result{}, err
+	}
+	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
+
+	return res.ReconcileUpdate(ctx, r.Client, &node)
+}
+
+func (r *NodeReconciler) reconcileXdpAttach(ctx context.Context,
+	req ctrl.Request, node *mfplanev1alpha1.Node,
+	res *util.ReconcileStatus) error {
+	log := log.FromContext(ctx)
+	util.SetLogger(log)
 	log.Info("RECONCILE_XDP_ATTACHING")
 	for _, fn := range node.Spec.Functions {
-		util.SetLogger(log)
-
 		// Check XDP program
 		linkDetail, err := goroute2.GetLinkDetail(fn.Netns, fn.Device)
 		if err != nil {
-			return ctrl.Result{}, err
+			return err
 		}
 		if linkDetail == nil {
-			return ctrl.Result{}, fmt.Errorf("link %s not found", fn.Device)
+			return fmt.Errorf("link %s not found", fn.Device)
 		}
 
 		// Attach XDP program
@@ -79,69 +104,85 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			if _, err := util.LocalExecutef("sudo ip netns exec %s "+
 				"./bin/mikanectl bpf %s attach -i %s -n %s -m %s",
 				fn.Netns, fn.Type, fn.Device, fn.Name, fn.Mode); err != nil {
-				return ctrl.Result{}, err
+				return err
 			}
 		}
 	}
+	return nil
+}
 
-	// Reconcile1
-	log.Info("RECONCILE_XDP_ATTACHING")
-	for _, fn := range node.Status.Functions {
-		fnSpec := mfplanev1alpha1.FunctionSpec{}
-		if err := node.GetFunctionSpec(fn.Name, &fnSpec); err != nil {
-			return ctrl.Result{}, err
-		}
-		fnStatus := mfplanev1alpha1.FunctionStatus{}
-		if err := node.GetFunctionStatus(fn.Name, &fnStatus); err != nil {
-			return ctrl.Result{}, err
+func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
+	req ctrl.Request, node *mfplanev1alpha1.Node,
+	res *util.ReconcileStatus) error {
+	log := log.FromContext(ctx)
+	util.SetLogger(log)
+	log.Info("RECONCILE_XDP_MAP_LOAD")
+	for _, fn := range node.Spec.Functions {
+		// Fetch SID(s) which is allocated and bound on node:fn
+		segList := mfplanev1alpha1.Srv6SegmentList{}
+		if err := r.List(ctx, &segList, &client.ListOptions{
+			Namespace: node.GetNamespace(),
+			LabelSelector: labels.SelectorFromSet(map[string]string{
+				"nodeName":     node.Name,
+				"funcName":     fn.Name,
+				"sidAllocated": strconv.FormatBool(true),
+			}),
+		}); err != nil {
+			return err
 		}
 
 		// Prepare config
-		configFile, err := craftConfig(fnSpec, fnStatus)
+		configFile, err := craftConfig(ctx, fn, segList)
 		if err != nil {
-			return ctrl.Result{}, err
+			log.Error(err, "craftConfig")
+			return err
 		}
 		if err := util.WriteFile(fmt.Sprintf("/tmp/%s.config.yaml", fn.Name),
 			[]byte(configFile)); err != nil {
-			return ctrl.Result{}, err
+			log.Error(err, "util.WriteFile")
+			return err
 		}
 		if _, err := util.LocalExecutef("sudo ip netns exec %s "+
 			"./bin/mikanectl map-load -f /tmp/%s.config.yaml",
-			fnSpec.Netns, fn.Name); err != nil {
-			return ctrl.Result{}, err
+			fn.Netns, fn.Name); err != nil {
+			log.Error(err, "map-load")
+			return err
 		}
 	}
-
-	return ctrl.Result{}, nil
+	return nil
 }
 
-func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
-	fnStatus mfplanev1alpha1.FunctionStatus) (string, error) {
+func craftConfig(ctx context.Context,
+	fnSpec mfplanev1alpha1.FunctionSpec,
+	segList mfplanev1alpha1.Srv6SegmentList) (string, error) {
+	log := log.FromContext(ctx)
 	c := mikanectl.Config{
 		NamePrefix:  fnSpec.Name,
 		MaxRules:    2,
 		MaxBackends: 7,
 		EncapSource: fnSpec.SegmentRoutingSrv6.EncapSource,
 	}
-	for _, seg := range fnStatus.Segments {
+	for _, seg := range segList.Items {
 		sid := mikanectl.ConfigLocalSid{}
-		sid.Sid = seg.Sid
+		sid.Sid = seg.Spec.Sid
 		switch {
-		case seg.EndMflNat != nil:
+		case seg.Spec.EndMflNat != nil:
 			sid.End_MFL = &mikanectl.ConfigLocalSid_End_MFL{
-				Vip:                seg.EndMflNat.Vip,
-				NatPortHashBit:     seg.EndMflNat.NatPortHashBit, // XXX: typo
-				USidBlock:          "fc00::0",                    // TODO(slankdev)
-				USidBlockLength:    seg.EndMflNat.UsidBlockLength,
-				USidFunctionLength: seg.EndMflNat.UsidFunctionLength,
+				Vip:                seg.Spec.EndMflNat.Vip,
+				NatPortHashBit:     seg.Spec.EndMflNat.NatPortHashBit, // XXX: typo
+				USidBlock:          "fc00::0",                         // TODO(slankdev)
+				USidBlockLength:    seg.Spec.EndMflNat.UsidBlockLength,
+				USidFunctionLength: seg.Spec.EndMflNat.UsidFunctionLength,
 				NatMapping:         "endpointIndependentMapping",   // TODO(slankdev)
 				NatFiltering:       "endpointIndependentFiltering", // TODO(slankdev)
 			}
-			for _, rev := range seg.EndMflNat.USidFunctionRevisions {
+
+			for _, rev := range seg.Spec.EndMflNat.USidFunctionRevisions {
 				backends := []string{}
 				for _, b := range rev.Backends {
 					_, ipnet, err := net.ParseCIDR(b)
 					if err != nil {
+						log.Error(err, "net.ParseCIDR")
 						return "", err
 					}
 					u8 := [16]uint8{}
@@ -159,13 +200,13 @@ func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
 					},
 				)
 			}
-		case seg.EndMfnNat != nil:
+		case seg.Spec.EndMfnNat != nil:
 			sid.End_MFN_NAT = &mikanectl.ConfigLocalSid_End_MFN_NAT{
-				Vip:                seg.EndMfnNat.Vip,
-				NatPortHashBit:     seg.EndMfnNat.NatPortHashBit, // XXX: typo
-				USidBlockLength:    seg.EndMfnNat.UsidBlockLength,
-				USidFunctionLength: seg.EndMfnNat.UsidFunctionLength,
-				Sources:            seg.EndMfnNat.Sources,
+				Vip:                seg.Spec.EndMfnNat.Vip,
+				NatPortHashBit:     seg.Spec.EndMfnNat.NatPortHashBit, // XXX: typo
+				USidBlockLength:    seg.Spec.EndMfnNat.UsidBlockLength,
+				USidFunctionLength: seg.Spec.EndMfnNat.UsidFunctionLength,
+				Sources:            seg.Spec.EndMfnNat.Sources,
 			}
 		default:
 			return "", fmt.Errorf("no sid activated")
@@ -180,9 +221,42 @@ func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
 	return sout, nil
 }
 
+func (r *NodeReconciler) findNodesFromSrv6Segment(
+	seg0 client.Object) []reconcile.Request {
+	seg := mfplanev1alpha1.Srv6Segment{}
+	if err := r.Get(context.TODO(), types.NamespacedName{
+		Namespace: seg0.GetNamespace(), Name: seg0.GetName()}, &seg); err != nil {
+		return []reconcile.Request{}
+	}
+	if seg.Status.NodeName == "" || seg.Status.FuncName == "" {
+		return []reconcile.Request{}
+	}
+	nodeList := mfplanev1alpha1.NodeList{}
+	if err := r.List(context.TODO(), &nodeList); err != nil {
+		return []reconcile.Request{}
+	}
+	requests := []reconcile.Request{}
+	for _, node := range nodeList.Items {
+		if seg.Status.NodeName == node.Name {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      node.GetName(),
+					Namespace: node.GetNamespace(),
+				},
+			})
+		}
+	}
+	return requests
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *NodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&mfplanev1alpha1.Node{}).
+		Watches(
+			&source.Kind{Type: &mfplanev1alpha1.Srv6Segment{}},
+			handler.EnqueueRequestsFromMapFunc(r.findNodesFromSrv6Segment),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+		).
 		Complete(r)
 }

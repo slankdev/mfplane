@@ -161,9 +161,17 @@ ifeq ($(shell test -e local.mk && echo -n yes),yes)
 include local.mk
 endif
 
-apply:
+apply-all: apply-node apply-nat
+delete-all: delete-nat delete-node
+apply-node:
 	kubectl apply -f config/samples/mfplane_v1alpha1_node.yaml
+apply-nat:
 	kubectl apply -f config/samples/mfplane_v1alpha1_nat.yaml
-delete:
+apply-seg:
+	kubectl apply -f config/samples/mfplane_v1alpha1_srv6segment.yaml || true
+delete-node:
 	kubectl delete -f config/samples/mfplane_v1alpha1_node.yaml || true
+delete-nat:
 	kubectl delete -f config/samples/mfplane_v1alpha1_nat.yaml || true
+delete-seg:
+	kubectl delete -f config/samples/mfplane_v1alpha1_srv6segment.yaml || true

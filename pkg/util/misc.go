@@ -143,3 +143,41 @@ func GetKernelVersion() (string, error) {
 	}
 	return semverVal, nil
 }
+
+func VerifyMatchLabels(target, expression map[string]string) bool {
+	for key, val := range expression {
+		tval, ok := target[key]
+		if !ok {
+			return false
+		}
+		if tval != val {
+			return false
+		}
+	}
+	return true
+}
+
+func MergeLabels(base map[string]string,
+	patch map[string]string) map[string]string {
+	out, _ := MergeLabelsDiff(base, patch)
+	return out
+}
+
+func MergeLabelsDiff(base map[string]string,
+	patch map[string]string) (map[string]string, bool) {
+	if base == nil {
+		base = map[string]string{}
+	}
+	updated := false
+	for k, v := range patch {
+		current, ok := base[k]
+		if !ok {
+			updated = true
+		}
+		if current != v {
+			updated = true
+		}
+		base[k] = v
+	}
+	return base, updated
+}

@@ -47,6 +47,15 @@ type SegmentRoutingSrv6Spec struct {
 	Locators    []Srv6Locator `json:"locators"`
 }
 
+func (s SegmentRoutingSrv6Spec) GetLocator(name string) *Srv6Locator {
+	for _, loc := range s.Locators {
+		if loc.Name == name {
+			return &loc
+		}
+	}
+	return nil
+}
+
 type Srv6Locator struct {
 	Name    string `json:"name"`
 	Prefix  string `json:"prefix"`
@@ -60,49 +69,8 @@ type NodeStatus struct {
 }
 
 type FunctionStatus struct {
-	Name     string            `json:"name"`
-	Labels   map[string]string `json:"labels,omitempty"`
-	Segments []Segment         `json:"segments"`
-}
-
-type Segment struct {
-	NodeName  string       `json:"nodeName"`
-	FuncName  string       `json:"funcName"`
-	Locator   string       `json:"locator"`
-	Sid       string       `json:"sid"`
-	EndMfnNat *EndMfnNat   `json:"endMfnNat,omitempty"`
-	EndMflNat *EndMflNat   `json:"endMflNat,omitempty"`
-	Owner     SegmentOwner `json:"owner"`
-}
-
-type SegmentOwner struct {
-	Kind string `json:"kind"`
-	Name string `json:"name"`
-}
-
-type EndMfnNat struct {
-	Vip                string   `json:"vip"`
-	NatPortHashBit     uint16   `json:"natPortHashBit"`
-	UsidBlockLength    int      `json:"uSidBlockLength"`
-	UsidFunctionLength int      `json:"uSidFunctionLength"`
-	Sources            []string `json:"sources"`
-}
-
-type EndMflNat struct {
-	Vip                   string              `json:"vip"`
-	NatPortHashBit        uint16              `json:"natPortHashBit"`
-	UsidBlockLength       int                 `json:"uSidBlockLength"`
-	UsidFunctionLength    int                 `json:"uSidFunctionLength"`
-	USidFunctionRevisions []EndMflNatRevision `json:"uSidFunctionRevisions"`
-}
-
-type EndMflNatRevision struct {
-	Backends []string `json:"backends"`
-}
-
-type HEncaps struct {
-	Mode string   `json:"mode"`
-	Segs []string `json:"segs"`
+	Name   string            `json:"name"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -137,7 +105,7 @@ func (n Node) GetFunctionSpec(name string, spec *FunctionSpec) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("not found")
+	return fmt.Errorf("GetFunctionSpec not found")
 }
 
 func (n Node) GetFunctionStatus(name string, spec *FunctionStatus) error {
@@ -147,5 +115,15 @@ func (n Node) GetFunctionStatus(name string, spec *FunctionStatus) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("not found")
+	return fmt.Errorf("GetFunctionStatu not found")
+}
+
+func (n *Node) SetFunctionStatus(name string, fnStatus *FunctionStatus) error {
+	for idx, fn := range n.Status.Functions {
+		if fn.Name == name {
+			n.Status.Functions[idx] = *fnStatus
+			return nil
+		}
+	}
+	return fmt.Errorf("SetFunctionStatu not found")
 }

@@ -23,6 +23,8 @@ import (
 	"encoding/binary"
 	"math/bits"
 	"net"
+
+	netaddr "github.com/dspinhirne/netaddr-go"
 )
 
 func ConvertUint32ToIP(nn uint32) net.IP {
@@ -63,4 +65,17 @@ func Plen(mask net.IPMask) int {
 		l += bits.OnesCount8(uint8(m))
 	}
 	return l
+}
+
+func GetSubnet(cidrStr string, prefixlen uint) ([]string, error) {
+	loc, err := netaddr.ParseIPv6Net(cidrStr)
+	if err != nil {
+		return nil, err
+	}
+	sids := []string{}
+	for i := uint64(0); i < loc.SubnetCount(prefixlen); i++ {
+		sid := loc.NthSubnet(32, i)
+		sids = append(sids, sid.String())
+	}
+	return sids, nil
 }

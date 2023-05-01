@@ -18,13 +18,18 @@ package controller
 
 import (
 	"context"
+	"reflect"
+	"strconv"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
+	"github.com/slankdev/mfplane/pkg/util"
 )
 
 // NatReconciler reconciles a Nat object
@@ -39,185 +44,216 @@ type NatReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Nat object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *NatReconciler) Reconcile(ctx context.Context,
+	req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+	res := util.NewReconcileStatus()
 
+	// Fetch Resource
 	nat := mfplanev1alpha1.Nat{}
 	if err := r.Get(ctx, req.NamespacedName, &nat); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	log.Info("RECONCILE_L_NODE")
 
-	// TODO(slankdev): support scale-in. currently it doesn't support such case.
-	// Need to consider using sub-resource/scale.
-
-	// Schedule N-node Segments
-	nbCreateNf := nat.Spec.NetworkFunction.Replicas
-	nodeList1 := mfplanev1alpha1.NodeList{}
-	if err := r.List(ctx, &nodeList1); err != nil {
+	// Do Reconcile
+	log.Info("RECONCILE_MAIN_ROUTINE_START")
+	if err := r.reconcileChildNf(ctx, req, &nat, res); err != nil {
 		return ctrl.Result{}, err
 	}
-	for _, node := range nodeList1.Items {
-		for _, fn := range node.Status.Functions {
-			for _, seg := range fn.Segments {
-				if seg.Owner.Kind == "Nat" && seg.Owner.Name == nat.Name &&
-					seg.EndMfnNat != nil {
-					nbCreateNf--
-				}
-			}
-		}
-	}
-	nfSegments := []mfplanev1alpha1.Segment{}
-	for i := 0; i < nbCreateNf; i++ {
-		newSeg := mfplanev1alpha1.Segment{
-			Locator: "default",
-			Owner: mfplanev1alpha1.SegmentOwner{
-				Kind: nat.Kind,
-				Name: nat.Name,
-			},
-			EndMfnNat: &mfplanev1alpha1.EndMfnNat{
-				Vip:                nat.Spec.Vip,
-				NatPortHashBit:     nat.Spec.NatPortHashBit,
-				UsidBlockLength:    nat.Spec.UsidBlockLength,
-				UsidFunctionLength: nat.Spec.UsidFunctionLength,
-				Sources:            nat.Spec.Sources,
-			},
-		}
-
-		// XXX(slankdev)
-		if i == 0 {
-			newSeg.NodeName = "node-sample1"
-			newSeg.FuncName = "N1"
-			newSeg.Sid = "fc00:3101::/32"
-		}
-		if i == 1 {
-			newSeg.NodeName = "node-sample1"
-			newSeg.FuncName = "N2"
-			newSeg.Sid = "fc00:3201::/32"
-		}
-
-		nfSegments = append(nfSegments, newSeg)
-	}
-
-	// Schedule L-node Segments
-	nbCreateLb := nat.Spec.LoadBalancer.Replicas
-	nodeList0 := mfplanev1alpha1.NodeList{}
-	if err := r.List(ctx, &nodeList0); err != nil {
+	if err := r.reconcileChildLb(ctx, req, &nat, res); err != nil {
 		return ctrl.Result{}, err
 	}
-	for _, node := range nodeList0.Items {
-		for _, fn := range node.Status.Functions {
-			for _, seg := range fn.Segments {
-				if seg.Owner.Kind == "Nat" && seg.Owner.Name == nat.Name &&
-					seg.EndMflNat != nil {
-					nbCreateLb--
-				}
-			}
-		}
-	}
-	lbSegments := []mfplanev1alpha1.Segment{}
-	for i := 0; i < nbCreateLb; i++ {
-		newSeg := mfplanev1alpha1.Segment{
-			Locator: "anycast",
-			Owner: mfplanev1alpha1.SegmentOwner{
-				Kind: nat.Kind,
-				Name: nat.Name,
-			},
-			EndMflNat: &mfplanev1alpha1.EndMflNat{
-				Vip:                nat.Spec.Vip,
-				NatPortHashBit:     nat.Spec.NatPortHashBit,
-				UsidBlockLength:    nat.Spec.UsidBlockLength,
-				UsidFunctionLength: nat.Spec.UsidFunctionLength,
-			},
-		}
+	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
 
-		// XXX(slankdev)
-		if i == 0 {
-			newSeg.NodeName = "node-sample1"
-			newSeg.FuncName = "L1"
-			newSeg.Sid = "fc00:ff01::/32"
-			newSeg.EndMflNat.USidFunctionRevisions = []mfplanev1alpha1.EndMflNatRevision{
-				{
-					Backends: []string{
-						"fc00:3101::/32",
-						"fc00:3201::/32",
+	return res.ReconcileUpdate(ctx, r.Client, &nat)
+}
+
+func (r *NatReconciler) reconcileChildNf(ctx context.Context,
+	req ctrl.Request, nat *mfplanev1alpha1.Nat, res *util.ReconcileStatus) error {
+	log := log.FromContext(ctx)
+
+	segList := mfplanev1alpha1.Srv6SegmentList{}
+	if err := r.List(ctx, &segList, &client.ListOptions{
+		Namespace: nat.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			"srv6Action":        "endMfnNat",
+			"ownerResourceKind": nat.Kind,
+			"ownerResourceName": nat.GetName(),
+		}),
+	}); err != nil {
+		return err
+	}
+
+	diff := nat.Spec.NetworkFunction.Replicas - len(segList.Items)
+	if diff != 0 {
+		seg := mfplanev1alpha1.Srv6Segment{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: nat.GetName() + "-nnode-",
+				Namespace:    nat.GetNamespace(),
+			},
+			Spec: mfplanev1alpha1.Srv6SegmentSpec{
+				Locator: "default",
+				Selector: mfplanev1alpha1.MfpNodeSpecifySelector{
+					MatchLabels: map[string]string{
+						"nat": nat.Name,
 					},
 				},
-			}
+				EndMfnNat: &mfplanev1alpha1.EndMfnNat{
+					Vip:                nat.Spec.Vip,
+					NatPortHashBit:     nat.Spec.NatPortHashBit,
+					UsidBlockLength:    nat.Spec.UsidBlockLength,
+					UsidFunctionLength: nat.Spec.UsidFunctionLength,
+					Sources:            nat.Spec.Sources,
+				},
+			},
 		}
-
-		lbSegments = append(lbSegments, newSeg)
-	}
-
-	// Reconcile for Node resource
-	nodeList := mfplanev1alpha1.NodeList{}
-	if err := r.List(ctx, &nodeList); err != nil {
-		return ctrl.Result{}, err
-	}
-	for _, node := range nodeList.Items {
-		// Resource init
-		if node.Status.Functions == nil {
-			node.Status.Functions = []mfplanev1alpha1.FunctionStatus{}
-		}
-		for _, fn := range node.Spec.Functions {
-			found := false
-			for _, statusFn := range node.Status.Functions {
-				if statusFn.Name == fn.Name {
-					found = true
-					break
-				}
+		for i := 0; i < diff; i++ {
+			seg.SetName("")
+			op, err := ctrl.CreateOrUpdate(ctx, r.Client, &seg, func() error {
+				seg.SetLabels(map[string]string{
+					"nat":               nat.Name,
+					"ownerResourceKind": nat.Kind,
+					"ownerResourceName": nat.GetName(),
+					"srv6Action":        "endMfnNat",
+				})
+				return ctrl.SetControllerReference(nat, &seg, r.Scheme)
+			})
+			if err != nil {
+				log.Error(err, "ERROR")
+				return err
 			}
-			if !found {
-				node.Status.Functions = append(node.Status.Functions,
-					mfplanev1alpha1.FunctionStatus{
-						Name:     fn.Name,
-						Segments: []mfplanev1alpha1.Segment{},
-					})
-			}
-		}
-
-		// Fill allocated segment
-		updated := false
-		for fnIdx, fn := range node.Status.Functions {
-			for _, seg := range lbSegments {
-				if seg.NodeName == node.Name && seg.FuncName == fn.Name {
-					fn.Segments = append(fn.Segments, seg)
-					node.Status.Functions[fnIdx].Segments = fn.Segments
-					updated = true
-				}
-			}
-			for _, seg := range nfSegments {
-				if seg.NodeName == node.Name && seg.FuncName == fn.Name {
-					fn.Segments = append(fn.Segments, seg)
-					node.Status.Functions[fnIdx].Segments = fn.Segments
-					updated = true
-				}
-			}
-		}
-
-		// Update node resource
-		if updated {
-			if err := r.Status().Update(ctx, &node); err != nil {
-				return ctrl.Result{}, err
-			}
+			log.Info("CreateOrUpdate", "op", op)
 		}
 	}
+	return nil
+}
 
-	// Finish
-	log.Info("RECONCILE_DONE")
-	return ctrl.Result{}, nil
+func (r *NatReconciler) reconcileChildLb(ctx context.Context,
+	req ctrl.Request, nat *mfplanev1alpha1.Nat, res *util.ReconcileStatus) error {
+	log := log.FromContext(ctx)
+
+	// Resolve SID
+	nfSegList := mfplanev1alpha1.Srv6SegmentList{}
+	if err := r.List(ctx, &nfSegList, &client.ListOptions{
+		Namespace: nat.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			"srv6Action":        "endMfnNat",
+			"sidAllocated":      strconv.FormatBool(true),
+			"ownerResourceKind": nat.Kind,
+			"ownerResourceName": nat.GetName(),
+		}),
+	}); err != nil {
+		return err
+	}
+	sidList := []string{}
+	for _, item := range nfSegList.Items {
+		sidList = append(sidList, item.Spec.Sid)
+	}
+
+	// Create Desired additional segments
+	lbSegList := mfplanev1alpha1.Srv6SegmentList{}
+	if err := r.List(ctx, &lbSegList, &client.ListOptions{
+		Namespace: nat.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			"srv6Action":        "endMflNat",
+			"ownerResourceKind": nat.Kind,
+			"ownerResourceName": nat.GetName(),
+		}),
+	}); err != nil {
+		return err
+	}
+
+	diff := nat.Spec.LoadBalancer.Replicas - len(lbSegList.Items)
+	if diff != 0 {
+		for i := 0; i < diff; i++ {
+			seg := mfplanev1alpha1.Srv6Segment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:         "",
+					GenerateName: nat.GetName() + "-lnode-",
+					Namespace:    nat.GetNamespace(),
+				},
+			}
+			op, err := ctrl.CreateOrUpdate(ctx, r.Client, &seg, func() error {
+				seg.SetLabels(map[string]string{
+					"nat":               nat.Name,
+					"ownerResourceKind": nat.Kind,
+					"ownerResourceName": nat.GetName(),
+					"srv6Action":        "endMflNat",
+				})
+				seg.Spec = mfplanev1alpha1.Srv6SegmentSpec{
+					Locator: "anycast",
+					Selector: mfplanev1alpha1.MfpNodeSpecifySelector{
+						MatchLabels: map[string]string{
+							"nat": nat.Name,
+						},
+					},
+					EndMflNat: &mfplanev1alpha1.EndMflNat{
+						Vip:                nat.Spec.Vip,
+						NatPortHashBit:     nat.Spec.NatPortHashBit,
+						UsidBlockLength:    nat.Spec.UsidBlockLength,
+						UsidFunctionLength: nat.Spec.UsidFunctionLength,
+						USidFunctionRevisions: []mfplanev1alpha1.EndMflNatRevision{
+							{
+								Backends: sidList,
+							},
+						},
+					},
+				}
+				return ctrl.SetControllerReference(nat, &seg, r.Scheme)
+			})
+			if err != nil {
+				log.Error(err, "ERROR")
+				return err
+			}
+			log.Info("CreateOrUpdate", "op", op)
+		}
+	}
+
+	lbSegList1 := mfplanev1alpha1.Srv6SegmentList{}
+	if err := r.List(ctx, &lbSegList1, &client.ListOptions{
+		Namespace: nat.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			"srv6Action":        "endMflNat",
+			"sidAllocated":      strconv.FormatBool(true),
+			"ownerResourceKind": nat.Kind,
+			"ownerResourceName": nat.GetName(),
+		}),
+	}); err != nil {
+		return err
+	}
+	for _, seg := range lbSegList1.Items {
+		specOld := seg.Spec.DeepCopy()
+		seg.Spec.Locator = "anycast"
+		seg.Spec.Selector = mfplanev1alpha1.MfpNodeSpecifySelector{
+			MatchLabels: map[string]string{
+				"nat": nat.Name,
+			},
+		}
+		seg.Spec.EndMflNat = &mfplanev1alpha1.EndMflNat{
+			Vip:                nat.Spec.Vip,
+			NatPortHashBit:     nat.Spec.NatPortHashBit,
+			UsidBlockLength:    nat.Spec.UsidBlockLength,
+			UsidFunctionLength: nat.Spec.UsidFunctionLength,
+			USidFunctionRevisions: []mfplanev1alpha1.EndMflNatRevision{
+				{
+					Backends: sidList,
+				},
+			},
+		}
+		if !reflect.DeepEqual(specOld, seg.Spec) {
+			if err := r.Update(ctx, &seg); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&mfplanev1alpha1.Nat{}).
+		Owns(&mfplanev1alpha1.Srv6Segment{}).
 		Complete(r)
 }
