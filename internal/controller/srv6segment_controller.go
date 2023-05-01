@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/util"
 )
@@ -60,16 +61,39 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Main reconciles
-	log.Info("RECONCILE_START")
-	if err := r.reconcileNodeFuncSchedule(ctx, req, &seg, res); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	log.Info("START_RECONCILE", "state", seg.Status.State)
+	switch seg.Status.State {
+	case mfplanev1alpha1.Srv6SegmentStateActive:
+		pp.Println("NOT IMPLEMENTED", seg.Status.State)
+	case mfplanev1alpha1.Srv6SegmentStateConfiguring:
+		pp.Println("NOT IMPLEMENTED", seg.Status.State)
+	case mfplanev1alpha1.Srv6SegmentStateTerminating:
+		pp.Println("NOT IMPLEMENTED", seg.Status.State)
+	case mfplanev1alpha1.Srv6SegmentStatePending:
+		if err := r.reconcileNodeFuncSchedule(ctx, req, &seg, res); err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		if err := r.reconcileSidAllocation(ctx, req, &seg, res); err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		if seg.Status.NodeName != "" && seg.Status.FuncName != "" &&
+			seg.Spec.Sid != "" {
+			seg.Status.State = mfplanev1alpha1.Srv6SegmentStateConfiguring
+			res.StatusUpdated = true
+		}
+	default:
+		seg.Status.State = mfplanev1alpha1.Srv6SegmentStatePending
+		res.StatusUpdated = true
 	}
-	if err := r.reconcileSidAllocation(ctx, req, &seg, res); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
+	log.Info("FINISH_RECONCILE", "state", seg.Status.State)
 
-	// Bit labelling
+	r.reconcileCommonState(&seg, res)
+	return res.ReconcileUpdate(ctx, r.Client, &seg)
+}
+
+func (r *Srv6SegmentReconciler) reconcileCommonState(
+	seg *mfplanev1alpha1.Srv6Segment,
+	res *util.ReconcileStatus) {
 	updated := false
 	seg.Labels, updated = util.MergeLabelsDiff(seg.Labels, map[string]string{
 		"nodeName":     seg.Status.NodeName,
@@ -79,8 +103,6 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 	if updated {
 		res.SpecUpdated = true
 	}
-
-	return res.ReconcileUpdate(ctx, r.Client, &seg)
 }
 
 func (r *Srv6SegmentReconciler) reconcileNodeFuncSchedule(ctx context.Context,
