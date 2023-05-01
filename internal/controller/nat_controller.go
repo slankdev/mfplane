@@ -65,7 +65,7 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	if err := r.List(ctx, &segList, &client.ListOptions{
 		Namespace: nat.GetNamespace(),
 		LabelSelector: labels.SelectorFromSet(map[string]string{
-			"type":              "nat",
+			"srv6Action":        "endMfnNat",
 			"ownerResourceKind": nat.Kind,
 			"ownerResourceName": nat.GetName(),
 		}),
@@ -100,9 +100,9 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			op, err := ctrl.CreateOrUpdate(ctx, r.Client, &seg, func() error {
 				seg.SetLabels(map[string]string{
 					"nat":               nat.Name,
-					"type":              "nat",
 					"ownerResourceKind": nat.Kind,
 					"ownerResourceName": nat.GetName(),
+					"srv6Action":        "endMfnNat",
 				})
 				return ctrl.SetControllerReference(&nat, &seg, r.Scheme)
 			})
