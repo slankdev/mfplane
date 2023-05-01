@@ -69,7 +69,6 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err := r.Get(ctx, req.NamespacedName, &node); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	// return res.ReconcileUpdate(ctx, r.Client, &node)
 
 	// Do Reconcile
 	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
