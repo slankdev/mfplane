@@ -212,6 +212,11 @@ func craftConfig(ctx context.Context,
 			return "", fmt.Errorf("no sid activated")
 		}
 		c.LocalSids = append(c.LocalSids, sid)
+		if _, err := util.LocalExecutef(
+			"sudo ip netns exec %s ip -6 route replace blackhole %s",
+			fnSpec.Netns, seg.Spec.Sid); err != nil {
+			return "", err
+		}
 	}
 	out, err := yaml.Marshal(c)
 	if err != nil {
