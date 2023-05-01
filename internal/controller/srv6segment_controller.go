@@ -87,7 +87,6 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 		}
 		if seg.Status.NodeName != "" && seg.Status.FuncName != "" &&
 			seg.Status.Sid != "" {
-			pp.Println(seg.Spec, seg.Status)
 			seg.Status.State = mfplanev1alpha1.Srv6SegmentStateConfiguring
 			res.StatusUpdated = true
 		}
