@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/util"
 )
@@ -58,11 +57,9 @@ func (r *NatReconciler) Reconcile(ctx context.Context,
 	// Do Reconcile
 	log.Info("RECONCILE_MAIN_ROUTINE_START")
 	if err := r.reconcileChildNf(ctx, req, &nat, res); err != nil {
-		panic(err)
 		return ctrl.Result{}, err
 	}
 	if err := r.reconcileChildLb(ctx, req, &nat, res); err != nil {
-		panic(err)
 		return ctrl.Result{}, err
 	}
 	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
@@ -151,7 +148,6 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 	for _, item := range nfSegList.Items {
 		sidList = append(sidList, item.Spec.Sid)
 	}
-	pp.Println(sidList)
 
 	// Create Desired additional segments
 	lbSegList := mfplanev1alpha1.Srv6SegmentList{}

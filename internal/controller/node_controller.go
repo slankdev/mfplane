@@ -137,7 +137,6 @@ func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
 			log.Error(err, "craftConfig")
 			return err
 		}
-		println(configFile)
 		if err := util.WriteFile(fmt.Sprintf("/tmp/%s.config.yaml", fn.Name),
 			[]byte(configFile)); err != nil {
 			log.Error(err, "util.WriteFile")
