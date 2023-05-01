@@ -32,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/goroute2"
 	"github.com/slankdev/mfplane/pkg/mikanectl"
@@ -60,26 +59,42 @@ type NodeReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+	res := util.NewReconcileStatus()
 
-	return ctrl.Result{}, nil
-
+	// Fetch Resource
 	node := mfplanev1alpha1.Node{}
 	if err := r.Get(ctx, req.NamespacedName, &node); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Reconcile1
+	// Do Reconcile
+	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
+	if err := r.reconcileXdpAttach(ctx, req, &node, res); err != nil {
+		return ctrl.Result{}, err
+	}
+	if err := r.reconcileXdpMapLoad(ctx, req, &node, res); err != nil {
+		return ctrl.Result{}, err
+	}
+	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
+
+	return res.ReconcileUpdate(ctx, r.Client, &node)
+}
+
+func (r *NodeReconciler) reconcileXdpAttach(ctx context.Context,
+	req ctrl.Request, node *mfplanev1alpha1.Node,
+	res *util.ReconcileStatus) error {
+	log := log.FromContext(ctx)
+	util.SetLogger(log)
+
 	log.Info("RECONCILE_XDP_ATTACHING")
 	for _, fn := range node.Spec.Functions {
-		util.SetLogger(log)
-
 		// Check XDP program
 		linkDetail, err := goroute2.GetLinkDetail(fn.Netns, fn.Device)
 		if err != nil {
-			return ctrl.Result{}, err
+			return err
 		}
 		if linkDetail == nil {
-			return ctrl.Result{}, fmt.Errorf("link %s not found", fn.Device)
+			return fmt.Errorf("link %s not found", fn.Device)
 		}
 
 		// Attach XDP program
@@ -87,40 +102,46 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			if _, err := util.LocalExecutef("sudo ip netns exec %s "+
 				"./bin/mikanectl bpf %s attach -i %s -n %s -m %s",
 				fn.Netns, fn.Type, fn.Device, fn.Name, fn.Mode); err != nil {
-				return ctrl.Result{}, err
+				return err
 			}
 		}
 	}
+	return nil
+}
+
+func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
+	req ctrl.Request, node *mfplanev1alpha1.Node,
+	res *util.ReconcileStatus) error {
+	// log := log.FromContext(ctx)
 
 	// Reconcile1
-	log.Info("RECONCILE_XDP_ATTACHING")
-	for _, fn := range node.Status.Functions {
-		fnSpec := mfplanev1alpha1.FunctionSpec{}
-		if err := node.GetFunctionSpec(fn.Name, &fnSpec); err != nil {
-			return ctrl.Result{}, err
-		}
-		fnStatus := mfplanev1alpha1.FunctionStatus{}
-		if err := node.GetFunctionStatus(fn.Name, &fnStatus); err != nil {
-			return ctrl.Result{}, err
-		}
+	// log.Info("RECONCILE_XDP_ATTACHING")
+	// for _, fn := range node.Status.Functions {
+	// 	fnSpec := mfplanev1alpha1.FunctionSpec{}
+	// 	if err := node.GetFunctionSpec(fn.Name, &fnSpec); err != nil {
+	// 		return err
+	// 	}
+	// 	fnStatus := mfplanev1alpha1.FunctionStatus{}
+	// 	if err := node.GetFunctionStatus(fn.Name, &fnStatus); err != nil {
+	// 		return err
+	// 	}
 
-		// Prepare config
-		configFile, err := craftConfig(fnSpec, fnStatus)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		if err := util.WriteFile(fmt.Sprintf("/tmp/%s.config.yaml", fn.Name),
-			[]byte(configFile)); err != nil {
-			return ctrl.Result{}, err
-		}
-		if _, err := util.LocalExecutef("sudo ip netns exec %s "+
-			"./bin/mikanectl map-load -f /tmp/%s.config.yaml",
-			fnSpec.Netns, fn.Name); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
-	return ctrl.Result{}, nil
+	// 	// Prepare config
+	// 	configFile, err := craftConfig(fnSpec, fnStatus)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if err := util.WriteFile(fmt.Sprintf("/tmp/%s.config.yaml", fn.Name),
+	// 		[]byte(configFile)); err != nil {
+	// 		return err
+	// 	}
+	// 	if _, err := util.LocalExecutef("sudo ip netns exec %s "+
+	// 		"./bin/mikanectl map-load -f /tmp/%s.config.yaml",
+	// 		fnSpec.Netns, fn.Name); err != nil {
+	// 		return err
+	// 	}
+	// }
+	return nil
 }
 
 func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
