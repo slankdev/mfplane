@@ -200,6 +200,11 @@ func craftConfig(ctx context.Context,
 					},
 				)
 			}
+			if _, err := util.LocalExecutef(
+				"sudo ip netns exec %s ip -4 route replace blackhole %s",
+				fnSpec.Netns, seg.Spec.EndMflNat.Vip); err != nil {
+				return "", err
+			}
 		case seg.Spec.EndMfnNat != nil:
 			sid.End_MFN_NAT = &mikanectl.ConfigLocalSid_End_MFN_NAT{
 				Vip:                seg.Spec.EndMfnNat.Vip,
