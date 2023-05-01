@@ -18,7 +18,9 @@ package controller
 
 import (
 	"context"
+	"math/rand"
 	"reflect"
+	"sort"
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/util"
 )
@@ -85,7 +88,7 @@ func (r *NatReconciler) reconcileChildNf(ctx context.Context,
 	}
 
 	diff := nat.Spec.NetworkFunction.Replicas - len(segList.Items)
-	if diff != 0 {
+	if diff > 0 {
 		seg := mfplanev1alpha1.Srv6Segment{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: nat.GetName() + "-nnode-",
@@ -124,6 +127,14 @@ func (r *NatReconciler) reconcileChildNf(ctx context.Context,
 			}
 			log.Info("CreateOrUpdate", "op", op)
 		}
+	} else if diff < 0 {
+		pp.Println("DELETEDELETE ", diff)
+		deleteIdx := rand.Intn(len(segList.Items))
+		log.Info("DELETE ONE SEGMENT", "segName", segList.Items[deleteIdx].Name)
+		if err := r.Delete(ctx, &segList.Items[deleteIdx]); err != nil {
+			log.Error(err, "r.Delete")
+			return err
+		}
 	}
 	return nil
 }
@@ -149,6 +160,20 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 	for _, item := range nfSegList.Items {
 		sidList = append(sidList, item.Status.Sid)
 	}
+	sort.Slice(sidList, func(i, j int) bool { return sidList[i] < sidList[j] })
+	revision := mfplanev1alpha1.EndMflNatRevision{
+		Backends: sidList,
+	}
+	if len(nat.Status.Revisions) == 0 ||
+		!reflect.DeepEqual(nat.Status.Revisions[0], revision) {
+		nat.Status.Revisions = append([]mfplanev1alpha1.EndMflNatRevision{revision},
+			nat.Status.Revisions...)
+		res.StatusUpdated = true
+	}
+	if len(nat.Status.Revisions) > 4 {
+		nat.Status.Revisions = nat.Status.Revisions[:4]
+		res.StatusUpdated = true
+	}
 
 	// Create Desired additional segments
 	lbSegList := mfplanev1alpha1.Srv6SegmentList{}
@@ -164,7 +189,7 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 	}
 
 	diff := nat.Spec.LoadBalancer.Replicas - len(lbSegList.Items)
-	if diff != 0 {
+	if diff > 0 {
 		for i := 0; i < diff; i++ {
 			seg := mfplanev1alpha1.Srv6Segment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -188,15 +213,11 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 						},
 					},
 					EndMflNat: &mfplanev1alpha1.EndMflNat{
-						Vip:                nat.Spec.Vip,
-						NatPortHashBit:     nat.Spec.NatPortHashBit,
-						UsidBlockLength:    nat.Spec.UsidBlockLength,
-						UsidFunctionLength: nat.Spec.UsidFunctionLength,
-						USidFunctionRevisions: []mfplanev1alpha1.EndMflNatRevision{
-							{
-								Backends: sidList,
-							},
-						},
+						Vip:                   nat.Spec.Vip,
+						NatPortHashBit:        nat.Spec.NatPortHashBit,
+						UsidBlockLength:       nat.Spec.UsidBlockLength,
+						UsidFunctionLength:    nat.Spec.UsidFunctionLength,
+						USidFunctionRevisions: nat.Status.Revisions,
 					},
 				}
 				return ctrl.SetControllerReference(nat, &seg, r.Scheme)
@@ -206,6 +227,13 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 				return err
 			}
 			log.Info("CreateOrUpdate", "op", op)
+		}
+	} else if diff < 0 {
+		deleteIdx := rand.Intn(len(lbSegList.Items))
+		log.Info("DELETE ONE SEGMENT", "segName", lbSegList.Items[deleteIdx].Name)
+		if err := r.Delete(ctx, &lbSegList.Items[deleteIdx]); err != nil {
+			log.Error(err, "r.Delete")
+			return err
 		}
 	}
 
@@ -230,15 +258,11 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 			},
 		}
 		seg.Spec.EndMflNat = &mfplanev1alpha1.EndMflNat{
-			Vip:                nat.Spec.Vip,
-			NatPortHashBit:     nat.Spec.NatPortHashBit,
-			UsidBlockLength:    nat.Spec.UsidBlockLength,
-			UsidFunctionLength: nat.Spec.UsidFunctionLength,
-			USidFunctionRevisions: []mfplanev1alpha1.EndMflNatRevision{
-				{
-					Backends: sidList,
-				},
-			},
+			Vip:                   nat.Spec.Vip,
+			NatPortHashBit:        nat.Spec.NatPortHashBit,
+			UsidBlockLength:       nat.Spec.UsidBlockLength,
+			UsidFunctionLength:    nat.Spec.UsidFunctionLength,
+			USidFunctionRevisions: nat.Status.Revisions,
 		}
 		if !reflect.DeepEqual(specOld, seg.Spec) {
 			if err := r.Update(ctx, &seg); err != nil {
