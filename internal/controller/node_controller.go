@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -32,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/goroute2"
 	"github.com/slankdev/mfplane/pkg/mikanectl"
@@ -85,7 +87,6 @@ func (r *NodeReconciler) reconcileXdpAttach(ctx context.Context,
 	res *util.ReconcileStatus) error {
 	log := log.FromContext(ctx)
 	util.SetLogger(log)
-
 	log.Info("RECONCILE_XDP_ATTACHING")
 	for _, fn := range node.Spec.Functions {
 		// Check XDP program
@@ -112,35 +113,40 @@ func (r *NodeReconciler) reconcileXdpAttach(ctx context.Context,
 func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
 	req ctrl.Request, node *mfplanev1alpha1.Node,
 	res *util.ReconcileStatus) error {
-	// log := log.FromContext(ctx)
+	log := log.FromContext(ctx)
+	log.Info("RECONCILE_XDP_MAP_LOAD")
+	for _, fn := range node.Spec.Functions {
 
-	// Reconcile1
-	// log.Info("RECONCILE_XDP_ATTACHING")
-	// for _, fn := range node.Status.Functions {
-	// 	fnSpec := mfplanev1alpha1.FunctionSpec{}
-	// 	if err := node.GetFunctionSpec(fn.Name, &fnSpec); err != nil {
-	// 		return err
-	// 	}
-	// 	fnStatus := mfplanev1alpha1.FunctionStatus{}
-	// 	if err := node.GetFunctionStatus(fn.Name, &fnStatus); err != nil {
-	// 		return err
-	// 	}
+		// KOKO
+		segList := mfplanev1alpha1.Srv6SegmentList{}
+		if err := r.List(ctx, &segList, &client.ListOptions{
+			Namespace: node.GetNamespace(),
+			LabelSelector: labels.SelectorFromSet(map[string]string{
+				"nodeName": node.Name,
+				"funcName": fn.Name,
+			}),
+		}); err != nil {
+			return err
+		}
+		pp.Println(node.Name, fn.Name, segList)
+		print("\n")
 
-	// 	// Prepare config
-	// 	configFile, err := craftConfig(fnSpec, fnStatus)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if err := util.WriteFile(fmt.Sprintf("/tmp/%s.config.yaml", fn.Name),
-	// 		[]byte(configFile)); err != nil {
-	// 		return err
-	// 	}
-	// 	if _, err := util.LocalExecutef("sudo ip netns exec %s "+
-	// 		"./bin/mikanectl map-load -f /tmp/%s.config.yaml",
-	// 		fnSpec.Netns, fn.Name); err != nil {
-	// 		return err
-	// 	}
-	// }
+		// KOKOKARA
+		// Prepare config
+		// configFile, err := craftConfig(fnSpec, fnStatus)
+		// if err != nil {
+		// 	return err
+		// }
+		// if err := util.WriteFile(fmt.Sprintf("/tmp/%s.config.yaml", fn.Name),
+		// 	[]byte(configFile)); err != nil {
+		// 	return err
+		// }
+		// if _, err := util.LocalExecutef("sudo ip netns exec %s "+
+		// 	"./bin/mikanectl map-load -f /tmp/%s.config.yaml",
+		// 	fn.Netns, fn.Name); err != nil {
+		// 	return err
+		// }
+	}
 	return nil
 }
 
