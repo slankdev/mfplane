@@ -103,11 +103,7 @@ spec:
                 - uSidFunctionLength
                 - vip
                 type: object
-              funcName:
-                type: string
               locator:
-                type: string
-              nodeName:
                 type: string
               selector:
                 properties:

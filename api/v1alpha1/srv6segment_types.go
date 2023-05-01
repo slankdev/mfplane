@@ -25,8 +25,6 @@ import (
 
 // Srv6SegmentSpec defines the desired state of Srv6Segment
 type Srv6SegmentSpec struct {
-	NodeName  string                 `json:"nodeName,omitempty"`
-	FuncName  string                 `json:"funcName,omitempty"`
 	Locator   string                 `json:"locator"`
 	EndMfnNat *EndMfnNat             `json:"endMfnNat,omitempty"`
 	EndMflNat *EndMflNat             `json:"endMflNat,omitempty"`
