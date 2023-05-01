@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -136,6 +137,26 @@ func (r *Srv6SegmentReconciler) reconcileSidAllocation(ctx context.Context,
 	}
 
 	log.Info("SID_ALLOCATION")
+	if seg.Spec.Locator == "anycast" {
+		filter := seg.Spec.Selector.MatchLabels
+		filter = util.MergeLabels(filter, map[string]string{
+			"sidAllocated": strconv.FormatBool(true),
+		})
+		otherSegList := mfplanev1alpha1.Srv6SegmentList{}
+		if err := r.List(ctx, &otherSegList, &client.ListOptions{
+			Namespace:     seg.GetNamespace(),
+			LabelSelector: labels.SelectorFromSet(filter),
+		}); err != nil {
+			return err
+		}
+		if len(otherSegList.Items) > 0 {
+			log.Info("ANYCAST_SID", "value", seg.Spec.Sid)
+			seg.Spec.Sid = otherSegList.Items[0].Spec.Sid
+			res.SpecUpdated = true
+			return nil
+		}
+	}
+
 	node := mfplanev1alpha1.Node{}
 	if err := r.Get(ctx, types.NamespacedName{Namespace: seg.Namespace,
 		Name: seg.Status.NodeName}, &node); err != nil {
