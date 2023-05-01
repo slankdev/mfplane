@@ -65,9 +65,9 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 	switch seg.Status.State {
 	case mfplanev1alpha1.Srv6SegmentStateActive:
 		pp.Println("NOT IMPLEMENTED", seg.Status.State)
-	case mfplanev1alpha1.Srv6SegmentStateConfiguring:
-		pp.Println("NOT IMPLEMENTED", seg.Status.State)
 	case mfplanev1alpha1.Srv6SegmentStateTerminating:
+		pp.Println("NOT IMPLEMENTED", seg.Status.State)
+	case mfplanev1alpha1.Srv6SegmentStateConfiguring:
 		pp.Println("NOT IMPLEMENTED", seg.Status.State)
 	case mfplanev1alpha1.Srv6SegmentStatePending:
 		if err := r.reconcileNodeFuncSchedule(ctx, req, &seg, res); err != nil {
