@@ -66,6 +66,10 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 		seg.Status.State = mfplanev1alpha1.Srv6SegmentStatePending
 		res.StatusUpdated = true
 	}
+	if !seg.ObjectMeta.DeletionTimestamp.IsZero() {
+		seg.Status.State = mfplanev1alpha1.Srv6SegmentStateTerminating
+		res.StatusUpdated = true
+	}
 
 	log.Info("START_RECONCILE", "state", seg.Status.State)
 	switch seg.Status.State {
