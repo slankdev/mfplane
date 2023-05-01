@@ -95,7 +95,7 @@ func (r *NatReconciler) reconcileChildNf(ctx context.Context,
 				Locator: "default",
 				Selector: mfplanev1alpha1.MfpNodeSpecifySelector{
 					MatchLabels: map[string]string{
-						"nat": nat.Name,
+						"nat-nnode": nat.Name,
 					},
 				},
 				EndMfnNat: &mfplanev1alpha1.EndMfnNat{
@@ -111,7 +111,7 @@ func (r *NatReconciler) reconcileChildNf(ctx context.Context,
 			seg.SetName("")
 			op, err := ctrl.CreateOrUpdate(ctx, r.Client, &seg, func() error {
 				seg.SetLabels(map[string]string{
-					"nat":               nat.Name,
+					"nat-nnode":         nat.Name,
 					"ownerResourceKind": nat.Kind,
 					"ownerResourceName": nat.GetName(),
 					"srv6Action":        "endMfnNat",
@@ -175,7 +175,7 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 			}
 			op, err := ctrl.CreateOrUpdate(ctx, r.Client, &seg, func() error {
 				seg.SetLabels(map[string]string{
-					"nat":               nat.Name,
+					"nat-lnode":         nat.Name,
 					"ownerResourceKind": nat.Kind,
 					"ownerResourceName": nat.GetName(),
 					"srv6Action":        "endMflNat",
@@ -184,7 +184,7 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 					Locator: "anycast",
 					Selector: mfplanev1alpha1.MfpNodeSpecifySelector{
 						MatchLabels: map[string]string{
-							"nat": nat.Name,
+							"nat-lnode": nat.Name,
 						},
 					},
 					EndMflNat: &mfplanev1alpha1.EndMflNat{

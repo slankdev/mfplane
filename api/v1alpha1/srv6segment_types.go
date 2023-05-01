@@ -47,7 +47,7 @@ type EndMflNat struct {
 	NatPortHashBit        uint16              `json:"natPortHashBit"`
 	UsidBlockLength       int                 `json:"uSidBlockLength"`
 	UsidFunctionLength    int                 `json:"uSidFunctionLength"`
-	USidFunctionRevisions []EndMflNatRevision `json:"uSidFunctionRevisions"`
+	USidFunctionRevisions []EndMflNatRevision `json:"uSidFunctionRevisions,omitempty"`
 }
 
 type EndMflNatRevision struct {

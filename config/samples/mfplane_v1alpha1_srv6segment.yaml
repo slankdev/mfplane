@@ -5,11 +5,9 @@ metadata:
   labels:
     group: group1
 spec:
-  locator: "default"
-  endMfnNat:
+  locator: "anycast"
+  endMflNat:
     vip: 142.0.0.1
-    sources:
-    - 10.0.1.0/24
     natPortHashBit: 255
     uSidBlockLength: 16
     uSidFunctionLength: 16
@@ -24,11 +22,9 @@ metadata:
   labels:
     group: group1
 spec:
-  locator: "default"
-  endMfnNat:
+  locator: "anycast"
+  endMflNat:
     vip: 142.0.0.1
-    sources:
-    - 10.0.1.0/24
     natPortHashBit: 255
     uSidBlockLength: 16
     uSidFunctionLength: 16
@@ -36,78 +32,97 @@ spec:
     matchLabels:
       group: group1
 ---
-apiVersion: mfplane.mfplane.io/v1alpha1
-kind: Srv6Segment
-metadata:
-  name: group2-seg1
-  labels:
-    group: group2
-spec:
-  locator: "default"
-  endMfnNat:
-    vip: 142.0.0.1
-    sources:
-    - 10.0.1.0/24
-    natPortHashBit: 255
-    uSidBlockLength: 16
-    uSidFunctionLength: 16
-  selector:
-    matchLabels:
-      group: group2
----
-apiVersion: mfplane.mfplane.io/v1alpha1
-kind: Srv6Segment
-metadata:
-  name: group3-seg1
-  labels:
-    group: group3
-spec:
-  locator: "default"
-  endMfnNat:
-    vip: 142.0.0.1
-    sources:
-    - 10.0.1.0/24
-    natPortHashBit: 255
-    uSidBlockLength: 16
-    uSidFunctionLength: 16
-  selector:
-    matchLabels:
-      group: group3
----
-apiVersion: mfplane.mfplane.io/v1alpha1
-kind: Srv6Segment
-metadata:
-  name: group4-seg1
-  labels:
-    group: group4
-spec:
-  locator: "default"
-  endMfnNat:
-    vip: 142.0.0.1
-    sources:
-    - 10.0.1.0/24
-    natPortHashBit: 255
-    uSidBlockLength: 16
-    uSidFunctionLength: 16
-  selector:
-    matchLabels:
-      group: group4
----
-apiVersion: mfplane.mfplane.io/v1alpha1
-kind: Srv6Segment
-metadata:
-  name: group4-seg2
-  labels:
-    group: group4
-spec:
-  locator: "default"
-  endMfnNat:
-    vip: 142.0.0.1
-    sources:
-    - 10.0.1.0/24
-    natPortHashBit: 255
-    uSidBlockLength: 16
-    uSidFunctionLength: 16
-  selector:
-    matchLabels:
-      group: group4
+# apiversion: mfplane.mfplane.io/v1alpha1
+# kind: srv6segment
+# metadata:
+#   name: group1-seg2
+#   labels:
+#     group: group1
+# spec:
+#   locator: "default"
+#   endmfnnat:
+#     vip: 142.0.0.1
+#     sources:
+#     - 10.0.1.0/24
+#     natporthashbit: 255
+#     usidblocklength: 16
+#     usidfunctionlength: 16
+#   selector:
+#     matchlabels:
+#       group: group1
+# ---
+# apiversion: mfplane.mfplane.io/v1alpha1
+# kind: srv6segment
+# metadata:
+#   name: group2-seg1
+#   labels:
+#     group: group2
+# spec:
+#   locator: "default"
+#   endmfnnat:
+#     vip: 142.0.0.1
+#     sources:
+#     - 10.0.1.0/24
+#     natporthashbit: 255
+#     usidblocklength: 16
+#     usidfunctionlength: 16
+#   selector:
+#     matchlabels:
+#       group: group2
+# ---
+# apiversion: mfplane.mfplane.io/v1alpha1
+# kind: srv6segment
+# metadata:
+#   name: group3-seg1
+#   labels:
+#     group: group3
+# spec:
+#   locator: "default"
+#   endmfnnat:
+#     vip: 142.0.0.1
+#     sources:
+#     - 10.0.1.0/24
+#     natporthashbit: 255
+#     usidblocklength: 16
+#     usidfunctionlength: 16
+#   selector:
+#     matchlabels:
+#       group: group3
+# ---
+# apiversion: mfplane.mfplane.io/v1alpha1
+# kind: srv6segment
+# metadata:
+#   name: group4-seg1
+#   labels:
+#     group: group4
+# spec:
+#   locator: "default"
+#   endmfnnat:
+#     vip: 142.0.0.1
+#     sources:
+#     - 10.0.1.0/24
+#     natporthashbit: 255
+#     usidblocklength: 16
+#     usidfunctionlength: 16
+#   selector:
+#     matchlabels:
+#       group: group4
+# ---
+# apiversion: mfplane.mfplane.io/v1alpha1
+# kind: srv6segment
+# metadata:
+#   name: group4-seg2
+#   labels:
+#     group: group4
+# spec:
+#   locator: "default"
+#   endmfnnat:
+#     vip: 142.0.0.1
+#     sources:
+#     - 10.0.1.0/24
+#     natporthashbit: 255
+#     usidblocklength: 16
+#     usidfunctionlength: 16
+#   selector:
+#     matchlabels:
+#       group: group4

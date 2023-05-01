@@ -1,4 +1,5 @@
-de CLOS tcpdump -nni any not icmp6 and not tcp port 179 and not ip6 multicast
+docker exec -it CLOS tcpdump -nni any not icmp6 and not tcp port 179 and not ip6 multicast
+docker exec -it HV1 ip -4 route replace default encap seg6 mode encap segs fc00:ff00::0 dev net0 vrf vrf1
 make nat-attach-n1
 make clb-attach-l1
 mikanectl hash bpftoolcli -t 17 -b fc00:11:1::1 -n l1 | sudo sh -xe
