@@ -156,3 +156,14 @@ func VerifyMatchLabels(target, expression map[string]string) bool {
 	}
 	return true
 }
+
+func MergeLabels(base map[string]string,
+	patch map[string]string) map[string]string {
+	if base == nil {
+		base = map[string]string{}
+	}
+	for k, v := range patch {
+		base[k] = v
+	}
+	return base
+}
