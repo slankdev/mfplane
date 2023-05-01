@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -26,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/util"
 )
@@ -56,9 +58,11 @@ func (r *NatReconciler) Reconcile(ctx context.Context,
 	// Do Reconcile
 	log.Info("RECONCILE_MAIN_ROUTINE_START")
 	if err := r.reconcileChildNf(ctx, req, &nat, res); err != nil {
+		panic(err)
 		return ctrl.Result{}, err
 	}
 	if err := r.reconcileChildLb(ctx, req, &nat, res); err != nil {
+		panic(err)
 		return ctrl.Result{}, err
 	}
 	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
@@ -136,6 +140,7 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 		Namespace: nat.GetNamespace(),
 		LabelSelector: labels.SelectorFromSet(map[string]string{
 			"srv6Action":        "endMfnNat",
+			"sidAllocated":      strconv.FormatBool(true),
 			"ownerResourceKind": nat.Kind,
 			"ownerResourceName": nat.GetName(),
 		}),
@@ -144,13 +149,13 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 	}
 	sidList := []string{}
 	for _, item := range nfSegList.Items {
-		if item.Spec.Sid != "" {
-			sidList = append(sidList, item.Spec.Sid)
-		}
+		sidList = append(sidList, item.Spec.Sid)
 	}
+	pp.Println(sidList)
 
-	segList := mfplanev1alpha1.Srv6SegmentList{}
-	if err := r.List(ctx, &segList, &client.ListOptions{
+	// Create Desired additional segments
+	lbSegList := mfplanev1alpha1.Srv6SegmentList{}
+	if err := r.List(ctx, &lbSegList, &client.ListOptions{
 		Namespace: nat.GetNamespace(),
 		LabelSelector: labels.SelectorFromSet(map[string]string{
 			"srv6Action":        "endMflNat",
@@ -161,14 +166,23 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 		return err
 	}
 
-	diff := nat.Spec.LoadBalancer.Replicas - len(segList.Items)
+	diff := nat.Spec.LoadBalancer.Replicas - len(lbSegList.Items)
 	if diff != 0 {
-		seg := mfplanev1alpha1.Srv6Segment{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: nat.GetName() + "-lnode-",
-				Namespace:    nat.GetNamespace(),
-			},
-			Spec: mfplanev1alpha1.Srv6SegmentSpec{
+		for i := 0; i < diff; i++ {
+			seg := mfplanev1alpha1.Srv6Segment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:         "",
+					GenerateName: nat.GetName() + "-lnode-",
+					Namespace:    nat.GetNamespace(),
+				},
+			}
+			seg.SetLabels(map[string]string{
+				"nat":               nat.Name,
+				"ownerResourceKind": nat.Kind,
+				"ownerResourceName": nat.GetName(),
+				"srv6Action":        "endMflNat",
+			})
+			seg.Spec = mfplanev1alpha1.Srv6SegmentSpec{
 				Locator: "anycast",
 				Selector: mfplanev1alpha1.MfpNodeSpecifySelector{
 					MatchLabels: map[string]string{
@@ -186,26 +200,51 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 						},
 					},
 				},
-			},
-		}
-		for i := 0; i < diff; i++ {
-			seg.SetName("")
-			op, err := ctrl.CreateOrUpdate(ctx, r.Client, &seg, func() error {
-				seg.SetLabels(map[string]string{
-					"nat":               nat.Name,
-					"ownerResourceKind": nat.Kind,
-					"ownerResourceName": nat.GetName(),
-					"srv6Action":        "endMflNat",
-				})
-				return ctrl.SetControllerReference(nat, &seg, r.Scheme)
-			})
-			if err != nil {
-				log.Error(err, "ERROR")
+			}
+			if err := r.Create(ctx, &seg); err != nil {
+				log.Error(err, "r.Create")
 				return err
 			}
-			log.Info("CreateOrUpdate", "op", op)
 		}
 	}
+
+	lbSegList1 := mfplanev1alpha1.Srv6SegmentList{}
+	if err := r.List(ctx, &lbSegList1, &client.ListOptions{
+		Namespace: nat.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			"srv6Action":        "endMflNat",
+			"sidAllocated":      strconv.FormatBool(true),
+			"ownerResourceKind": nat.Kind,
+			"ownerResourceName": nat.GetName(),
+		}),
+	}); err != nil {
+		return err
+	}
+	for _, seg := range lbSegList1.Items {
+		seg.Spec = mfplanev1alpha1.Srv6SegmentSpec{
+			Locator: "anycast",
+			Selector: mfplanev1alpha1.MfpNodeSpecifySelector{
+				MatchLabels: map[string]string{
+					"nat": nat.Name,
+				},
+			},
+			EndMflNat: &mfplanev1alpha1.EndMflNat{
+				Vip:                nat.Spec.Vip,
+				NatPortHashBit:     nat.Spec.NatPortHashBit,
+				UsidBlockLength:    nat.Spec.UsidBlockLength,
+				UsidFunctionLength: nat.Spec.UsidFunctionLength,
+				USidFunctionRevisions: []mfplanev1alpha1.EndMflNatRevision{
+					{
+						Backends: sidList,
+					},
+				},
+			},
+		}
+		if err := r.Update(ctx, &seg); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

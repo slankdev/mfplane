@@ -69,6 +69,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err := r.Get(ctx, req.NamespacedName, &node); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	// return res.ReconcileUpdate(ctx, r.Client, &node)
 
 	// Do Reconcile
 	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
@@ -115,6 +116,7 @@ func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
 	req ctrl.Request, node *mfplanev1alpha1.Node,
 	res *util.ReconcileStatus) error {
 	log := log.FromContext(ctx)
+	util.SetLogger(log)
 	log.Info("RECONCILE_XDP_MAP_LOAD")
 	for _, fn := range node.Spec.Functions {
 		// Fetch SID(s) which is allocated and bound on node:fn
@@ -131,25 +133,31 @@ func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
 		}
 
 		// Prepare config
-		configFile, err := craftConfig(fn, segList)
+		configFile, err := craftConfig(ctx, fn, segList)
 		if err != nil {
+			log.Error(err, "craftConfig")
 			return err
 		}
+		println(configFile)
 		if err := util.WriteFile(fmt.Sprintf("/tmp/%s.config.yaml", fn.Name),
 			[]byte(configFile)); err != nil {
+			log.Error(err, "util.WriteFile")
 			return err
 		}
 		if _, err := util.LocalExecutef("sudo ip netns exec %s "+
 			"./bin/mikanectl map-load -f /tmp/%s.config.yaml",
 			fn.Netns, fn.Name); err != nil {
+			log.Error(err, "map-load")
 			return err
 		}
 	}
 	return nil
 }
 
-func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
+func craftConfig(ctx context.Context,
+	fnSpec mfplanev1alpha1.FunctionSpec,
 	segList mfplanev1alpha1.Srv6SegmentList) (string, error) {
+	log := log.FromContext(ctx)
 	c := mikanectl.Config{
 		NamePrefix:  fnSpec.Name,
 		MaxRules:    2,
@@ -170,13 +178,13 @@ func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
 				NatMapping:         "endpointIndependentMapping",   // TODO(slankdev)
 				NatFiltering:       "endpointIndependentFiltering", // TODO(slankdev)
 			}
-			seg.Spec.EndMflNat.USidFunctionRevisions {
 
 			for _, rev := range seg.Spec.EndMflNat.USidFunctionRevisions {
 				backends := []string{}
 				for _, b := range rev.Backends {
 					_, ipnet, err := net.ParseCIDR(b)
 					if err != nil {
+						log.Error(err, "net.ParseCIDR")
 						return "", err
 					}
 					u8 := [16]uint8{}
