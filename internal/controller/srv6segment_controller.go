@@ -144,6 +144,12 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 		res.SpecUpdated = true
 	}
 
+	seg.Labels = util.MergeLabels(seg.Labels, map[string]string{
+		"nodeName": seg.Status.NodeName,
+		"funcName": seg.Status.FuncName,
+	})
+	res.SpecUpdated = true
+
 	return res.ReconcileUpdate(ctx, r.Client, &seg)
 }
 
