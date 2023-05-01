@@ -59,8 +59,33 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// Main reconciles
 	log.Info("RECONCILE_START")
+	if err := r.reconcileNodeFuncSchedule(ctx, req, &seg, res); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	if err := r.reconcileSidAllocation(ctx, req, &seg, res); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
 
+	// Bit labelling
+	updated := false
+	seg.Labels, updated = util.MergeLabelsDiff(seg.Labels, map[string]string{
+		"nodeName":     seg.Status.NodeName,
+		"funcName":     seg.Status.FuncName,
+		"sidAllocated": strconv.FormatBool(seg.Spec.Sid != ""),
+	})
+	if updated {
+		res.SpecUpdated = true
+	}
+
+	return res.ReconcileUpdate(ctx, r.Client, &seg)
+}
+
+func (r *Srv6SegmentReconciler) reconcileNodeFuncSchedule(ctx context.Context,
+	req ctrl.Request, seg *mfplanev1alpha1.Srv6Segment,
+	res *util.ReconcileStatus) error {
+	log := log.FromContext(ctx)
 	if seg.Status.NodeName == "" || seg.Status.FuncName == "" {
 		log.Info("SCHEDULING")
 		funcType := "unknown"
@@ -70,17 +95,17 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 		case seg.Spec.EndMfnNat != nil:
 			funcType = "nat"
 		default:
-			return ctrl.Result{}, fmt.Errorf("no sid activated")
+			return fmt.Errorf("no sid activated")
 		}
 
 		// FILTERS
 		c0, err := GetScheduleCandidates(ctx, r.Client, funcType)
 		if err != nil {
-			return ctrl.Result{}, err
+			return err
 		}
 		c1, err := FilterAntiAffinity(ctx, r.Client, seg, c0)
 		if err != nil {
-			return ctrl.Result{}, err
+			return err
 		}
 
 		// TODO(slankdev)
@@ -96,66 +121,63 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 			res.StatusUpdated = true
 		}
 	}
+	return nil
+}
 
-	if seg.Status.NodeName != "" && seg.Status.FuncName != "" &&
-		seg.Spec.Sid == "" {
-		log.Info("SID_ALLOCATION")
+func (r *Srv6SegmentReconciler) reconcileSidAllocation(ctx context.Context,
+	req ctrl.Request, seg *mfplanev1alpha1.Srv6Segment,
+	res *util.ReconcileStatus) error {
+	log := log.FromContext(ctx)
 
-		node := mfplanev1alpha1.Node{}
-		if err := r.Get(ctx, types.NamespacedName{Namespace: seg.Namespace,
-			Name: seg.Status.NodeName}, &node); err != nil {
-			return ctrl.Result{}, err
-		}
-		fnSpec := mfplanev1alpha1.FunctionSpec{}
-		if err := node.GetFunctionSpec(seg.Status.FuncName, &fnSpec); err != nil {
-			return ctrl.Result{}, err
-		}
-		loc := fnSpec.SegmentRoutingSrv6.GetLocator(seg.Spec.Locator)
-		if loc == nil {
-			return ctrl.Result{}, fmt.Errorf("locator '%s' not found",
-				seg.Spec.Locator)
-		}
-
-		sids, err := util.GetSubnet(loc.Prefix, 32)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		availableSids := []string{}
-		segList := mfplanev1alpha1.Srv6SegmentList{}
-		if err := r.List(ctx, &segList); err != nil {
-			return ctrl.Result{}, err
-		}
-		for _, sid := range sids {
-			exist := false
-			for _, seg := range segList.Items {
-				if seg.Spec.Sid == sid {
-					exist = true
-					break
-				}
-			}
-			if !exist {
-				availableSids = append(availableSids, sid)
-			}
-		}
-
-		if len(availableSids) == 0 {
-			return ctrl.Result{}, fmt.Errorf("no available sid")
-		}
-		seg.Spec.Sid = availableSids[0]
-		res.SpecUpdated = true
+	// Skip for "not func scheduled" or "already sid allocated"
+	if seg.Status.NodeName == "" || seg.Status.FuncName == "" ||
+		seg.Spec.Sid != "" {
+		return nil
 	}
 
-	updated := false
-	seg.Labels, updated = util.MergeLabelsDiff(seg.Labels, map[string]string{
-		"nodeName":     seg.Status.NodeName,
-		"funcName":     seg.Status.FuncName,
-		"sidAllocated": strconv.FormatBool(seg.Spec.Sid != ""),
-	})
-	if updated {
-		res.SpecUpdated = true
+	log.Info("SID_ALLOCATION")
+	node := mfplanev1alpha1.Node{}
+	if err := r.Get(ctx, types.NamespacedName{Namespace: seg.Namespace,
+		Name: seg.Status.NodeName}, &node); err != nil {
+		return err
+	}
+	fnSpec := mfplanev1alpha1.FunctionSpec{}
+	if err := node.GetFunctionSpec(seg.Status.FuncName, &fnSpec); err != nil {
+		return err
+	}
+	loc := fnSpec.SegmentRoutingSrv6.GetLocator(seg.Spec.Locator)
+	if loc == nil {
+		return fmt.Errorf("locator '%s' not found", seg.Spec.Locator)
 	}
 
-	return res.ReconcileUpdate(ctx, r.Client, &seg)
+	sids, err := util.GetSubnet(loc.Prefix, 32)
+	if err != nil {
+		return err
+	}
+	availableSids := []string{}
+	segList := mfplanev1alpha1.Srv6SegmentList{}
+	if err := r.List(ctx, &segList); err != nil {
+		return err
+	}
+	for _, sid := range sids {
+		exist := false
+		for _, seg := range segList.Items {
+			if seg.Spec.Sid == sid {
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			availableSids = append(availableSids, sid)
+		}
+	}
+
+	if len(availableSids) == 0 {
+		return fmt.Errorf("no available sid")
+	}
+	seg.Spec.Sid = availableSids[0]
+	res.SpecUpdated = true
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -199,7 +221,7 @@ func GetScheduleCandidates(ctx context.Context, cli client.Client,
 }
 
 func FilterAntiAffinity(ctx context.Context, cli client.Client,
-	seg mfplanev1alpha1.Srv6Segment,
+	seg *mfplanev1alpha1.Srv6Segment,
 	in []ScheduleCandidate) ([]ScheduleCandidate, error) {
 	out := []ScheduleCandidate{}
 	for _, item := range in {
