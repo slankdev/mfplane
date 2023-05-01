@@ -75,8 +75,6 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 	switch seg.Status.State {
 	case mfplanev1alpha1.Srv6SegmentStateActive:
 		pp.Println("NOT IMPLEMENTED", seg.Status.State)
-	case mfplanev1alpha1.Srv6SegmentStateTerminating:
-		pp.Println("NOT IMPLEMENTED", seg.Status.State)
 	case mfplanev1alpha1.Srv6SegmentStateConfiguring:
 		if len(seg.ObjectMeta.Finalizers) > 0 {
 			seg.Status.State = mfplanev1alpha1.Srv6SegmentStateActive
@@ -94,6 +92,8 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context,
 			seg.Status.State = mfplanev1alpha1.Srv6SegmentStateConfiguring
 			res.StatusUpdated = true
 		}
+	case mfplanev1alpha1.Srv6SegmentStateTerminating:
+		log.Info("Terminatin Do nothing")
 	default:
 		seg.Status.State = mfplanev1alpha1.Srv6SegmentStatePending
 		res.StatusUpdated = true
