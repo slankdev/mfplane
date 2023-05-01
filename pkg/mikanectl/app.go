@@ -41,6 +41,10 @@ import (
 	"github.com/slankdev/mfplane/pkg/util"
 )
 
+var (
+	timeoutDuration = time.Duration(10 * time.Second)
+)
+
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "mikanectl",
@@ -511,7 +515,6 @@ func (e CacheEntry) CleanupMapEntri(namePrefix string) error {
 }
 
 func (e CacheEntry) IsExpired() (bool, error) {
-	timeoutDuration := time.Duration(1000 * time.Second)
 	now := time.Now()
 	updatedAt, err := util.KtimeSecToTime(e.UpdatedAt)
 	if err != nil {
@@ -961,9 +964,11 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 func NewCommandDaemonNat() *cobra.Command {
 	var clioptPort int
 	var clioptNamePrefixes []string
+	var clioptIntervalSec int
 	cmd := &cobra.Command{
 		Use: "daemon-nat",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			timeoutDuration = time.Duration(clioptIntervalSec) * time.Second
 			go func() {
 				Name = clioptNamePrefixes[0]
 				http.HandleFunc("/", httpHandler)
@@ -977,6 +982,7 @@ func NewCommandDaemonNat() *cobra.Command {
 	cmd.Flags().StringArrayVarP(&clioptNamePrefixes,
 		"name", "n", []string{"n1"}, "")
 	cmd.Flags().IntVarP(&clioptPort, "port", "p", 8080, "")
+	cmd.Flags().IntVarP(&clioptIntervalSec, "interval", "i", 10, "")
 	return cmd
 }
 
