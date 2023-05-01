@@ -77,7 +77,6 @@ spec:
                 - natPortHashBit
                 - uSidBlockLength
                 - uSidFunctionLength
-                - uSidFunctionRevisions
                 - vip
                 type: object
               endMfnNat:
