@@ -70,11 +70,13 @@ postinit:
       mkdir -p /var/run/netns
       rm -f /var/run/netns/l1
       rm -f /var/run/netns/l2
+      rm -f /var/run/netns/l3
       rm -f /var/run/netns/n1
       rm -f /var/run/netns/n2
       rm -f /var/run/netns/n3
       ln -s /proc/$(docker inspect L1 -f "{{.State.Pid}}")/ns/net /var/run/netns/l1
       ln -s /proc/$(docker inspect L2 -f "{{.State.Pid}}")/ns/net /var/run/netns/l2
+      ln -s /proc/$(docker inspect L3 -f "{{.State.Pid}}")/ns/net /var/run/netns/l3
       ln -s /proc/$(docker inspect N1 -f "{{.State.Pid}}")/ns/net /var/run/netns/n1
       ln -s /proc/$(docker inspect N2 -f "{{.State.Pid}}")/ns/net /var/run/netns/n2
       ln -s /proc/$(docker inspect N3 -f "{{.State.Pid}}")/ns/net /var/run/netns/n3
@@ -89,7 +91,7 @@ nodes:
   - { name: c2 , type: direct, args: C2#net0  }
   - { name: l1 , type: direct, args: L1#net0  }
   - { name: l2 , type: direct, args: L2#net0  }
-  # - { name: l3 , type: direct, args: L3#net0  }
+  - { name: l3 , type: direct, args: L3#net0  }
   - { name: n1 , type: direct, args: N1#net0  }
   - { name: n2 , type: direct, args: N2#net0  }
   - { name: n3 , type: direct, args: N3#net0  }
@@ -216,18 +218,18 @@ nodes:
   - sysctl: net.ipv4.fib_multipath_hash_policy=1
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.forwarding=1
-# - name: L3
-#   image: slankdev/mikanectl
-#   docker_run_extra_args: --entrypoint bash
-#   interfaces:
-#   - { name: net0, type: direct, args: CLOS#l3 }
-#   sysctls:
-#   - sysctl: net.vrf.strict_mode=1
-#   - sysctl: net.ipv6.conf.all.disable_ipv6=0
-#   - sysctl: net.ipv6.conf.default.disable_ipv6=0
-#   - sysctl: net.ipv4.fib_multipath_hash_policy=1
-#   - sysctl: net.ipv4.ip_forward=1
-#   - sysctl: net.ipv6.conf.all.forwarding=1
+- name: L3
+  image: slankdev/mikanectl
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: CLOS#l3 }
+  sysctls:
+  - sysctl: net.vrf.strict_mode=1
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+  - sysctl: net.ipv4.fib_multipath_hash_policy=1
+  - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.forwarding=1
 - name: N1
   image: slankdev/mikanectl
   docker_run_extra_args: --entrypoint bash
