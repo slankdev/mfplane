@@ -199,15 +199,11 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 						},
 					},
 					EndMflNat: &mfplanev1alpha1.EndMflNat{
-						Vip:                nat.Spec.Vip,
-						NatPortHashBit:     nat.Spec.NatPortHashBit,
-						UsidBlockLength:    nat.Spec.UsidBlockLength,
-						UsidFunctionLength: nat.Spec.UsidFunctionLength,
-						USidFunctionRevisions: []mfplanev1alpha1.EndMflNatRevision{
-							{
-								Backends: sidList,
-							},
-						},
+						Vip:                   nat.Spec.Vip,
+						NatPortHashBit:        nat.Spec.NatPortHashBit,
+						UsidBlockLength:       nat.Spec.UsidBlockLength,
+						UsidFunctionLength:    nat.Spec.UsidFunctionLength,
+						USidFunctionRevisions: nat.Status.Revisions,
 					},
 				}
 				return ctrl.SetControllerReference(nat, &seg, r.Scheme)
@@ -241,15 +237,11 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 			},
 		}
 		seg.Spec.EndMflNat = &mfplanev1alpha1.EndMflNat{
-			Vip:                nat.Spec.Vip,
-			NatPortHashBit:     nat.Spec.NatPortHashBit,
-			UsidBlockLength:    nat.Spec.UsidBlockLength,
-			UsidFunctionLength: nat.Spec.UsidFunctionLength,
-			USidFunctionRevisions: []mfplanev1alpha1.EndMflNatRevision{
-				{
-					Backends: sidList,
-				},
-			},
+			Vip:                   nat.Spec.Vip,
+			NatPortHashBit:        nat.Spec.NatPortHashBit,
+			UsidBlockLength:       nat.Spec.UsidBlockLength,
+			UsidFunctionLength:    nat.Spec.UsidFunctionLength,
+			USidFunctionRevisions: nat.Status.Revisions,
 		}
 		if !reflect.DeepEqual(specOld, seg.Spec) {
 			if err := r.Update(ctx, &seg); err != nil {
