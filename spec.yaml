@@ -359,7 +359,7 @@ node_configs:
   - cmd: ip link set c2  mtu 9000
   - cmd: ip link set l1  mtu 9000
   - cmd: ip link set l2  mtu 9000
-  # - cmd: ip link set l3  mtu 9000
+  - cmd: ip link set l3  mtu 9000
   - cmd: ip link set n1  mtu 9000
   - cmd: ip link set n2  mtu 9000
   - cmd: ip link set n3  mtu 9000
@@ -397,7 +397,7 @@ node_configs:
       -c ' neighbor c2 interface peer-group PEER'
       -c ' neighbor l1 interface peer-group PEER'
       -c ' neighbor l2 interface peer-group PEER'
-      -c ' !neighbor l3 interface peer-group PEER'
+      -c ' neighbor l3 interface peer-group PEER'
       -c ' neighbor n1 interface peer-group PEER'
       -c ' neighbor n2 interface peer-group PEER'
       -c ' neighbor n3 interface peer-group PEER'
@@ -522,29 +522,27 @@ node_configs:
       -c '  neighbor PEER activate'
       -c '  redistribute kernel'
       -c ' exit-address-family'
-  - cmd: ip link set net0 down
 
-# - name: L3
-#   cmds:
-#   - cmd: ip link set net0 mtu 9000
-#   - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
-#   - cmd: ip route add blackhole 10.0.1.0/24
-#   - cmd: ip route add blackhole 10.0.2.0/24
-#   - cmd: ip route add blackhole fc00:ff00::/24
-#   - cmd: >-
-#       vtysh -c 'conf te'
-#       -c 'ip route 142.0.0.1/24 Null0'
-#       -c '!'
-#       -c 'router bgp'
-#       -c ' address-family ipv4 unicast'
-#       -c ' network 142.0.0.1/24'
-#       -c ' exit-address-family'
-#       -c ' !'
-#       -c ' address-family ipv6 unicast'
-#       -c '  neighbor PEER activate'
-#       -c '  redistribute kernel'
-#       -c ' exit-address-family'
-#   - cmd: ip link set net0 down
+- name: L3
+  cmds:
+  - cmd: ip link set net0 mtu 9000
+  - cmd: sh /usr/bin/bgp_conf_init.sh 10.255.0.3 65003
+  - cmd: ip route add blackhole 10.0.1.0/24
+  - cmd: ip route add blackhole 10.0.2.0/24
+  - cmd: ip route add blackhole fc00:ff00::/24
+  - cmd: >-
+      vtysh -c 'conf te'
+      -c 'ip route 142.0.0.1/24 Null0'
+      -c '!'
+      -c 'router bgp'
+      -c ' address-family ipv4 unicast'
+      -c ' network 142.0.0.1/24'
+      -c ' exit-address-family'
+      -c ' !'
+      -c ' address-family ipv6 unicast'
+      -c '  neighbor PEER activate'
+      -c '  redistribute kernel'
+      -c ' exit-address-family'
 
 - name: N1
   cmds:
