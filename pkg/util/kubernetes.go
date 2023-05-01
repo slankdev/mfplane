@@ -40,12 +40,14 @@ func (res *ReconcileStatus) ReconcileUpdate(ctx context.Context,
 	cli client.Client, obj client.Object) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	if res.StatusUpdated {
+		log.Info("STATUS_UPDATE")
 		if err := cli.Status().Update(ctx, obj); err != nil {
 			log.Info("SKIPPABLE_ERROR", "error", err.Error())
 			return ctrl.Result{}, err
 		}
 	}
 	if res.SpecUpdated {
+		log.Info("SPEC_UPDATE")
 		if err := cli.Update(ctx, obj); err != nil {
 			log.Info("SKIPPABLE_ERROR", "error", err.Error())
 			return ctrl.Result{}, err
