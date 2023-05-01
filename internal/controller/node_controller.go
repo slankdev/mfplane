@@ -22,10 +22,17 @@ import (
 
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/goroute2"
 	"github.com/slankdev/mfplane/pkg/mikanectl"
@@ -181,9 +188,42 @@ func craftConfig(fnSpec mfplanev1alpha1.FunctionSpec,
 	return sout, nil
 }
 
+func (r *NodeReconciler) findNodesFromSrv6Segment(
+	seg0 client.Object) []reconcile.Request {
+	seg := mfplanev1alpha1.Srv6Segment{}
+	if err := r.Get(context.TODO(), types.NamespacedName{
+		Namespace: seg0.GetNamespace(), Name: seg0.GetName()}, &seg); err != nil {
+		return []reconcile.Request{}
+	}
+	if seg.Status.NodeName == "" || seg.Status.FuncName == "" {
+		return []reconcile.Request{}
+	}
+	nodeList := mfplanev1alpha1.NodeList{}
+	if err := r.List(context.TODO(), &nodeList); err != nil {
+		return []reconcile.Request{}
+	}
+	requests := []reconcile.Request{}
+	for _, node := range nodeList.Items {
+		if seg.Status.NodeName == node.Name {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      node.GetName(),
+					Namespace: node.GetNamespace(),
+				},
+			})
+		}
+	}
+	return requests
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *NodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&mfplanev1alpha1.Node{}).
+		Watches(
+			&source.Kind{Type: &mfplanev1alpha1.Srv6Segment{}},
+			handler.EnqueueRequestsFromMapFunc(r.findNodesFromSrv6Segment),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+		).
 		Complete(r)
 }
