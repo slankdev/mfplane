@@ -21,7 +21,7 @@ spec:
     - jsonPath: .status.state
       name: STATE
       type: string
-    - jsonPath: .spec.sid
+    - jsonPath: .status.sid
       name: SID
       type: string
     - jsonPath: .status.nodeName
@@ -116,8 +116,6 @@ spec:
                       type: string
                     type: object
                 type: object
-              sid:
-                type: string
             required:
             - locator
             type: object
@@ -127,6 +125,8 @@ spec:
               funcName:
                 type: string
               nodeName:
+                type: string
+              sid:
                 type: string
               state:
                 description: State indicates the current Segment state. The behavior
