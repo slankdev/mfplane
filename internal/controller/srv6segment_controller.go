@@ -57,14 +57,13 @@ type ScheduleCandidate struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+	res := util.NewReconcileStatus()
 
 	seg := mfplanev1alpha1.Srv6Segment{}
 	if err := r.Get(ctx, req.NamespacedName, &seg); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	specUpdated := false
-	statusUpdated := false
 	log.Info("RECONCILE_START")
 
 	if seg.Status.NodeName == "" || seg.Status.FuncName == "" {
@@ -99,7 +98,7 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			c := c1[0]
 			seg.Status.NodeName = c.NodeName
 			seg.Status.FuncName = c.FuncName
-			statusUpdated = true
+			res.StatusUpdated = true
 		}
 	}
 
@@ -148,21 +147,10 @@ func (r *Srv6SegmentReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, fmt.Errorf("no available sid")
 		}
 		seg.Spec.Sid = availableSids[0]
-		specUpdated = true
+		res.SpecUpdated = true
 	}
 
-	// Write back changes
-	if statusUpdated {
-		if err := r.Status().Update(ctx, &seg); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-	if specUpdated {
-		if err := r.Update(ctx, &seg); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-	return ctrl.Result{}, nil
+	return res.ReconcileUpdate(ctx, r.Client, &seg)
 }
 
 // SetupWithManager sets up the controller with the Manager.
