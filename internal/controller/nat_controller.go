@@ -19,11 +19,13 @@ package controller
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 )
 
@@ -58,6 +60,60 @@ func (r *NatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	// Reconcile N-Node //
 	//////////////////////
 	log.Info("RECONCILE_L_NODE")
+
+	segList := mfplanev1alpha1.Srv6SegmentList{}
+	if err := r.List(ctx, &segList, &client.ListOptions{
+		Namespace: nat.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			"type":              "nat",
+			"ownerResourceKind": nat.Kind,
+			"ownerResourceName": nat.GetName(),
+		}),
+	}); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	diff := nat.Spec.NetworkFunction.Replicas - len(segList.Items)
+	pp.Println("diff", diff)
+	if diff != 0 {
+		seg := mfplanev1alpha1.Srv6Segment{
+			Spec: mfplanev1alpha1.Srv6SegmentSpec{
+				Locator: "default",
+				Selector: mfplanev1alpha1.MfpNodeSpecifySelector{
+					MatchLabels: map[string]string{
+						"nat": nat.Name,
+					},
+				},
+				EndMfnNat: &mfplanev1alpha1.EndMfnNat{
+					Vip:                nat.Spec.Vip,
+					NatPortHashBit:     nat.Spec.NatPortHashBit,
+					UsidBlockLength:    nat.Spec.UsidBlockLength,
+					UsidFunctionLength: nat.Spec.UsidFunctionLength,
+					Sources:            nat.Spec.Sources,
+				},
+			},
+		}
+		for i := 0; i < diff; i++ {
+			seg.SetName("")
+			seg.SetNamespace(nat.GetNamespace())
+			seg.SetGenerateName(nat.GetName() + "-")
+			op, err := ctrl.CreateOrUpdate(ctx, r.Client, &seg, func() error {
+				seg.SetLabels(map[string]string{
+					"nat":               nat.Name,
+					"type":              "nat",
+					"ownerResourceKind": nat.Kind,
+					"ownerResourceName": nat.GetName(),
+				})
+				return ctrl.SetControllerReference(&nat, &seg, r.Scheme)
+			})
+			if err != nil {
+				log.Error(err, "ERROR")
+				return ctrl.Result{}, err
+			}
+			log.Info("CreateOrUpdate", "op", op)
+		}
+	}
+
 	// segments, err := GetAllSegments(ctx, r.Client, "nat",
 	// 	mfplanev1alpha1.SegmentOwner{Name: nat.Name, Kind: nat.Kind})
 	// if err != nil {
