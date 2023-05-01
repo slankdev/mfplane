@@ -56,7 +56,7 @@ func (res *ReconcileStatus) ReconcileUpdate(ctx context.Context,
 	return ctrl.Result{}, nil
 }
 
-func SetFinalizer(obj client.Object, name string) {
+func SetFinalizer(obj client.Object, name string) bool {
 	finalizers := obj.GetFinalizers()
 	exist := false
 	for _, f := range finalizers {
@@ -68,5 +68,22 @@ func SetFinalizer(obj client.Object, name string) {
 	if !exist {
 		finalizers = append(finalizers, name)
 		obj.SetFinalizers(finalizers)
+		return true
 	}
+	return false
+}
+
+func UnsetFinalizer(obj client.Object, name string) bool {
+	updated := false
+	finalizers := obj.GetFinalizers()
+	for i, f := range finalizers {
+		if f == name {
+			finalizers[i] = finalizers[len(finalizers)-1]
+			finalizers = finalizers[:len(finalizers)-1]
+			updated = true
+			break
+		}
+	}
+	obj.SetFinalizers(finalizers)
+	return updated
 }
