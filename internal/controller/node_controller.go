@@ -325,13 +325,12 @@ func init() {
 	}()
 }
 
-func SetKubernetesClient(cli client.Client) {
-	collector := Collector{client: cli}
-	metrics.Registry.MustRegister(&collector)
-}
-
 type Collector struct {
 	client client.Client
+}
+
+func MustRegisterPromCollector(cli client.Client) {
+	metrics.Registry.MustRegister(&Collector{client: cli})
 }
 
 func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
