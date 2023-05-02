@@ -105,7 +105,17 @@ func NewCommandMapDump() *cobra.Command {
 					entries := m.Iterate()
 					for entries.Next(&key, &val) {
 						ip := net.IP(key.Addr[:])
-						fmt.Printf("%s/%d %+v\n", ip, key.Prefixlen, val)
+						fmt.Printf("%s/%d\t", ip, key.Prefixlen)
+						switch val.Action {
+						case 123: // End.Mfl.Nat
+							fmt.Printf("End.Mfl.Nat\t")
+						case 456: // End.Mfn.Nat
+							fmt.Printf("End.Mfn.Nat\t")
+						default:
+							fmt.Printf("unknownAction(%d)\t", val.Action)
+						}
+						fmt.Printf("%d\t%d", val.StatsTotalPkts, val.StatsTotalBytes)
+						fmt.Printf("\n")
 					}
 					return nil
 				}); err != nil {

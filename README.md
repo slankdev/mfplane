@@ -79,7 +79,7 @@ tinet reconf | sudo sh -xe
 ```
 . <(kubectl completion bash)
 . <(kind completion bash)
-. <(mikenactl completion bash)
+. <(mikanectl completion bash)
 ```
 
 ## Experiment Memo
