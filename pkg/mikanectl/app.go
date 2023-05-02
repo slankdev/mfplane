@@ -28,6 +28,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -54,6 +55,7 @@ func NewCommand() *cobra.Command {
 	cmd.AddCommand(NewCommandDaemonNat())
 	cmd.AddCommand(NewCommandMapLoad())
 	cmd.AddCommand(NewCommandMapDump())
+	cmd.AddCommand(NewCommandMapDumpAll())
 	cmd.AddCommand(NewCommandMapDumpNat())
 	cmd.AddCommand(NewCommandMapInstallNat())
 	cmd.AddCommand(NewCommandMapDumpNatOld())
@@ -72,6 +74,70 @@ func NewCommandBpf() *cobra.Command {
 	cmd.AddCommand(ebpf.NewCommandXdpDetach("detach"))
 	cmd.AddCommand(ebpf.NewCommandXdp("nat", "nat_main.c", "xdp-ingress"))
 	cmd.AddCommand(ebpf.NewCommandXdp("clb", "clb_main.c", "xdp-ingress"))
+	return cmd
+}
+
+var (
+	r = regexp.MustCompile(".*_fib6$")
+)
+
+func actString(v int) string {
+	switch v {
+	case 123:
+		return "End.Mfl.Nat"
+	case 456:
+		return "End.Mfn.Nat"
+	default:
+		return fmt.Sprintf("unknown(%d)", v)
+	}
+}
+
+func NewCommandMapDumpAll() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "map-dump-all",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			table := util.NewTableWriter(os.Stdout)
+			table.SetHeader([]string{"map", "sid", "action", "pkts", "bytes"})
+			for id := ciliumebpf.MapID(0); ; {
+				var err error
+				id, err = ciliumebpf.MapGetNextID(ciliumebpf.MapID(id))
+				if err != nil {
+					break
+				}
+				m, err := ciliumebpf.NewMapFromID(id)
+				if err != nil {
+					return err
+				}
+				info, err := m.Info()
+				if err != nil {
+					return err
+				}
+				if !r.MatchString(info.Name) {
+					continue
+				}
+				if err := ebpf.BatchMapOperation(info.Name, ciliumebpf.LPMTrie,
+					func(m *ciliumebpf.Map) error {
+						key := ebpf.Trie6Key{}
+						val := ebpf.Trie6Val{}
+						entries := m.Iterate()
+						for entries.Next(&key, &val) {
+							table.Append([]string{
+								info.Name,
+								fmt.Sprintf("%s/%d", net.IP(key.Addr[:]), key.Prefixlen),
+								actString(int(val.Action)),
+								fmt.Sprintf("%d", val.StatsTotalPkts),
+								fmt.Sprintf("%d", val.StatsTotalBytes),
+							})
+						}
+						return nil
+					}); err != nil {
+					return err
+				}
+			}
+			table.Render()
+			return nil
+		},
+	}
 	return cmd
 }
 
