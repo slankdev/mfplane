@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -299,4 +302,51 @@ func (r *NodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).
 		Complete(r)
+}
+
+var (
+	receivePkts = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "mfplane",
+			Name:      "receive_pkts",
+		},
+		[]string{"node", "netns", "device"},
+	)
+)
+
+var cnt = 0
+
+func init() {
+	go func() {
+		for {
+			time.Sleep(100 * time.Millisecond)
+			cnt++
+		}
+	}()
+}
+
+func SetKubernetesClient(cli client.Client) {
+	collector := Collector{client: cli}
+	metrics.Registry.MustRegister(&collector)
+}
+
+type Collector struct {
+	client client.Client
+}
+
+func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- receivePkts.WithLabelValues("node", "netns", "device").Desc()
+}
+
+func (c *Collector) Collect(ch chan<- prometheus.Metric) {
+	nodeList := mfplanev1alpha1.NodeList{}
+	if err := c.client.List(context.TODO(), &nodeList); err == nil {
+		for _, node := range nodeList.Items {
+			for _, fn := range node.Spec.Functions {
+				ch <- prometheus.MustNewConstMetric(
+					receivePkts.WithLabelValues("node", "netns", "device").Desc(),
+					prometheus.CounterValue, float64(cnt), node.Name, fn.Name, fn.Device)
+			}
+		}
+	}
 }
