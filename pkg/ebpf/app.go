@@ -81,6 +81,7 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 	var clioptVerbose bool
 	var clioptMode string
 	var clioptName string
+	var clioptDefine []string
 	cmd := &cobra.Command{
 		Use: name,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -132,6 +133,9 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 			if clioptDebugErrorPacket {
 				cflags += " -DDEBUG_ERROR_PACKET"
 			}
+			for _, def := range clioptDefine {
+				cflags += " -D " + def
+			}
 			if _, err := util.LocalExecutef(
 				"clang %s -c %s/code/%s -o %s/bin/out.o",
 				cflags, tmppath, file, tmppath); err != nil {
@@ -177,6 +181,7 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 		"if attached, once detach and try force attach the bpf code")
 	cmd.Flags().BoolVar(&clioptDebugIgnorePacket, "debug-ignore-packet", false, "")
 	cmd.Flags().BoolVar(&clioptDebugErrorPacket, "debug-error-packet", false, "")
+	cmd.Flags().StringArrayVar(&clioptDefine, "define", []string{}, "")
 	return cmd
 }
 

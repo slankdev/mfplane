@@ -29,7 +29,7 @@ type Maglev struct {
 // NewMaglev :
 func NewMaglev(backends []string, m uint64) (*Maglev, error) {
 	if !big.NewInt(0).SetUint64(m).ProbablyPrime(1) {
-		return nil, errors.New("lookup table size is not a prime number")
+		return nil, fmt.Errorf("lookup table size is not a prime number (%d)", m)
 	}
 	mag := &Maglev{m: m, lock: &sync.RWMutex{}}
 	if backends != nil {

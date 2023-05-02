@@ -71,8 +71,6 @@ type ConfigFib4 struct {
 
 type Config struct {
 	NamePrefix  string           `yaml:"namePrefix"`
-	MaxRules    int              `yaml:"maxRules"`
-	MaxBackends int              `yaml:"maxBackends"`
 	EncapSource string           `yaml:"encapSource"`
 	LocalSids   []ConfigLocalSid `yaml:"localSids"`
 	Fib4        []ConfigFib4     `yaml:"fib4"`
