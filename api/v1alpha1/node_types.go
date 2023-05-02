@@ -65,17 +65,6 @@ type Srv6Locator struct {
 
 // NodeStatus defines the observed state of Node
 type NodeStatus struct {
-	Functions []FunctionStatus `json:"functions,omitempty"`
-}
-
-type FunctionStatus struct {
-	Name          string                  `json:"name"`
-	SegmentStatus []FunctionSegmentStatus `json:"segments"`
-}
-
-type FunctionSegmentStatus struct {
-	LocalSegmentConfigured bool `json:"localSegmentConfigured"`
-	BlackholeConfigured    bool `json:"BlackholeConfigured"`
 }
 
 //+kubebuilder:object:root=true
@@ -111,24 +100,4 @@ func (n Node) GetFunctionSpec(name string, spec *FunctionSpec) error {
 		}
 	}
 	return fmt.Errorf("GetFunctionSpec not found")
-}
-
-func (n Node) GetFunctionStatus(name string, spec *FunctionStatus) error {
-	for _, fn := range n.Status.Functions {
-		if fn.Name == name {
-			*spec = fn
-			return nil
-		}
-	}
-	return fmt.Errorf("GetFunctionStatu not found")
-}
-
-func (n *Node) SetFunctionStatus(name string, fnStatus *FunctionStatus) error {
-	for idx, fn := range n.Status.Functions {
-		if fn.Name == name {
-			n.Status.Functions[idx] = *fnStatus
-			return nil
-		}
-	}
-	return fmt.Errorf("SetFunctionStatu not found")
 }

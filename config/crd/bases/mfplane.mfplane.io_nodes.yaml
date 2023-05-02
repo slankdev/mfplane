@@ -93,29 +93,6 @@ spec:
             type: object
           status:
             description: NodeStatus defines the observed state of Node
-            properties:
-              functions:
-                items:
-                  properties:
-                    name:
-                      type: string
-                    segments:
-                      items:
-                        properties:
-                          BlackholeConfigured:
-                            type: boolean
-                          localSegmentConfigured:
-                            type: boolean
-                        required:
-                        - BlackholeConfigured
-                        - localSegmentConfigured
-                        type: object
-                      type: array
-                  required:
-                  - name
-                  - segments
-                  type: object
-                type: array
             type: object
         type: object
     served: true
