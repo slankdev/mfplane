@@ -97,14 +97,23 @@ spec:
               functions:
                 items:
                   properties:
-                    labels:
-                      additionalProperties:
-                        type: string
-                      type: object
                     name:
                       type: string
+                    segments:
+                      items:
+                        properties:
+                          BlackholeConfigured:
+                            type: boolean
+                          localSegmentConfigured:
+                            type: boolean
+                        required:
+                        - BlackholeConfigured
+                        - localSegmentConfigured
+                        type: object
+                      type: array
                   required:
                   - name
+                  - segments
                   type: object
                 type: array
             type: object

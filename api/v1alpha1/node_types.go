@@ -69,8 +69,13 @@ type NodeStatus struct {
 }
 
 type FunctionStatus struct {
-	Name   string            `json:"name"`
-	Labels map[string]string `json:"labels,omitempty"`
+	Name          string                  `json:"name"`
+	SegmentStatus []FunctionSegmentStatus `json:"segments"`
+}
+
+type FunctionSegmentStatus struct {
+	LocalSegmentConfigured bool `json:"localSegmentConfigured"`
+	BlackholeConfigured    bool `json:"BlackholeConfigured"`
 }
 
 //+kubebuilder:object:root=true
