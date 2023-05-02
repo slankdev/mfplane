@@ -60,19 +60,13 @@ func (r *NatReconciler) Reconcile(ctx context.Context,
 	// Do Reconcile
 	log.Info("RECONCILE_MAIN_ROUTINE_START")
 	if err := r.reconcileScaleIn(ctx, req, &nat, res,
-		nat.Spec.NetworkFunction.Replicas, map[string]string{
-			"srv6Action":        "endMfnNat",
-			"ownerResourceKind": nat.Kind,
-			"ownerResourceName": nat.GetName(),
-		}); err != nil {
+		nat.Spec.NetworkFunction.Replicas,
+		map[string]string{"srv6Action": "endMfnNat"}); err != nil {
 		return ctrl.Result{}, err
 	}
 	if err := r.reconcileScaleIn(ctx, req, &nat, res,
-		nat.Spec.LoadBalancer.Replicas, map[string]string{
-			"srv6Action":        "endMflNat",
-			"ownerResourceKind": nat.Kind,
-			"ownerResourceName": nat.GetName(),
-		}); err != nil {
+		nat.Spec.LoadBalancer.Replicas,
+		map[string]string{"srv6Action": "endMflNat"}); err != nil {
 		return ctrl.Result{}, err
 	}
 	if err := r.reconcileChildNf(ctx, req, &nat, res); err != nil {
@@ -94,8 +88,13 @@ func (r *NatReconciler) reconcileScaleIn(ctx context.Context,
 	// Fetch Child Segments
 	segList := mfplanev1alpha1.Srv6SegmentList{}
 	if err := r.List(ctx, &segList, &client.ListOptions{
-		Namespace:     nat.GetNamespace(),
-		LabelSelector: labels.SelectorFromSet(labelSelector),
+		Namespace: nat.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(util.MergeLabels(labelSelector,
+			map[string]string{
+				"ownerResourceKind": nat.Kind,
+				"ownerResourceName": nat.GetName(),
+			},
+		)),
 	}); err != nil {
 		return err
 	}
