@@ -175,3 +175,8 @@ delete-nat:
 	kubectl delete -f config/samples/mfplane_v1alpha1_nat.yaml || true
 delete-seg:
 	kubectl delete -f config/samples/mfplane_v1alpha1_srv6segment.yaml || true
+
+xdpclean:
+	for node in l1 l2 l3 l4 n1 n2 n3 n4 n5 n6 n7 n8; do \
+		sudo ip netns exec $$node ip link set net0 xdpgeneric off ; \
+	done
