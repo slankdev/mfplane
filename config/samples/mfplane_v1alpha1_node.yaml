@@ -213,7 +213,7 @@ spec:
             mode: encap
             segs: [fc00:1102::0]
   - name: N6
-    netns: n2
+    netns: n6
     device: net0
     type: nat
     mode: xdpgeneric
