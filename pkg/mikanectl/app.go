@@ -124,7 +124,7 @@ func NewCommandMapDumpAll() *cobra.Command {
 							table.Append([]string{
 								info.Name,
 								fmt.Sprintf("%s/%d", net.IP(key.Addr[:]), key.Prefixlen),
-								actString(int(val.Action)),
+								val.Action.String(),
 								fmt.Sprintf("%d", val.StatsTotalPkts),
 								fmt.Sprintf("%d", val.StatsTotalBytes),
 							})

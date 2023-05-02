@@ -17,6 +17,8 @@ limitations under the License.
 
 package ebpf
 
+import "fmt"
+
 type AddrPort struct {
 	Addr  [4]uint8 `json:"addr"`
 	Port  uint16   `json:"port"`
@@ -54,7 +56,7 @@ type SnatSource struct {
 }
 
 type Trie6Val struct {
-	Action             uint16          `json:"action"`
+	Action             EndAction       `json:"action"`
 	BackendBlockIndex  uint16          `json:"backend_block_index"`
 	Vip                [4]uint8        `json:"vip"`
 	NatPortBashBit     uint16          `json:"nat_port_hash_bit"`
@@ -67,6 +69,19 @@ type Trie6Val struct {
 	NatMapping         uint8           `json:"nat_mapping"`
 	NatFiltering       uint8           `json:"nat_filtering"`
 	Sources            [256]SnatSource `json:"sources"`
+}
+
+type EndAction uint16
+
+func (ea EndAction) String() string {
+	switch ea {
+	case 123:
+		return "End.Mfl.Nat"
+	case 456:
+		return "End.Mfn.Nat"
+	default:
+		return fmt.Sprintf("unknown(%d)", ea)
+	}
 }
 
 type VipKey struct {

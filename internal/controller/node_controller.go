@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"time"
 
+	ciliumebpf "github.com/cilium/ebpf"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/labels"
@@ -39,6 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
+	"github.com/slankdev/mfplane/pkg/ebpf"
 	"github.com/slankdev/mfplane/pkg/goroute2"
 	"github.com/slankdev/mfplane/pkg/mikanectl"
 	"github.com/slankdev/mfplane/pkg/util"
@@ -310,7 +312,7 @@ var (
 			Namespace: "mfplane",
 			Name:      "receive_pkts",
 		},
-		[]string{"node", "netns", "device"},
+		[]string{"node", "netns", "device", "sid", "action"},
 	)
 )
 
@@ -323,7 +325,8 @@ func MustRegisterPromCollector(cli client.Client) {
 }
 
 func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- receivePkts.WithLabelValues("node", "netns", "device").Desc()
+	ch <- receivePkts.WithLabelValues(
+		"node", "netns", "device", "sid", "action").Desc()
 }
 
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
@@ -331,9 +334,27 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	if err := c.client.List(context.TODO(), &nodeList); err == nil {
 		for _, node := range nodeList.Items {
 			for _, fn := range node.Spec.Functions {
-				ch <- prometheus.MustNewConstMetric(
-					receivePkts.WithLabelValues("node", "netns", "device").Desc(),
-					prometheus.CounterValue, float64(cnt), node.Name, fn.Name, fn.Device)
+				if err := ebpf.BatchMapOperation(fn.Name+"_fib6",
+					ciliumebpf.LPMTrie,
+					func(m *ciliumebpf.Map) error {
+						key := ebpf.Trie6Key{}
+						val := ebpf.Trie6Val{}
+						entries := m.Iterate()
+						for entries.Next(&key, &val) {
+							ch <- prometheus.MustNewConstMetric(
+								receivePkts.WithLabelValues(
+									"node", "netns", "device", "sid", "action").Desc(),
+								prometheus.CounterValue, float64(val.StatsTotalPkts),
+								node.Name, fn.Name, fn.Device,
+								fmt.Sprintf("%s/%d", net.IP(key.Addr[:]), key.Prefixlen),
+								val.Action.String(),
+							)
+						}
+						return nil
+					}); err != nil {
+					continue
+				}
+
 			}
 		}
 	}
