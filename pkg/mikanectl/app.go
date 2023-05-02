@@ -174,13 +174,18 @@ func CopyFromTo(dst, src *net.IP, octFrom, octTo int) {
 	copy(*dst, dst8[:])
 }
 
-func compute(end_MFL ConfigLocalSid_End_MFL, nBackends int) ([]net.IP, error) {
+func compute(end_MFL ConfigLocalSid_End_MFL, n string) ([]net.IP, error) {
 	// Unsupport case
 	if end_MFL.USidBlockLength%8 != 0 {
 		return nil, fmt.Errorf("not supported (uSidBlockLength %% 8 != 0)")
 	}
 	if end_MFL.USidFunctionLength%8 != 0 {
 		return nil, fmt.Errorf("not supported (uSidFunctionLength %% 8 != 0)")
+	}
+
+	nBackends, _, err := getMaxBackendsMaxRules(n)
+	if err != nil {
+		return nil, err
 	}
 
 	slots := make([]net.IP, nBackends)
@@ -225,6 +230,35 @@ func compute(end_MFL ConfigLocalSid_End_MFL, nBackends int) ([]net.IP, error) {
 	return slots, nil
 }
 
+func getMaxBackendsMaxRules(n string) (int, int, error) {
+	procsSize := 0
+	maxRules := 0
+	if err := ebpf.BatchMapOperation(n+"_procs", ciliumebpf.PerCPUArray,
+		func(m *ciliumebpf.Map) error {
+			i, err := m.Info()
+			if err != nil {
+				return err
+			}
+			procsSize = int(i.MaxEntries)
+			return nil
+		}); err != nil {
+		return 0, 0, err
+	}
+	if err := ebpf.BatchMapOperation(n+"_vip_table", ciliumebpf.PerCPUHash,
+		func(m *ciliumebpf.Map) error {
+			i, err := m.Info()
+			if err != nil {
+				return err
+			}
+			maxRules = int(i.MaxEntries)
+			return nil
+		}); err != nil {
+		return 0, 0, err
+	}
+	ringSize := procsSize / maxRules
+	return ringSize, maxRules, nil
+}
+
 func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 	config Config) error {
 	// Install backend-block
@@ -232,7 +266,12 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 		ciliumebpf.PerCPUArray,
 		func(m *ciliumebpf.Map) error {
 			// Fill uSID Block Bits
-			slots, err := compute(*localSid.End_MFL, config.MaxBackends)
+			slots, err := compute(*localSid.End_MFL, config.NamePrefix)
+			if err != nil {
+				return err
+			}
+
+			ringSize, _, err := getMaxBackendsMaxRules(config.NamePrefix)
 			if err != nil {
 				return err
 			}
@@ -240,7 +279,7 @@ func localSid_End_MFL(backendBlockIndex int, localSid ConfigLocalSid,
 			// Print uSID MF-hash
 			for idx := range slots {
 				fmt.Printf("%03d  %s\n", idx, FullIPv6(slots[idx]))
-				key := uint32(config.MaxBackends*backendBlockIndex + idx)
+				key := uint32(ringSize*backendBlockIndex + idx)
 				val := ebpf.FlowProcessor{}
 				copy(val.Addr[:], slots[idx])
 

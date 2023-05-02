@@ -175,8 +175,6 @@ func craftConfig(ctx context.Context,
 	log := log.FromContext(ctx)
 	c := mikanectl.Config{
 		NamePrefix:  fnSpec.Name,
-		MaxRules:    2,
-		MaxBackends: 7,
 		EncapSource: fnSpec.SegmentRoutingSrv6.EncapSource,
 	}
 	for _, seg := range segList.Items {
