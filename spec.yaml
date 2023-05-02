@@ -70,7 +70,7 @@ postinit:
   - cmd: >-
       for NS in l1 l2 l3 l4 n1 n2 n3 n4 n5 n6 n7 n8; do
       rm -f /var/run/netns/$NS;
-      ln -s /proc/$(docker inspect tr $(echo $NS | '[:lower:]' '[:upper:]')
+      ln -s /proc/$(docker inspect $(echo $NS | tr '[:lower:]' '[:upper:]')
       -f "{{.State.Pid}}")/ns/net /var/run/netns/$NS;
       done
   # - cmd: >-
