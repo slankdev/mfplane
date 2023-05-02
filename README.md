@@ -59,6 +59,12 @@ chmod +x /usr/bin/tinet
 tinet --version
 ```
 
+Google Cloud TIPs
+```
+sudo ln -s $HOME/google-cloud-sdk/bin/gke-gcloud-auth-plugin /usr/bin/gke-gcloud-auth-plugin
+sudo apt install linux-modules-extra-`uname -r`
+```
+
 ```
 kind create cluster
 tinet reconf | sudo sh -xe
