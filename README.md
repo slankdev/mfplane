@@ -54,6 +54,12 @@ curl -L https://github.com/ulucinar/kubectl-edit-status/releases/download/v0.3.0
 ```
 
 ```
+sudo docker run -td --rm --name clang-tmp quay.io/cilium/cilium-llvm:3408daa17f6490a464dfc746961e28ae31964c66 bash
+sudo docker cp clang-tmp:/usr/local/bin/clang /usr/bin/
+sudo docker rm -f clang-tmp
+```
+
+```
 curl -Lo /usr/bin/tinet https://github.com/tinynetwork/tinet/releases/download/v0.0.2/tinet
 chmod +x /usr/bin/tinet
 tinet --version
