@@ -314,17 +314,6 @@ var (
 	)
 )
 
-var cnt = 0
-
-func init() {
-	go func() {
-		for {
-			time.Sleep(100 * time.Millisecond)
-			cnt++
-		}
-	}()
-}
-
 type Collector struct {
 	client client.Client
 }
@@ -348,4 +337,17 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			}
 		}
 	}
+}
+
+// XXX(slankdev): HARIBOTE
+var cnt = 0
+
+// XXX(slankdev): HARIBOTE
+func init() {
+	go func() {
+		for {
+			time.Sleep(100 * time.Millisecond)
+			cnt++
+		}
+	}()
 }
