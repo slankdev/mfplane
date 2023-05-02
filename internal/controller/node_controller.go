@@ -102,7 +102,7 @@ func (r *NodeReconciler) reconcileXdpAttach(ctx context.Context,
 		// Attach XDP program
 		if linkDetail.Xdp == nil {
 			if _, err := util.LocalExecutef("sudo ip netns exec %s "+
-				"./bin/mikanectl bpf %s attach -i %s -n %s -m %s",
+				"./bin/mikanectl bpf %s attach -i %s -n %s -m %s --define RING_SIZE=65537",
 				fn.Netns, fn.Type, fn.Device, fn.Name, fn.Mode); err != nil {
 				return err
 			}
