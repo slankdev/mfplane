@@ -25,6 +25,13 @@
 ## Setup
 
 ```
+wget https://go.dev/dl/go1.19.8.linux-amd64.tar.gz #https://go.dev/doc/install
+rm -rf /usr/local/go && tar -C /usr/local -xzf go1.19.8.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+go version
+```
+
+```
 sudo curl -Lo /usr/bin/kubectl https://dl.k8s.io/v1.27.1/bin/linux/amd64/kubectl
 sudo chmod +x /usr/bin/kubectl
 sudo curl -Lo /usr/bin/kind https://kind.sigs.k8s.io/dl/v0.18.0/kind-linux-amd64
