@@ -16,14 +16,12 @@
 #include <bpf/bpf_endian.h>
 #include "lib/lib.h"
 
-#define MAX_RULES 2
 #ifndef MAX_RULES
-#error "please define MAX_RULES"
+#define MAX_RULES 2
 #endif
 
-#define RING_SIZE 7
 #ifndef RING_SIZE
-#error "please define RING_SIZE"
+#define RING_SIZE 7
 #endif
 
 struct {
