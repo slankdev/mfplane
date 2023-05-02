@@ -214,7 +214,10 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 	}
 	sidList := []string{}
 	for _, item := range nfSegList.Items {
-		sidList = append(sidList, item.Status.Sid)
+		if item.Status.State == mfplanev1alpha1.Srv6SegmentStateActive &&
+			item.DeletionTimestamp.IsZero() {
+			sidList = append(sidList, item.Status.Sid)
+		}
 	}
 	sort.Slice(sidList, func(i, j int) bool { return sidList[i] < sidList[j] })
 	revision := mfplanev1alpha1.EndMflNatRevision{
