@@ -548,18 +548,24 @@ node_configs:
 - name: N1
   cmds:
   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.11 65011 fc00:3100::/24
+  - cmd: ip -6 addr add fc00:3100::/128 dev lo
 - name: N2
   cmds:
   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.12 65012 fc00:3200::/24
+  - cmd: ip -6 addr add fc00:3200::/128 dev lo
 - name: N3
   cmds:
   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.13 65013 fc00:3300::/24
+  - cmd: ip -6 addr add fc00:3300::/128 dev lo
 # - name: N4
 #   cmds:
 #   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.14 65014 fc00:3400::/24
+#   - cmd: ip -6 addr add fc00:3400::/128 dev lo
 # - name: N5
 #   cmds:
 #   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.15 65015 fc00:3500::/24
+#   - cmd: ip -6 addr add fc00:3500::/128 dev lo
 # - name: N6
 #   cmds:
 #   - cmd: sh /usr/bin/n_node_setup.sh 10.255.0.16 65016 fc00:3600::/24
+#   - cmd: ip -6 addr add fc00:3600::/128 dev lo
