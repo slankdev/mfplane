@@ -59,12 +59,20 @@ func (r *NatReconciler) Reconcile(ctx context.Context,
 
 	// Do Reconcile
 	log.Info("RECONCILE_MAIN_ROUTINE_START")
-	if err := r.reconcileScaleIn(ctx, req, &nat,
-		nat.Spec.NetworkFunction.Replicas, res); err != nil {
+	if err := r.reconcileScaleIn(ctx, req, &nat, res,
+		nat.Spec.NetworkFunction.Replicas, map[string]string{
+			"srv6Action":        "endMfnNat",
+			"ownerResourceKind": nat.Kind,
+			"ownerResourceName": nat.GetName(),
+		}); err != nil {
 		return ctrl.Result{}, err
 	}
-	if err := r.reconcileScaleIn(ctx, req, &nat,
-		nat.Spec.LoadBalancer.Replicas, res); err != nil {
+	if err := r.reconcileScaleIn(ctx, req, &nat, res,
+		nat.Spec.LoadBalancer.Replicas, map[string]string{
+			"srv6Action":        "endMflNat",
+			"ownerResourceKind": nat.Kind,
+			"ownerResourceName": nat.GetName(),
+		}); err != nil {
 		return ctrl.Result{}, err
 	}
 	if err := r.reconcileChildNf(ctx, req, &nat, res); err != nil {
@@ -79,19 +87,15 @@ func (r *NatReconciler) Reconcile(ctx context.Context,
 }
 
 func (r *NatReconciler) reconcileScaleIn(ctx context.Context,
-	req ctrl.Request, nat *mfplanev1alpha1.Nat, desiredReplicas int,
-	res *util.ReconcileStatus) error {
+	req ctrl.Request, nat *mfplanev1alpha1.Nat, res *util.ReconcileStatus,
+	desiredReplicas int, labelSelector map[string]string) error {
 	log := log.FromContext(ctx)
 
 	// Fetch Child Segments
 	segList := mfplanev1alpha1.Srv6SegmentList{}
 	if err := r.List(ctx, &segList, &client.ListOptions{
-		Namespace: nat.GetNamespace(),
-		LabelSelector: labels.SelectorFromSet(map[string]string{
-			"srv6Action":        "endMfnNat",
-			"ownerResourceKind": nat.Kind,
-			"ownerResourceName": nat.GetName(),
-		}),
+		Namespace:     nat.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(labelSelector),
 	}); err != nil {
 		return err
 	}
