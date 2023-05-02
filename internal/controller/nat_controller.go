@@ -30,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/k0kubun/pp"
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
 	"github.com/slankdev/mfplane/pkg/util"
 )
@@ -60,6 +59,14 @@ func (r *NatReconciler) Reconcile(ctx context.Context,
 
 	// Do Reconcile
 	log.Info("RECONCILE_MAIN_ROUTINE_START")
+	if err := r.reconcileScaleIn(ctx, req, &nat,
+		nat.Spec.NetworkFunction.Replicas, res); err != nil {
+		return ctrl.Result{}, err
+	}
+	if err := r.reconcileScaleIn(ctx, req, &nat,
+		nat.Spec.LoadBalancer.Replicas, res); err != nil {
+		return ctrl.Result{}, err
+	}
 	if err := r.reconcileChildNf(ctx, req, &nat, res); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -69,6 +76,60 @@ func (r *NatReconciler) Reconcile(ctx context.Context,
 	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
 
 	return res.ReconcileUpdate(ctx, r.Client, &nat)
+}
+
+func (r *NatReconciler) reconcileScaleIn(ctx context.Context,
+	req ctrl.Request, nat *mfplanev1alpha1.Nat, desiredReplicas int,
+	res *util.ReconcileStatus) error {
+	log := log.FromContext(ctx)
+
+	// Fetch Child Segments
+	segList := mfplanev1alpha1.Srv6SegmentList{}
+	if err := r.List(ctx, &segList, &client.ListOptions{
+		Namespace: nat.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			"srv6Action":        "endMfnNat",
+			"ownerResourceKind": nat.Kind,
+			"ownerResourceName": nat.GetName(),
+		}),
+	}); err != nil {
+		return err
+	}
+
+	// Check Active or NonActive
+	activeSegs := []mfplanev1alpha1.Srv6Segment{}
+	nonActiveSegs := []mfplanev1alpha1.Srv6Segment{}
+	for _, item := range segList.Items {
+		if item.Status.State == mfplanev1alpha1.Srv6SegmentStateActive &&
+			item.DeletionTimestamp.IsZero() {
+			activeSegs = append(activeSegs, item)
+		} else {
+			nonActiveSegs = append(nonActiveSegs, item)
+		}
+	}
+
+	// Delete Active Segment which are not needed
+	diff := len(activeSegs) - desiredReplicas
+	for i := 0; i < diff; i++ {
+		idx := rand.Intn(len(activeSegs))
+		log.Info("DELETE ONE SEGMENT", "segName", activeSegs[idx].Name)
+		if err := r.Delete(ctx, &activeSegs[idx]); err != nil {
+			log.Error(err, "r.Delete")
+			return err
+		}
+	}
+
+	// Delete Remaining Un-Active Segment which is also not needed
+	if len(activeSegs) >= desiredReplicas {
+		for _, item := range nonActiveSegs {
+			log.Info("DELETE ONE SEGMENT", "segName", item.Name)
+			if err := r.Delete(ctx, &item); err != nil {
+				log.Error(err, "r.Delete")
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (r *NatReconciler) reconcileChildNf(ctx context.Context,
@@ -126,14 +187,6 @@ func (r *NatReconciler) reconcileChildNf(ctx context.Context,
 				return err
 			}
 			log.Info("CreateOrUpdate", "op", op)
-		}
-	} else if diff < 0 {
-		pp.Println("DELETEDELETE ", diff)
-		deleteIdx := rand.Intn(len(segList.Items))
-		log.Info("DELETE ONE SEGMENT", "segName", segList.Items[deleteIdx].Name)
-		if err := r.Delete(ctx, &segList.Items[deleteIdx]); err != nil {
-			log.Error(err, "r.Delete")
-			return err
 		}
 	}
 	return nil
@@ -227,13 +280,6 @@ func (r *NatReconciler) reconcileChildLb(ctx context.Context,
 				return err
 			}
 			log.Info("CreateOrUpdate", "op", op)
-		}
-	} else if diff < 0 {
-		deleteIdx := rand.Intn(len(lbSegList.Items))
-		log.Info("DELETE ONE SEGMENT", "segName", lbSegList.Items[deleteIdx].Name)
-		if err := r.Delete(ctx, &lbSegList.Items[deleteIdx]); err != nil {
-			log.Error(err, "r.Delete")
-			return err
 		}
 	}
 
