@@ -5,3 +5,5 @@ make clb-attach-l1
 mikanectl hash bpftoolcli -t 17 -b fc00:11:1::1 -n l1 | sudo sh -xe
 sudo bpftool prog tracelog
 de VM1 curl 10.255.100.1
+kubectl get nat nat-sample1 -o json | jq .spec.loadBalancer.replicas=1 | kubectl apply -f -
+kubectl get nat nat-sample1 -o json | jq .spec.networkFunction.replicas=1 | kubectl apply -f -
