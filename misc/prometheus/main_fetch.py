@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 prometheus_url = 'http://localhost:9090/api/v1/query_range'
 
 # クエリ
-query = 'up'
+query = 'rate(mfplane_receive_pkts{netns=~"N.*"}[10s])'
 
 # データの開始時刻と終了時刻（1分間）
 end_time = datetime.now()
@@ -22,7 +22,7 @@ params = {
     'query': query,
     'start': start_time_str,
     'end': end_time_str,
-    'step': '15s'
+    'step': '100ms'
 }
 
 # HTTPリクエストを送信してレスポンスを取得
