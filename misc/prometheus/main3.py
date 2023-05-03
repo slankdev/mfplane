@@ -1,7 +1,5 @@
 import csv, matplotlib.pyplot as plt, locale
-
 locale.setlocale(locale.LC_TIME, '')
-
 times = []
 values = []
 with open('up_metrics.csv', mode='r') as f:
