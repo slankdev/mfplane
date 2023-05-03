@@ -162,128 +162,128 @@ spec:
           encapSeg6:
             mode: encap
             segs: [fc00:1102::0]
-  # - name: N4
-  #   netns: n4
-  #   device: net0
-  #   type: nat
-  #   mode: xdpgeneric
-  #   labels:
-  #     natGroup: natGroup1
-  #   segmentRoutingSrv6:
-  #     encapSource: fc00:3400::0
-  #     locators:
-  #     - name: default
-  #       prefix: fc00:3400::/24
-  #       block: fc00::0
-  #   configFile: |
-  #     fib4:
-  #     - prefix: 10.0.1.0/24
-  #       action:
-  #         encapSeg6:
-  #           mode: encap
-  #           segs: [fc00:1101::0]
-  #     - prefix: 10.0.2.0/24
-  #       action:
-  #         encapSeg6:
-  #           mode: encap
-  #           segs: [fc00:1102::0]
-  # - name: N5
-  #   netns: n5
-  #   device: net0
-  #   type: nat
-  #   mode: xdpgeneric
-  #   labels:
-  #     natGroup: natGroup1
-  #   segmentRoutingSrv6:
-  #     encapSource: fc00:3500::0
-  #     locators:
-  #     - name: default
-  #       prefix: fc00:3500::/24
-  #       block: fc00::0
-  #   configFile: |
-  #     fib4:
-  #     - prefix: 10.0.1.0/24
-  #       action:
-  #         encapSeg6:
-  #           mode: encap
-  #           segs: [fc00:1101::0]
-  #     - prefix: 10.0.2.0/24
-  #       action:
-  #         encapSeg6:
-  #           mode: encap
-  #           segs: [fc00:1102::0]
-  # - name: N6
-  #   netns: n6
-  #   device: net0
-  #   type: nat
-  #   mode: xdpgeneric
-  #   labels:
-  #     natGroup: natGroup1
-  #   segmentRoutingSrv6:
-  #     encapSource: fc00:3600::0
-  #     locators:
-  #     - name: default
-  #       prefix: fc00:3600::/24
-  #       block: fc00::0
-  #   configFile: |
-  #     fib4:
-  #     - prefix: 10.0.1.0/24
-  #       action:
-  #         encapSeg6:
-  #           mode: encap
-  #           segs: [fc00:1101::0]
-  #     - prefix: 10.0.2.0/24
-  #       action:
-  #         encapSeg6:
-  #           mode: encap
-  #           segs: [fc00:1102::0]
-  # - name: N7
-  #   netns: n7
-  #   device: net0
-  #   type: nat
-  #   mode: xdpgeneric
-  #   labels:
-  #     natGroup: natGroup1
-  #   segmentRoutingSrv6:
-  #     encapSource: fc00:3700::0
-  #     locators:
-  #     - name: default
-  #       prefix: fc00:3700::/24
-  #       block: fc00::0
-  #   configFile: |
-  #     fib4:
-  #     - prefix: 10.0.1.0/24
-  #       action:
-  #         encapSeg6:
-  #           mode: encap
-  #           segs: [fc00:1101::0]
-  #     - prefix: 10.0.2.0/24
-  #       action:
-  #         encapSeg6:
-  #           mode: encap
-  #           segs: [fc00:1102::0]
-  # - name: N8
-  #   netns: n8
-  #   device: net0
-  #   type: nat
-  #   mode: xdpgeneric
-  #   labels:
-  #     natGroup: natGroup1
-  #   segmentRoutingSrv6:
-  #     encapSource: fc00:3800::0
-  #     locators:
-  #     - name: default
-  #       prefix: fc00:3800::/24
-  #       block: fc00::0
-  #   configFile: |
-  #     fib4:
-  #     - prefix: 10.0.1.0/24
-  #       action:
-  #         encapSeg6:
-  #           mode: encap
-  #           segs: [fc00:1101::0]
-  #     - prefix: 10.0.2.0/24
-  #       action:
-  #         encapSeg6:
-  #           mode: encap
-  #           segs: [fc00:1102::0]
+  - name: N4
+    netns: n4
+    device: net0
+    type: nat
+    mode: xdpgeneric
+    labels:
+      natGroup: natGroup1
+    segmentRoutingSrv6:
+      encapSource: fc00:3400::0
+      locators:
+      - name: default
+        prefix: fc00:3400::/24
+        block: fc00::0
+    configFile: |
+      fib4:
+      - prefix: 10.0.1.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1101::0]
+      - prefix: 10.0.2.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1102::0]
+  - name: N5
+    netns: n5
+    device: net0
+    type: nat
+    mode: xdpgeneric
+    labels:
+      natGroup: natGroup1
+    segmentRoutingSrv6:
+      encapSource: fc00:3500::0
+      locators:
+      - name: default
+        prefix: fc00:3500::/24
+        block: fc00::0
+    configFile: |
+      fib4:
+      - prefix: 10.0.1.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1101::0]
+      - prefix: 10.0.2.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1102::0]
+  - name: N6
+    netns: n6
+    device: net0
+    type: nat
+    mode: xdpgeneric
+    labels:
+      natGroup: natGroup1
+    segmentRoutingSrv6:
+      encapSource: fc00:3600::0
+      locators:
+      - name: default
+        prefix: fc00:3600::/24
+        block: fc00::0
+    configFile: |
+      fib4:
+      - prefix: 10.0.1.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1101::0]
+      - prefix: 10.0.2.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1102::0]
+  - name: N7
+    netns: n7
+    device: net0
+    type: nat
+    mode: xdpgeneric
+    labels:
+      natGroup: natGroup1
+    segmentRoutingSrv6:
+      encapSource: fc00:3700::0
+      locators:
+      - name: default
+        prefix: fc00:3700::/24
+        block: fc00::0
+    configFile: |
+      fib4:
+      - prefix: 10.0.1.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1101::0]
+      - prefix: 10.0.2.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1102::0]
+  - name: N8
+    netns: n8
+    device: net0
+    type: nat
+    mode: xdpgeneric
+    labels:
+      natGroup: natGroup1
+    segmentRoutingSrv6:
+      encapSource: fc00:3800::0
+      locators:
+      - name: default
+        prefix: fc00:3800::/24
+        block: fc00::0
+    configFile: |
+      fib4:
+      - prefix: 10.0.1.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1101::0]
+      - prefix: 10.0.2.0/24
+        action:
+          encapSeg6:
+            mode: encap
+            segs: [fc00:1102::0]

@@ -8,5 +8,14 @@ de VM1 curl 10.255.100.1
 kubectl get nat nat-sample1 -o json | jq .spec.loadBalancer.replicas=1 | kubectl apply -f -
 kubectl get nat nat-sample1 -o json | jq .spec.networkFunction.replicas=1 | kubectl apply -f -
 tc qdisc add dev net0 root handle 1:0 tbf limit 500kb burst 50kb rate 50mbit
+tc qdisc add dev n4 root handle 1:1 tbf rate 50mbit burst 200kb limit 2mb 
+
+for iface in n1 n2 n3 n4 ; do tc qdisc show dev $iface; done
+for iface in n1 n2 n3 n4 ; do tc qdisc show dev $iface; done
+for iface in n1 n2 n3 n4 ; do tc qdisc add dev $iface root handle 1:1 tbf rate 50mbit burst 200kb limit 2mb; done 
+for iface in n1 n2 n3 n4 ; do tc qdisc del dev $iface root handle 1:1 tbf rate 50mbit burst 200kb limit 2mb; done
+
 iperf -c 20.0.0.1 -t 10000 -P 20 -i1 -b 7M
 kubectl port-forward PODNAME 9090:8080 #9090:pod-port, 8080:local-port
+
+rate(mfplane_receive_pkts{netns=~"N.*"}[10s])
