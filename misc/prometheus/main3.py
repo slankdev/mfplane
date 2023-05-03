@@ -2,7 +2,7 @@ import requests,csv,datetime,matplotlib.pyplot as plt,locale
 locale.setlocale(locale.LC_TIME, '')
 
 prometheus_url = 'http://localhost:9090/api/v1/query_range'
-query = 'up'
+query = 'rate(mfplane_receive_pkts{netns=~"N.*"}[10s])'
 end_time = datetime.datetime.now()
 start_time = end_time - datetime.timedelta(minutes=1)
 start_time_str = start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
