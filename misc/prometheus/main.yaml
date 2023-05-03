@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        args:
+        - --config.file=/etc/prometheus/prometheus.yaml
+        - --log.level=debug
+        - --web.enable-lifecycle
+        - --storage.tsdb.path=/tmp
+        - --storage.tsdb.retention.time=10d
+        image: prom/prometheus
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-configmap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-configmap
+data:
+  prometheus.yaml: |
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 1s
+      evaluation_interval: 10s
+    scrape_configs:
+    - job_name: test
+      static_configs:
+      - targets:
+        - 10.146.0.12
