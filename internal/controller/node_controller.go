@@ -202,9 +202,13 @@ func (r *NodeReconciler) reconcileNatDaemon(ctx context.Context,
 
 		// Start Daemon if not running
 		if !running {
+			tm := fnSpec.NatSessionTimeoutSeconds
+			if fnSpec.NatSessionTimeoutSeconds == 0 {
+				tm = 30
+			}
 			pid, err := util.BackgroundLocalExecutef(
-				"ip netns exec %s mikanectl daemon-nat -n %s",
-				fnSpec.Netns, fnSpec.Name)
+				"ip netns exec %s mikanectl daemon-nat -n %s -i %d",
+				fnSpec.Netns, fnSpec.Name, tm)
 			if err != nil {
 				return err
 			}
@@ -213,6 +217,17 @@ func (r *NodeReconciler) reconcileNatDaemon(ctx context.Context,
 				return err
 			}
 			log.Info("subprocess started", "funcName", fnSpec.Name, "pid", pid)
+		}
+
+		// Check Child process is running
+		runningNext, err := util.CheckProcess(fnStatus.Pidfile)
+		if err != nil {
+			log.Error(err, "util.CheckProcess")
+			return err
+		}
+		if fnStatus.Running != runningNext {
+			fnStatus.Running = runningNext
+			res.StatusUpdated = true
 		}
 	}
 	return nil
