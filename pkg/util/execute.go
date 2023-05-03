@@ -21,7 +21,9 @@ package util
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
+	"syscall"
 
 	"github.com/fatih/color"
 	"github.com/go-logr/logr"
@@ -76,6 +78,53 @@ func LocalExecute(cmdstr string) (string, error) {
 }
 
 func LocalExecutef(fs string, a ...interface{}) (string, error) {
-	cmd := fmt.Sprintf(fs, a...)
-	return LocalExecute(cmd)
+	return LocalExecute(fmt.Sprintf(fs, a...))
+}
+
+func BackgroundLocalExecutef(fs string, a ...interface{}) (int, error) {
+	cmdstr := fmt.Sprintf(fs, a...)
+	cmd := exec.Command("sh", "-c", cmdstr)
+	if err := cmd.Start(); err != nil {
+		str := fmt.Sprintf("CommandExecute [%s] ", cmdstr)
+		str += color.RedString("Failed")
+		str += color.RedString("%s", err.Error())
+		fmt.Printf("%s\n", str)
+		return 0, err
+	}
+	go func() {
+		cmd.Wait()
+	}()
+	return cmd.Process.Pid, nil
+}
+
+func CheckProcess(pidfile string) (bool, error) {
+	if !FileExist(pidfile) {
+		return false, nil
+	}
+	file, err := os.Open(pidfile)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	var pid int
+	_, err = fmt.Fscanf(file, "%d", &pid)
+	if err != nil {
+		return false, err
+	}
+
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return false, err
+	}
+
+	err = process.Signal(syscall.Signal(0))
+	if err != nil {
+		if err.Error() == "os: process already finished" {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 }

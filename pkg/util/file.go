@@ -27,6 +27,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+func FileExist(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
+}
+
 func FileUnmarshalAsYaml(in string, v interface{}) error {
 	yamlFile, err := ioutil.ReadFile(in)
 	if err != nil {
