@@ -20,26 +20,52 @@ def format_xtick(x, pos=None):
         val, unit = x, ''
     return '{:,.1f}{}'.format(val, unit)
 
-
+LIMIT = 1683122800.892 # MY EXPECT (FROM)
+LIMIT = 1683122920.092 # MY EXPECT (TO)
+LIMIT = 1683122764.992 # DEBUG
 plt.close("all")
 fs = 18
 tfs = 16
 
+
+def isInRange(cnt):
+    return 550 < cnt and cnt < 2000
+
+
 x = []
 stack_ys = {}
-with open("./out.json") as f:
+with open("./out1.json") as f:
     data_objs = json.load(f)
+    cnt = 0
     for value in data_objs[0]["values"]:
-        x.append(value[0])
+        cnt = cnt + 1
+        if isInRange(cnt):
+            x.append(value[0])
     for data_obj in data_objs:
         y = []
+        cnt = 0
         for value in data_obj["values"]:
-            y.append(float(value[1]))
+            cnt = cnt + 1
+            if isInRange(cnt):
+                y.append(float(value[1]))
         stack_ys[data_obj["metric"]["netns"]] = y
 
+pprint.pprint(stack_ys.keys())
+pprint.pprint(stack_ys.values())
+# xx = np.array(x, dtype=object)
+# values = np.array(stack_ys.values(), dtype=object)
+# keys = np.array(stack_ys.keys(), dtype=object)
+# if xx.ndim == 0:
+#     xx = [xx]
+# if values.ndim == 0:
+#     values = [values]
+# if keys.ndim == 0:
+#     keys = [keys]
+
 fig, ax_bw = plt.subplots(figsize=(10, 4))
-ax_bw.stackplot(x, stack_ys.values(),
-                labels=stack_ys.keys(), alpha=0.5)
+#ax_bw.stackplot(xx, values, labels=keys, alpha=0.5)
+ax_bw.stackplot(x, stack_ys.values(), labels=stack_ys.keys(), alpha=0.5)
+
 ax_bw.set_zorder(1)
 lines1, labels1 = ax_bw.get_legend_handles_labels()
 #ax_rtt = ax_bw.twinx()
