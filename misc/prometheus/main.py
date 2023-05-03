@@ -1,0 +1,41 @@
+import requests
+import csv
+from datetime import datetime, timedelta
+
+# PrometheusエンドポイントのURL
+prometheus_url = 'http://localhost:9090/api/v1/query_range'
+
+# クエリ
+# query = 'up'
+query = 'rate(mfplane_receive_pkts{netns=~"N.*"}[10s])'
+
+# データの開始時刻と終了時刻（1分間）
+end_time = datetime.now()
+start_time = end_time - timedelta(minutes=1)
+
+# PromQL形式の開始時刻と終了時刻
+start_time_str = start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+end_time_str = end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+
+# HTTPリクエストのパラメータ
+params = {
+    'query': query,
+    'start': start_time_str,
+    'end': end_time_str,
+    'step': '15s'
+}
+
+# HTTPリクエストを送信してレスポンスを取得
+response = requests.get(prometheus_url, params=params)
+
+# レスポンスから結果を取得
+result = response.json()['data']['result']
+
+# 結果をCSVファイルに書き込む
+with open('up_metrics.csv', mode='w', newline='') as f:
+    writer = csv.writer(f)
+    writer.writerow(['timestamp', 'value'])
+    for r in result[0]['values']:
+        timestamp = datetime.fromtimestamp(float(r[0])).strftime('%Y-%m-%d %H:%M:%S')
+        value = r[1]
+        writer.writerow([timestamp, value])
