@@ -138,7 +138,7 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
     sval = &isval;
   } else {
     if (now - sval->last_reset > 5000000000) {
-      if (sval->pkts > (5 * 100)) {
+      if (sval->pkts > (5 * 10)) {
         // bpf_printk("perf");
         bpf_perf_event_output(ctx, &GLUE(NAME, events), BPF_F_CURRENT_CPU,
           &skey, sizeof(skey));
