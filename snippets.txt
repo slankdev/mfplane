@@ -9,3 +9,4 @@ kubectl get nat nat-sample1 -o json | jq .spec.loadBalancer.replicas=1 | kubectl
 kubectl get nat nat-sample1 -o json | jq .spec.networkFunction.replicas=1 | kubectl apply -f -
 tc qdisc add dev net0 root handle 1:0 tbf limit 500kb burst 50kb rate 50mbit
 iperf -c 20.0.0.1 -t 10000 -P 20 -i1 -b 7M
+kubectl port-forward PODNAME 9090:9090
