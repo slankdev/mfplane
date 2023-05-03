@@ -11,7 +11,7 @@ query = 'rate(mfplane_receive_pkts{netns=~"N.*"}[10s])'
 
 # データの開始時刻と終了時刻（1分間）
 end_time = datetime.now()
-start_time = end_time - timedelta(minutes=1)
+start_time = end_time - timedelta(minutes=5)
 
 # PromQL形式の開始時刻と終了時刻
 start_time_str = start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'

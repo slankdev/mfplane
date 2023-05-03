@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 url = 'http://localhost:9090/api/v1/query_range'
 query = 'rate(mfplane_receive_pkts{netns=~"N.*"}[10s])'
 end_time = datetime.now()
-start_time = end_time - timedelta(seconds=10)
+start_time = end_time - timedelta(minutes=6)
 #start_time = end_time - timedelta(minutes=1)
 start_time_str = start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
 end_time_str = end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
@@ -18,7 +18,7 @@ params = {
 
 response = requests.get(url, params=params)
 result = json.loads(response.text)['data']['result']
-print(json.dumps(result))
+print(json.dumps(result, indent=2))
 
 # import pprint
 # pprint.pprint(result)
