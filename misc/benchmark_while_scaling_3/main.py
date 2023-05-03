@@ -30,7 +30,7 @@ x = []
 with open("./out.json") as f:
     data_obj = json.load(f)
     for interval in data_obj["intervals"]:
-        x.append(stream[0]['start'])
+        x.append(interval["streams"][0]['start'])
 
 # Ensure Y1 stack-Ys
 stack_ys = {}
@@ -68,6 +68,7 @@ ax_bw.stackplot(x, stack_ys.values(),
 ax_rtt.plot(x, y2, label="rtt")
 ax_bw.set_zorder(1)
 ax_rtt.set_zorder(2)
+ax_rtt.set_ylim(0, 3.5)
 lines1, labels1 = ax_bw.get_legend_handles_labels()
 lines2, labels2 = ax_rtt.get_legend_handles_labels()
 ax_bw.legend(lines1+lines2, labels1+labels2, fontsize=tfs,
