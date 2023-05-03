@@ -83,6 +83,9 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err := r.reconcileXdpMapLoad(ctx, req, &node, res); err != nil {
 		return ctrl.Result{}, err
 	}
+	if err := r.reconcileNatDaemon(ctx, req, &node, res); err != nil {
+		return ctrl.Result{}, err
+	}
 	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
 
 	return res.ReconcileUpdate(ctx, r.Client, &node)
@@ -171,6 +174,47 @@ func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
 		}
 	}
 
+	return nil
+}
+
+func (r *NodeReconciler) reconcileNatDaemon(ctx context.Context,
+	req ctrl.Request, node *mfplanev1alpha1.Node,
+	res *util.ReconcileStatus) error {
+	log := log.FromContext(ctx)
+
+	for _, fnSpec := range node.Spec.Functions {
+		fnStatus := mfplanev1alpha1.FunctionStatus{}
+		if err := node.GetFunctionStatus(fnSpec.Name, &fnStatus); err != nil {
+			fnStatus.Name = fnSpec.Name
+			fnStatus.Pidfile = fmt.Sprintf("/tmp/%s.%s.pid", node.Name, fnSpec.Name)
+			fnStatus.Running = false
+			node.Status.Functions = append(node.Status.Functions, fnStatus)
+			res.StatusUpdated = true
+			log.Info("NEW FUNCTION STATUS", "funcName", fnSpec.Name)
+		}
+
+		// Check Child process is running
+		running, err := util.CheckProcess(fnStatus.Pidfile)
+		if err != nil {
+			log.Error(err, "util.CheckProcess")
+			return err
+		}
+
+		// Start Daemon if not running
+		if !running {
+			pid, err := util.BackgroundLocalExecutef(
+				"ip netns exec %s mikanectl daemon-nat -n %s",
+				fnSpec.Netns, fnSpec.Name)
+			if err != nil {
+				return err
+			}
+			if err := util.WriteFile(fnStatus.Pidfile,
+				[]byte(fmt.Sprintf("%d", pid))); err != nil {
+				return err
+			}
+			log.Info("subprocess started", "funcName", fnSpec.Name, "pid", pid)
+		}
+	}
 	return nil
 }
 
