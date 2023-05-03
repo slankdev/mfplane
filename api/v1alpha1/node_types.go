@@ -65,6 +65,13 @@ type Srv6Locator struct {
 
 // NodeStatus defines the observed state of Node
 type NodeStatus struct {
+	Functions []FunctionStatus `json:"functions,omitempty"`
+}
+
+type FunctionStatus struct {
+	Name    string `json:"name"`
+	Pidfile string `json:"pidfile"`
+	Running bool   `json:"running"`
 }
 
 //+kubebuilder:object:root=true
@@ -96,6 +103,16 @@ func (n Node) GetFunctionSpec(name string, spec *FunctionSpec) error {
 	for _, fn := range n.Spec.Functions {
 		if fn.Name == name {
 			*spec = fn
+			return nil
+		}
+	}
+	return fmt.Errorf("GetFunctionSpec not found")
+}
+
+func (n Node) GetFunctionStatus(name string, status *FunctionStatus) error {
+	for _, fn := range n.Status.Functions {
+		if fn.Name == name {
+			*status = fn
 			return nil
 		}
 	}
