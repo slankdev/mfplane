@@ -40,6 +40,11 @@ type FunctionSpec struct {
 	ConfigFile         string                 `json:"configFile,omitempty"`
 	Labels             map[string]string      `json:"labels,omitempty"`
 	SegmentRoutingSrv6 SegmentRoutingSrv6Spec `json:"segmentRoutingSrv6,omitempty"`
+	// NatSessionTimeoutSeconds indicates how long it takes to clean out the
+	// session cache that has not been updated. Many NAT implementations has this
+	// parameter for each Transport protocol, but currently it is the same for all
+	// protocols. It will be implemented when needed.
+	NatSessionTimeoutSeconds int `json:"natSessionTimeoutSeconds,omitempty"`
 }
 
 type SegmentRoutingSrv6Spec struct {

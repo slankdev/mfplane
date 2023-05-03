@@ -50,6 +50,13 @@ spec:
                       type: string
                     name:
                       type: string
+                    natSessionTimeoutSeconds:
+                      description: NatSessionTimeoutSeconds indicates how long it
+                        takes to clean out the session cache that has not been updated.
+                        Many NAT implementations has this parameter for each Transport
+                        protocol, but currently it is the same for all protocols.
+                        It will be implemented when needed.
+                      type: integer
                     netns:
                       type: string
                     segmentRoutingSrv6:
