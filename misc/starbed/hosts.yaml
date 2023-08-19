@@ -1,0 +1,16 @@
+all:
+  vars:
+    ansible_ssh_user: '{{ lookup("env", "ANSIBLE_SSH_USER") }}'
+    ansible_ssh_pass: '{{ lookup("env", "ANSIBLE_SSH_PASS") }}'
+    ansible_sudo_pass: '{{ lookup("env", "ANSIBLE_SUDO_PASS") }}'
+    ansible_ssh_common_args: >-
+      -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null
+
+mfplaneNodes:
+  hosts:
+    #w[001:013]:
+    w[014:048]:
+    w[101:112]:
+    w[117:126]:
+    x[065:094]:

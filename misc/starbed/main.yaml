@@ -1,0 +1,6 @@
+- hosts: mfplaneNodes
+  become: True
+  become_method: sudo
+  tasks:
+  - debug:
+      msg: hoge
