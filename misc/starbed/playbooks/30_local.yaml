@@ -1,0 +1,39 @@
+- hosts: localhost
+  become: true
+  become_method: sudo
+  gather_facts: false
+  tasks:
+
+  - name: install kubectl
+    environment:
+      http_proxy: "http://proxy1.lab.starbed.org:8080"
+      https_proxy: "http://proxy1.lab.starbed.org:8080"
+    vars:
+      kubectl_version: v1.28.1
+    ansible.builtin.get_url:
+      url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+      dest: /usr/bin/kubectl
+      mode: 0755
+
+  - name: install stern
+    block:
+    - ansible.builtin.get_url:
+        url: https://github.com/stern/stern/releases/download/v1.26.0/stern_1.26.0_linux_amd64.tar.gz
+        dest: /tmp/stern.tgz
+        mode: 0755
+      environment:
+        http_proxy: "http://proxy1.lab.starbed.org:8080"
+        https_proxy: "http://proxy1.lab.starbed.org:8080"
+      register: stern_dl
+    - unarchive:
+        src: /tmp/stern.tgz
+        dest: /usr/bin
+        remote_src: yes
+      when: stern_dl.changed
+
+  - name: install bash-completion
+    ansible.builtin.copy:
+      dest: /etc/bash_completion.d/mfplane
+      content: |
+        . <(kubectl completion bash)
+        . <(stern --completion bash)

@@ -1,0 +1,233 @@
+- hosts: localhost
+  become: false
+  gather_facts: no
+  tasks:
+  - name: craft ssh-config
+    ansible.builtin.blockinfile:
+      path: ~/.ssh/config
+      create: true
+      block: |
+        {% for name in groups['starbedNode'] %}
+        Host {{ name }}
+          User staruser
+          Hostname {{ name }}
+          StrictHostKeyChecking no
+          UserKnownHostsFile /dev/null
+        {% endfor %}
+
+- hosts: starbedNode
+  become: true
+  become_method: sudo
+  tasks:
+  - name: ssh key distribution
+    ansible.posix.authorized_key:
+      user: '{{ lookup("env", "ANSIBLE_SSH_USER") }}'
+      state: present
+      key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+  - name: set hostname
+    ansible.builtin.hostname:
+      name: "{{ inventory_hostname }}"
+
+  - name: set apt proxy
+    ansible.builtin.copy:
+      dest: /etc/apt/apt.conf.d/99curtin-aptproxy
+      mode: '0644'
+      content: |
+        Acquire::http::Proxy "{{ http_proxy }}";
+        Acquire::https::Proxy "{{ https_proxy }}";
+
+  # NOTE(slankdev): ansible.builtin.apt is not working
+  # fatal: [w001]: FAILED! =>
+  # {
+  #   "changed": false,
+  #   "msg": "python3-apt must be installed and visible from /usr/bin/python3."
+  # }
+  - name: install required packages
+    shell: |
+      set -xe
+      export HTTP_PROXY="{{ http_proxy }}"
+      export HTTPS_PROXY="{{ https_proxy }}"
+      apt update
+      apt install -y iperf3 ca-certificates curl gnupg frr frr-pythontools jq \
+        bash-completion python-apt bc \
+        git autoconf automake libtool make libreadline-dev pkg-config \
+        libpam0g-dev libjson-c-dev bison flex libc-ares-dev \
+        libsnmp-dev libcap-dev libelf-dev libmnl-dev
+
+  - name: gather the package facts
+    ansible.builtin.package_facts:
+      manager: auto
+
+  - name: install docker packages
+    when: "'docker-ce' not in ansible_facts.packages"
+    shell: |
+      set -xe
+      export HTTP_PROXY="{{ http_proxy }}"
+      export HTTPS_PROXY="{{ https_proxy }}"
+      install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      chmod a+r /etc/apt/keyrings/docker.gpg
+      echo \
+        "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+        "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+        tee /etc/apt/sources.list.d/docker.list > /dev/null
+      apt update
+      apt install -y docker-ce docker-ce-cli containerd.io \
+        docker-buildx-plugin docker-compose-plugin
+
+  - name: configure docker daemon's proxy
+    block:
+    - ansible.builtin.file:
+        path: /etc/systemd/system/docker.service.d
+        state: directory
+    - ansible.builtin.copy:
+        dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+        content: |
+          [Service]
+          Environment="HTTP_PROXY={{ http_proxy }}"
+          Environment="HTTPS_PROXY={{ https_proxy }}"
+      register: docker_service_file
+    - ansible.builtin.systemd:
+        name: docker
+        state: restarted
+        daemon_reload: true
+      when: docker_service_file.changed
+
+  - name: modprove vrf
+    changed_when: false
+    shell: |
+      modprobe vrf
+
+  - name: sysctl
+    ansible.posix.sysctl:
+      name: "{{ item.name }}"
+      value: "{{ item.value }}"
+      sysctl_set: true
+    with_items:
+    - {name: net.ipv4.ip_forward, value: 1}
+    - {name: net.ipv6.conf.all.forwarding, value: 1}
+    - {name: net.ipv6.conf.default.forwarding, value: 1}
+    - {name: net.ipv4.fib_multipath_hash_policy, value: 1}
+    - {name: net.ipv6.fib_multipath_hash_policy, value: 1}
+    - {name: net.vrf.strict_mode, value: 1}
+
+  - name: upgrade linux-kernel if needed
+    block:
+    - name: check current version
+      register: out
+      changed_when: false
+      shell: |
+        if [ $(uname -r | grep {{ kernelVersion }} | wc -l) = "0" ]; then
+          echo NEEDUPDATE
+        fi
+    - name: upgrade linux-kernel if needed
+      when: '"NEEDUPDATE" in out.stdout'
+      block:
+      - name: apt install linux-*
+        shell: |
+          apt install -y \
+            linux-image-{{ kernelVersion }}-generic \
+            linux-headers-{{ kernelVersion }}-generic \
+            linux-modules-extra-{{ kernelVersion }}-generic
+          grub-set-default $(cat /boot/grub/grub.cfg \
+            | grep 'menuentry ' \
+            | cut -f 2 -d "'" \
+            | nl -v 0 \
+            | grep "Ubuntu, with Linux {{ kernelVersion }}-generic" \
+            | grep -v "recovery mode" \
+            | awk '{print $1}')
+
+      - name: reboot
+        ansible.builtin.reboot:
+          reboot_timeout: 600 #seconds
+
+  - name: install iproute2-6.3
+    vars:
+      iproute2_version: 6.3.0
+    block:
+    - name: check current iproute2 version
+      register: out
+      changed_when: false
+      shell: |
+        if [ $(ip -V | grep "ip utility, iproute2-{{ iproute2_version }}" | wc -l) = "0" ]; then
+          echo NEEDUPDATE
+        fi
+    - when: '"NEEDUPDATE" in out.stdout'
+      block:
+      - ansible.builtin.get_url:
+          url: "\
+            https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/\
+            iproute2-{{ iproute2_version }}.tar.gz"
+          dest: /tmp/
+          mode: 0755
+        environment:
+          http_proxy: "http://proxy1.lab.starbed.org:8080"
+          https_proxy: "http://proxy1.lab.starbed.org:8080"
+        register: iproute2_dl
+      - name: build and install
+        register: tmp
+        changed_when: "'CHANGED' in tmp.stdout"
+        shell: |
+          set -xe
+          cd /tmp
+          tar xpf iproute2-{{ iproute2_version }}.tar.gz
+          cd iproute2-{{ iproute2_version }}
+          ./configure --libbpf_force=off
+          make clean && make && make install
+          echo CHANGE
+
+  - name: install bpftool
+    vars:
+      bpftool_version: 5.15.131
+    block:
+    - name: check current iproute2 version
+      register: out
+      changed_when: false
+      shell: |
+        if [ $(bpftool version | grep {{ bpftool_version }} | wc -l) = "0" ]; then
+          echo NEEDUPDATE
+        fi
+    - when: '"NEEDUPDATE" in out.stdout'
+      block:
+      - ansible.builtin.get_url:
+          url: "\
+            https://cdn.kernel.org/pub/linux/kernel/v5.x/\
+            linux-{{ bpftool_version }}.tar.xz"
+          dest: /tmp/
+          mode: 0755
+        environment:
+          http_proxy: "http://proxy1.lab.starbed.org:8080"
+          https_proxy: "http://proxy1.lab.starbed.org:8080"
+      - name: build and install
+        register: tmp
+        changed_when: "'CHANGED' in tmp.stdout"
+        shell: |
+          set -xe
+          cd /tmp
+          tar xpf linux-5.15.131.tar.xz
+          cd linux-{{ bpftool_version }}/tools/bpf/bpftool/
+          make && make install
+          echo CHANGE
+
+  - name: prepare operation utils
+    block:
+    - name: prepare operation util proxy-env-file
+      ansible.builtin.copy:
+        dest: /etc/proxy.bash
+        mode: '0644'
+        content: |
+          export HTTP_PROXY={{ http_proxy }}
+          export HTTPS_PROXY={{ https_proxy }}
+    - name: bash-completion
+      ansible.builtin.blockinfile:
+        path: /etc/bash.bashrc
+        create: true
+        block: |
+          alias de="docker exec -it"
+          if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+            . /etc/bash_completion
+          fi
+          if type "mikanectl" > /dev/null 2>&1; then
+            . <(mikanectl completion bash)
+          fi

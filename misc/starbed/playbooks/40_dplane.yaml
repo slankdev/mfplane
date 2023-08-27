@@ -1,0 +1,143 @@
+- hosts: dplaneNode
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tasks:
+
+  - name: update interface addresses
+    ansible.builtin.copy:
+      dest: /etc/netplan/99-config.yaml
+      content: |
+        network:
+          version: 2
+          renderer: networkd
+          ethernets:
+        {% for di in dataplaneInterfaces %}
+            {{ di.name }}:
+              dhcp6: true
+              addresses:
+        {% for addr in di.addrs %}
+              - {{ addr.addr }}/{{ addr.plen }}
+        {% endfor %}
+        {% endfor %}
+
+  - name: sysctl
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      sysctl -w net.ipv6.conf.all.seg6_enabled=1
+      sysctl -w net.ipv6.conf.default.seg6_enabled=1
+      sysctl -w net.ipv4.conf.all.rp_filter=0
+      sysctl -w net.ipv4.conf.default.rp_filter=0
+
+      {% for di in dataplaneInterfaces %}
+      sysctl -w net.ipv6.conf.{{ di.name }}.seg6_enabled=1
+      sysctl -w net.ipv4.conf.{{ di.name }}.rp_filter=0
+      {% endfor %}
+
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% for p in c.ports %}
+      sysctl -w net.ipv4.conf.{{ c.name }}-eth{{ loop.index0 }}.rp_filter=0
+      {% endfor %}
+      {% endif %}
+      {% endfor %}
+
+  - name: reload interface addresses
+    shell: |
+      netplan apply
+      ip -br link show dev bridge_Control && ip link del bridge_Control
+      {% for di in dataplaneInterfaces %}
+      ip link set {{ di.name }} down
+      ip link set {{ di.name }} up
+      {% endfor %}
+
+  - name: prepare dplane interface
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for di in dataplaneInterfaces %}
+      ip link set {{di.name}} up
+      {% for addr in di.addrs %}
+      ip addr replace {{addr.addr}}/{{addr.plen}} dev {{di.name}}
+      {% endfor %}
+      {% endfor %}
+
+  - name: configure srv6 locator blackhole route
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      {% for loc in srv6_locators %}
+      if [ $(ip -6 route list {{ loc.prefix }} | wc -l) = "0" ]; then
+        ip -6 route add blackhole {{ loc.prefix }}
+        echo CHANGED
+      fi
+      {% endfor %}
+
+  - name: configure /etc/frr/daemons
+    ansible.builtin.copy:
+      dest: /etc/frr/daemons
+      content: |
+        bgpd=yes
+        bfdd=yes
+        vtysh_enable=yes
+        zebra_options="  -A 127.0.0.1 -s 90000000"
+        bgpd_options="   -A 127.0.0.1"
+        staticd_options="-A 127.0.0.1"
+        bfdd_options="   -A 127.0.0.1"
+
+  - name: configure /etc/frr/frr.conf
+    ansible.builtin.copy:
+      dest: /etc/frr/frr.conf
+      content: |
+        router bgp {{ asNumber }}
+         bgp router-id {{ routerId }}
+         bgp bestpath as-path multipath-relax
+         no bgp ebgp-requires-policy
+         no bgp default ipv4-unicast
+         !
+         neighbor UPPER peer-group
+         neighbor UPPER remote-as internal
+        {% for name in groups['routeServer'] %}
+        {% for vrf in hostvars[name].vrfs %}
+        {% for di in vrf.dataplaneInterfaces %}
+         neighbor {{ di.addrs[0].addr }} peer-group UPPER
+        {% endfor %}
+        {% endfor %}
+        {% endfor %}
+         !
+         neighbor LOWER peer-group
+         neighbor LOWER remote-as external
+        {% for c in containers %}
+        {% if c.host == inventory_hostname %}
+        {% for p in c.ports %}
+        {% if p.bgp is defined %}
+         neighbor {{ c.name }}-eth{{ loop.index0 }} interface peer-group LOWER
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
+         !
+         address-family ipv4 unicast
+          neighbor UPPER activate
+          neighbor UPPER soft-reconfiguration inbound
+          neighbor LOWER activate
+          neighbor LOWER soft-reconfiguration inbound
+          redistribute kernel
+         exit-address-family
+         !
+         address-family ipv6 unicast
+          neighbor UPPER activate
+          neighbor UPPER soft-reconfiguration inbound
+          neighbor LOWER activate
+          neighbor LOWER soft-reconfiguration inbound
+          redistribute kernel
+         exit-address-family
+        !
+
+  - name: systemctl restart frr
+    ansible.builtin.systemd:
+      name: frr
+      state: restarted

@@ -1,0 +1,5 @@
+docker run --rm -it --net host nicolaka/netshoot tcpdump -nni any
+docker run --rm -it --net host nicolaka/netshoot tcpdump -nni any -l not tcp port 22
+docker run --rm -it --net host nicolaka/netshoot tcpdump -nni any -l not tcp port 22 and not icmp6 and not arp
+ssh -t w003 sudo ip netns exec c11 ping 8.8.8.8
+cat /sys/kernel/tracing/trace_pipe

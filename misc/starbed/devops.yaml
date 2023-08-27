@@ -1,0 +1,91 @@
+- hosts: localhost
+  become: true
+  gather_facts: no
+  tasks:
+
+  - name: install golang
+    block:
+    - ansible.builtin.stat:
+        path: /usr/local/go
+      register: tmp
+    - when: tmp.stat.exists == false
+      block:
+      - ansible.builtin.get_url:
+          url: https://go.dev/dl/go1.19.12.linux-amd64.tar.gz
+          dest: /tmp/go.tgz
+        environment:
+          http_proxy: "{{ http_proxy }}"
+          https_proxy: "{{ https_proxy }}"
+      - shell: |
+          set -xe
+          rm -rf /usr/local/go
+          tar -C /usr/local -xzf /tmp/go.tgz
+      - ansible.builtin.file:
+          src: /usr/local/go/bin/go
+          dest: /usr/bin/go
+          state: link
+
+  - name: install required packages
+    shell: |
+      set -xe
+      export HTTP_PROXY="{{ http_proxy }}"
+      export HTTPS_PROXY="{{ https_proxy }}"
+      apt update && apt install -y \
+        jq \
+        curl \
+        gnupg \
+        iperf3 \
+        python-apt \
+        ca-certificates \
+        bash-completion \
+        sshpass \
+        silversearcher-ag \
+        #END
+
+  - name: set apt proxy
+    ansible.builtin.copy:
+      dest: /etc/apt/apt.conf.d/99curtin-aptproxy
+      mode: '0644'
+      content: |
+        Acquire::http::Proxy "{{ http_proxy }}";
+        Acquire::https::Proxy "{{ https_proxy }}";
+
+  - name: install docker
+    block:
+    - ansible.builtin.package_facts:
+        manager: auto
+    - when: "'docker-ce' not in ansible_facts.packages"
+      shell: |
+        set -xe
+        export HTTP_PROXY="{{ http_proxy }}"
+        export HTTPS_PROXY="{{ https_proxy }}"
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+
+        echo \
+          "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+          tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+        apt update
+        apt install -y docker-ce docker-ce-cli containerd.io \
+          docker-buildx-plugin docker-compose-plugin
+
+  - name: configure docker daemon's proxy
+    block:
+    - ansible.builtin.file:
+        path: /etc/systemd/system/docker.service.d
+        state: directory
+    - ansible.builtin.copy:
+        dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+        content: |
+          [Service]
+          Environment="HTTP_PROXY={{ http_proxy }}"
+          Environment="HTTPS_PROXY={{ https_proxy }}"
+      register: docker_service_file
+    - ansible.builtin.systemd:
+        name: docker
+        state: restarted
+        daemon_reload: true
+      when: docker_service_file.changed

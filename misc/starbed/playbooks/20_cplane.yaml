@@ -1,0 +1,164 @@
+- hosts: routeServer
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tasks:
+
+  - name: install kind
+    environment:
+      http_proxy: "{{ http_proxy }}"
+      https_proxy: "{{ https_proxy }}"
+    vars:
+      kind_version: v0.11.1
+    ansible.builtin.get_url:
+      url: "https://kind.sigs.k8s.io/dl/{{ kind_version }}/kind-linux-amd64"
+      dest: /usr/bin/kind
+      mode: 0755
+
+  - name: install kubectl
+    environment:
+      http_proxy: "{{ http_proxy }}"
+      https_proxy: "{{ https_proxy }}"
+    vars:
+      kubectl_version: v1.28.1
+    ansible.builtin.get_url:
+      url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+      dest: /usr/bin/kubectl
+      mode: 0755
+
+  - name: install bash-completion
+    ansible.builtin.copy:
+      dest: /etc/bash_completion.d/mfplane
+      content: |
+        . <(kubectl completion bash)
+        . <(kind completion bash)
+
+  - name: prepare kind.yaml
+    ansible.builtin.copy:
+      dest: /etc/kind.yaml
+      content: |
+        kind: Cluster
+        apiVersion: kind.x-k8s.io/v1alpha4
+        networking:
+          ipFamily: ipv4
+          apiServerAddress: "0.0.0.0"
+          apiServerPort: 6443
+        nodes:
+        - role: control-plane
+          extraPortMappings:
+          - {containerPort: 30080, hostPort: 30080, listenAddress: "0.0.0.0"}
+          - {containerPort: 30081, hostPort: 30081, listenAddress: "0.0.0.0"}
+          - {containerPort: 30082, hostPort: 30082, listenAddress: "0.0.0.0"}
+          - {containerPort: 30083, hostPort: 30083, listenAddress: "0.0.0.0"}
+          - {containerPort: 30084, hostPort: 30084, listenAddress: "0.0.0.0"}
+          - {containerPort: 30085, hostPort: 30085, listenAddress: "0.0.0.0"}
+          - {containerPort: 30086, hostPort: 30086, listenAddress: "0.0.0.0"}
+          - {containerPort: 30087, hostPort: 30087, listenAddress: "0.0.0.0"}
+          - {containerPort: 30088, hostPort: 30088, listenAddress: "0.0.0.0"}
+          - {containerPort: 30089, hostPort: 30089, listenAddress: "0.0.0.0"}
+          - {containerPort: 30090, hostPort: 30090, listenAddress: "0.0.0.0"}
+
+  - name: prepare kind.resources.yaml
+    ansible.builtin.copy:
+      dest: /etc/kind.resources.yaml
+      content: |
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: cluster-admin-sa
+          namespace: default
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          name: cluster-admin-sa
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: cluster-admin
+        subjects:
+        - kind: ServiceAccount
+          name: cluster-admin-sa
+          namespace: default
+
+  - name: setup kind-k8s
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    environment:
+      http_proxy: "{{ http_proxy }}"
+      https_proxy: "{{ https_proxy }}"
+    shell: |
+      set -xe
+      # https://kind.sigs.k8s.io/docs/user/quick-start/#configure-kind-to-use-a-proxy
+      export HTTP_PROXY="{{ http_proxy }}"
+      export HTTPs_PROXY="{{ https_proxy }}"
+      if [ $(kind get clusters | grep kind | wc -l) = "0" ]; then
+        ip link set docker0 up
+        systemctl restart docker
+        sleep 1
+        kind create cluster --config /etc/kind.yaml
+        echo CHANGED
+      fi
+
+  - name: apply kind.resources.yaml
+    register: tmp
+    changed_when: "'created' in tmp.stdout"
+    shell: |
+      kubectl apply -f /etc/kind.resources.yaml
+
+  - name: gather var of token-info for kubeconfig
+    register: token
+    changed_when: false
+    shell: |
+      kubectl -n default get secret -o json \
+        $(kubectl get sa  cluster-admin-sa -o json | jq .secrets[0].name -r) \
+        | jq .data.token -r | base64 -d
+
+  - name: gather var of ipaddr-info for kubeconfig
+    register: ipaddr
+    changed_when: false
+    shell: |
+      ip -j -4 addr show dev eno8303 | jq .[0].addr_info[0].local -r
+
+  - name: prepare kubeconfig
+    ansible.builtin.copy:
+      dest: /etc/kind.kubeconfig.yaml
+      content: |
+        apiVersion: v1
+        clusters:
+        - cluster:
+            server: https://{{ ipaddr.stdout }}:6443
+            insecure-skip-tls-verify: true
+          name: default
+        contexts:
+        - context:
+            cluster: default
+            user: default
+          name: default
+        current-context: default
+        kind: Config
+        users:
+        - name: default
+          user:
+            token: {{ token.stdout }}
+
+  - name: fetch kubeconfig
+    ansible.builtin.fetch:
+      src: /etc/kind.kubeconfig.yaml
+      dest: ~/{{ inventory_hostname }}.kind.kubeconfig.yaml
+      flat: yes
+
+  - name: fetch mfplane manifests
+    environment:
+      http_proxy: "{{ http_proxy }}"
+      https_proxy: "{{ https_proxy }}"
+    ansible.builtin.get_url:
+      url: "{{ manifestUrl }}"
+      dest: /etc/mfplane.base.yaml
+
+  - name: apply mfplane manifests
+    register: tmp
+    changed_when: "('created' in tmp.stdout) or ('changed' in tmp.stdout)"
+    shell: |
+      kubectl create ns cplane-system
+      kubectl apply -f /etc/mfplane.base.yaml
