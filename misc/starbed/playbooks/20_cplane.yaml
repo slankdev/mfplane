@@ -148,9 +148,15 @@
       dest: ~/{{ inventory_hostname }}.kind.kubeconfig.yaml
       flat: yes
 
+- hosts: localhost
+  become: false
+  gather_facts: no
+  tasks:
   - name: apply mfplane manifests
     register: tmp
     changed_when: "('created' in tmp.stdout) or ('changed' in tmp.stdout)"
     shell: |
-      kubectl create ns cplane-system
-      kubectl kustomize ../../config/default/ | kubectl apply -f-
+      if [ $(kubectl get ns -o name | grep namespace/cplane-system | wc -l) = "0" ]; then
+        kubectl create ns cplane-system
+      fi
+      kubectl kustomize ../../../config/default/ | kubectl apply -f-
