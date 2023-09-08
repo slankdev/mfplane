@@ -148,17 +148,9 @@
       dest: ~/{{ inventory_hostname }}.kind.kubeconfig.yaml
       flat: yes
 
-  - name: fetch mfplane manifests
-    environment:
-      http_proxy: "{{ http_proxy }}"
-      https_proxy: "{{ https_proxy }}"
-    ansible.builtin.get_url:
-      url: "{{ manifestUrl }}"
-      dest: /etc/mfplane.base.yaml
-
   - name: apply mfplane manifests
     register: tmp
     changed_when: "('created' in tmp.stdout) or ('changed' in tmp.stdout)"
     shell: |
       kubectl create ns cplane-system
-      kubectl apply -f /etc/mfplane.base.yaml
+      kubectl kustomize ../../config/default/ | kubectl apply -f-
