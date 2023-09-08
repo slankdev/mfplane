@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
-	"github.com/slankdev/mfplane/internal/controller"
+	controller "github.com/slankdev/mfplane/internal/controller/agent"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -52,8 +52,12 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var namespace string
+	var name string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&name, "name", "", "Node resource name.")
+	flag.StringVar(&namespace, "namespace", "", "Node resource namespace.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -90,24 +94,12 @@ func main() {
 	}
 
 	if err = (&controller.NodeReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:    mgr.GetClient(),
+		Scheme:    mgr.GetScheme(),
+		Name:      name,
+		Namespace: namespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Node")
-		os.Exit(1)
-	}
-	if err = (&controller.NatReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Nat")
-		os.Exit(1)
-	}
-	if err = (&controller.Srv6SegmentReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Srv6Segment")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
@@ -121,6 +113,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	controller.MustRegisterPromCollector(mgr.GetClient())
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")

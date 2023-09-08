@@ -50,6 +50,10 @@ import (
 type NodeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	// Name ...
+	Name string
+	// Namespace ...
+	Namespace string
 }
 
 //+kubebuilder:rbac:groups=mfplane.mfplane.io,resources=nodes,verbs=get;list;watch;create;update;patch;delete
@@ -74,9 +78,13 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err := r.Get(ctx, req.NamespacedName, &node); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	if node.GetName() != r.Name || node.GetNamespace() != r.Namespace {
+		log.Info("skip")
+		return ctrl.Result{}, nil
+	}
 
 	// Do Reconcile
-	log.Info("RECONCILE_MAIN_ROUTINE_FINISH")
+	log.Info("RECONCILE_MAIN_ROUTINE_BEGIN")
 	if err := r.reconcileXdpAttach(ctx, req, &node, res); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -109,7 +117,7 @@ func (r *NodeReconciler) reconcileXdpAttach(ctx context.Context,
 
 		// Attach XDP program
 		if linkDetail.Xdp == nil {
-			if _, err := util.LocalExecutef("sudo ip netns exec %s "+
+			if _, err := util.LocalExecutef("ip netns exec %s "+
 				"./bin/mikanectl bpf %s attach -i %s -n %s -m %s --define RING_SIZE=65537",
 				fn.Netns, fn.Type, fn.Device, fn.Name, fn.Mode); err != nil {
 				return err
@@ -150,7 +158,7 @@ func (r *NodeReconciler) reconcileXdpMapLoad(ctx context.Context,
 			log.Error(err, "util.WriteFile")
 			return err
 		}
-		if _, err := util.LocalExecutef("sudo ip netns exec %s "+
+		if _, err := util.LocalExecutef("ip netns exec %s "+
 			"./bin/mikanectl map-load -f /tmp/%s.config.yaml",
 			fn.Netns, fn.Name); err != nil {
 			log.Error(err, "map-load")
@@ -244,12 +252,12 @@ func craftConfig(ctx context.Context,
 	for _, seg := range segList.Items {
 		if !seg.DeletionTimestamp.IsZero() {
 			_, _ = util.LocalExecutef(
-				"sudo ip netns exec %s ip -6 route del blackhole %s",
+				"ip netns exec %s ip -6 route del blackhole %s",
 				fnSpec.Netns, seg.Status.Sid)
 			switch {
 			case seg.Spec.EndMflNat != nil:
 				_, _ = util.LocalExecutef(
-					"sudo ip netns exec %s ip -4 route del blackhole %s",
+					"ip netns exec %s ip -4 route del blackhole %s",
 					fnSpec.Netns, seg.Spec.EndMflNat.Vip)
 			case seg.Spec.EndMfnNat != nil:
 				// Do nothing
@@ -294,7 +302,7 @@ func craftConfig(ctx context.Context,
 					)
 				}
 				if _, err := util.LocalExecutef(
-					"sudo ip netns exec %s ip -4 route replace blackhole %s",
+					"ip netns exec %s ip -4 route replace blackhole %s",
 					fnSpec.Netns, seg.Spec.EndMflNat.Vip); err != nil {
 					return "", err
 				}
@@ -311,7 +319,7 @@ func craftConfig(ctx context.Context,
 			}
 			c.LocalSids = append(c.LocalSids, sid)
 			if _, err := util.LocalExecutef(
-				"sudo ip netns exec %s ip -6 route replace blackhole %s",
+				"ip netns exec %s ip -6 route replace blackhole %s",
 				fnSpec.Netns, seg.Status.Sid); err != nil {
 				return "", err
 			}

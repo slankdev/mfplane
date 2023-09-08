@@ -61,7 +61,7 @@ type Srv6SegmentStatus struct {
 	State Srv6SegmentState `json:"state"`
 }
 
-//+kubebuilder:validation:Enum=Terminating;Active;Configuring;Pending
+// +kubebuilder:validation:Enum=Terminating;Active;Configuring;Pending
 type Srv6SegmentState string
 
 const (
