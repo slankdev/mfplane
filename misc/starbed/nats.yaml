@@ -1,0 +1,24 @@
+apiVersion: mfplane.mfplane.io/v1alpha1
+kind: Nat
+metadata:
+  name: nat-sample1
+  namespace: default
+spec:
+  vip: 142.0.0.1
+  sources:
+  - 10.1.0.0/24
+  natPortHashBit: 0x00ff
+  natMapping: endpointIndependentMapping
+  natFiltering: endpointIndependentFiltering
+  uSidBlockLength: 16
+  uSidFunctionLength: 16
+  loadBalancer:
+    replicas: 1
+    selector:
+      matchLabels:
+        lbGroup: lbGroup1
+  networkFunction:
+    replicas: 1
+    selector:
+      matchLabels:
+        natGroup: natGroup1

@@ -1,0 +1,48 @@
+- hosts: dplaneNode
+  become: true
+  become_method: sudo
+  tags: [mfplane]
+  gather_facts: no
+  tasks:
+
+  - name: prepare /etc/mfplane
+    ansible.builtin.file:
+      path: "{{ item.name }}"
+      state: directory
+    with_items:
+    - name: /etc/mfplane
+    - name: /etc/kubernetes
+
+  - name: prepare /etc/kubernetes/kubeconfig
+    ansible.builtin.copy:
+      dest: /etc/kubernetes/kubeconfig
+      src: ~/w002.kind.kubeconfig.yaml
+
+  - name: prepare /etc/mfplane/docker-compose.yaml
+    ansible.builtin.copy:
+      dest: /etc/mfplane/docker-compse.yaml
+      content: |
+        version: '3'
+        services:
+          agent:
+            image: slankdev/mfplane-agent:develop
+            pull_policy: always
+            network_mode: host
+            pid: host
+            privileged: true
+            volumes:
+            - /etc/mfplane:/etc/mfplane
+            - /etc/kubernetes:/etc/kubernetes
+            - /var/run/netns:/var/run/netns
+            environment:
+            - KUBECONFIG=/etc/kubernetes/kubeconfig
+            command: >
+              /usr/bin/agent
+              --namespace=default
+              --name={{ inventory_hostname }}
+
+  - name: execute docker compose
+    shell: |
+      set -xe
+      docker compose -f /etc/mfplane/docker-compse.yaml down
+      docker compose -f /etc/mfplane/docker-compse.yaml up -d

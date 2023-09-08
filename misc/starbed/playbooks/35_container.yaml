@@ -1,0 +1,345 @@
+- hosts: dplaneNode
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tasks:
+  - name: create pause container for netns
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      mkdir -p /var/run/netns
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      if [ $(docker ps --format {%raw%}"{{.Names}}"{%endraw%} \
+        | grep {{ c.name }} | wc -l) = "0" ]; then
+        docker rm -f {{ c.name }} || true
+        docker run -td --name {{ c.name }} --net=none \
+          --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+          --sysctl net.ipv6.conf.default.disable_ipv6=0 \
+          mirantis/ucp-pause:3.4.9
+        echo CHANGED
+      fi
+      {% endif %}
+      {% endfor %}
+
+  - name: expose netns of pause container
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      if ! ip netns exec {{ c.name }} ls; then
+        rm -rf /var/run/netns/{{ c.name }}
+        ln -s /proc/$(docker inspect {{ c.name }} -f \
+          {%raw%}"{{.State.Pid}}"{%endraw%})/ns/net \
+          /var/run/netns/{{ c.name }}
+        echo CHANGED
+      fi
+      {% endif %}
+      {% endfor %}
+
+  - name: create vrf if needed
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% for p in c.ports %}
+      {% if p.type == "overlay" %}
+      VRF_NAME=vrf-{{ p.network }}
+      if [ $(ip -br link show dev $VRF_NAME | wc -l) = "0" ]; then
+        ip link add $VRF_NAME type vrf table \
+          $(printf '%d' "0x$(echo -n {{ p.network }} | md5sum | cut -c 1-8)")
+        ip link set $VRF_NAME up
+        sysctl -w net.ipv4.conf.$VRF_NAME.rp_filter=0
+        echo CHANGED
+      fi
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+
+  - name: set dataplane interface netns
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% for p in c.ports %}
+      HIF="{{ c.name }}-eth{{ loop.index0 }}"
+      CIF="eth{{ loop.index0 }}"
+      if [ $(ip -br link show dev $HIF | wc -l) = "0" ]; then
+        ip link add $HIF type veth peer name $CIF netns {{ c.name }}
+      {% if p.type == "overlay" %}
+        ip link set $HIF vrf vrf-{{ p.network }}
+      {% endif %}
+        ip link set $HIF up
+        ip netns exec {{ c.name }} ip link set $CIF up
+        echo CHANGED
+      fi
+      {% endfor %}
+      {% endif %}
+      {% endfor %}
+
+  - name: set hv address and route
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% for p in c.ports %}
+      HIF="{{ c.name }}-eth{{ loop.index0 }}"
+      if [ $(ip -br addr show dev $HIF | grep 169.254.169.254 \
+        | wc -l) = "0" ]; then
+        ip addr add 169.254.169.254 dev $HIF
+      {% for a in p.addrs %}
+      {% if p.type == "overlay" %}
+        ip route add {{ a.addr }} dev $HIF vrf vrf-{{ p.network }}
+      {% else %}
+        ip route add {{ a.addr }} dev $HIF
+      {% endif %}
+      {% endfor %}
+        echo CHANGED
+      fi
+      {% endfor %}
+      {% endif %}
+      {% endfor %}
+
+  - name: set sr dummy device
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      if [ $(ip -br link show dev sr0 | wc -l) = "0" ]; then
+        ip link add sr0 type dummy
+        ip link set sr0 up
+        sysctl -w net.ipv4.conf.sr0.rp_filter=0
+        echo CHANGED
+      fi
+
+  - name: set hv srv6 decap route
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% for p in c.ports %}
+      {% if p.type == "overlay" %}
+      TABLE=$(printf '%d' "0x$(echo -n {{ p.network }} | md5sum | cut -c 1-8)")
+      SID="{{ srv6_locators[0].token }}:$(echo -n {{ p.network }} | md5sum | cut -c 1-4)::/48"
+      if [ $(ip -6 route list ${SID} | wc -l) = "0" ]; then
+        ip -6 route add ${SID} encap seg6local \
+          action End.DT4 vrftable $TABLE dev sr0 proto 100
+        echo CHANGED
+      fi
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+      {% endfor %}
+
+  - name: set hv srv6 encap route
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% set ns = namespace(token = "") %}
+      {% for c in containers %}
+      {% if c.host != inventory_hostname %}
+      {% for p in c.ports %}
+      {% if p.type == "overlay" %}
+      {% for name in groups['dplaneNode'] %}
+      {% if c.host == name %}
+      {% set ns.token=hostvars[name].srv6_locators[0].token %}
+      {% endif %}
+      {% endfor %}
+      if [ $(ip route list {{ p.addrs[0].addr }} vrf vrf-{{ p.network }} \
+        | wc -l) = "0" ]; then
+        ip route add {{ p.addrs[0].addr }} \
+          encap seg6 mode encap \
+          segs {{ ns.token }}:$(echo -n {{ p.network }} | md5sum | cut -c 1-4):: \
+          dev sr0 vrf vrf-{{ p.network }}
+      fi
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+      {% endfor %}
+
+  - name: set container address and route
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% for p in c.ports %}
+      CIF="eth{{ loop.index0 }}"
+      {% for a in p.addrs %}
+      if [ $(ip -n {{ c.name }} -br addr show dev $CIF | grep {{ a.addr }} \
+        | wc -l) = "0" ]; then
+        ip -n {{ c.name }} addr add {{ a.addr }} dev $CIF
+        ip -n {{ c.name }} route add 169.254.169.254 dev $CIF
+        ip -n {{ c.name }} route add default via 169.254.169.254
+        echo CHANGED
+      fi
+      {% endfor %}
+      {% endfor %}
+      {% endif %}
+      {% endfor %}
+
+  - name: set custom route for vrf (TODO currently it forcely updates fib)
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for r in routes %}
+      OLD_MD5=$(ip route list vrf vrf-{{ r.network }} {{ r.destination }} \
+        | md5sum | awk '{print $1}')
+      ip route replace {{ r.destination }} encap seg6 mode encap \
+        segs {{ r.nexthop.segs | join(',') }} dev sr0 \
+        vrf vrf-{{ r.network }}
+      NEW_MD5=$(ip route list vrf vrf-{{ r.network }} {{ r.destination }} \
+        | md5sum | awk '{print $1}')
+      if [ "$OLD_MD5" != "$NEW_MD5" ]; then
+        echo CHANGED
+      fi
+      {% endfor %}
+
+  - name: create frr.conf
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% set ns = namespace(bgp = false) %}
+      {% for p in c.ports %}
+      {% if p.bgp is defined %}
+      {% set ns.bgp = true %}
+      {% endif %}
+      {% endfor %}
+      {% if ns.bgp %}
+
+      touch /etc/mfplane/{{ c.name }}.frr.conf
+      cat <<EOF > /etc/mfplane/{{ c.name }}.frr.conf
+      !
+      interface eth0
+        ipv6 nd ra-interval 3
+        no ipv6 nd suppress-ra
+      !
+      router bgp 65000
+        bgp router-id 1.1.1.1
+        bgp bestpath as-path multipath-relax
+        no bgp ebgp-requires-policy
+        no bgp default ipv4-unicast
+        neighbor UPPER peer-group
+        neighbor UPPER remote-as external
+        neighbor eth0 interface peer-group UPPER
+        !
+        address-family ipv4 unicast
+          redistribute kernel
+          neighbor UPPER activate
+          neighbor UPPER soft-reconfiguration inbound
+        exit-address-family
+        !
+        address-family ipv6 unicast
+          redistribute kernel
+          neighbor UPPER activate
+          neighbor UPPER soft-reconfiguration inbound
+        exit-address-family
+      !
+      EOF
+      echo CHANGED
+
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+
+  - name: create daemons configuration
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% set ns = namespace(bgp = false) %}
+      {% for p in c.ports %}
+      {% if p.bgp is defined %}
+      {% set ns.bgp = true %}
+      {% endif %}
+      {% endfor %}
+      {% if ns.bgp %}
+
+      touch /etc/mfplane/{{ c.name }}.daemons
+      cat <<EOF > /etc/mfplane/{{ c.name }}.daemons
+      bgpd=yes
+      bfdd=yes
+      vtysh_enable=yes
+      zebra_options="  -A 127.0.0.1 -s 90000000"
+      bgpd_options="   -A 127.0.0.1"
+      staticd_options="-A 127.0.0.1"
+      bfdd_options="   -A 127.0.0.1"
+      EOF
+      echo CHANGED
+
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+
+  - name: create FRR container
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% set ns = namespace(bgp = false) %}
+      {% for p in c.ports %}
+      {% if p.bgp is defined %}
+      {% set ns.bgp = true %}
+      {% endif %}
+      {% endfor %}
+      {% if ns.bgp %}
+      if [ $(docker ps --format {%raw%}"{{.Names}}"{%endraw%} \
+        | grep {{ c.name }}-frr | wc -l) = "0" ]; then
+        docker rm -f {{ c.name }}-frr || true
+        docker run -td --name {{ c.name }}-frr \
+          --net=container:{{ c.name }} \
+          --privileged \
+          --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+          --sysctl net.ipv6.conf.default.disable_ipv6=0 \
+          --volume /etc/mfplane/{{ c.name }}.frr.conf:/etc/frr/frr.conf \
+          --volume /etc/mfplane/{{ c.name }}.daemons:/etc/frr/daemons \
+          frrouting/frr:v8.1.0
+        echo CHANGED
+      fi
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+
+  - name: create HTTP serer container
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% if c.httpApp is defined and c.httpApp %}
+      if [ $(docker ps --format {%raw%}"{{.Names}}"{%endraw%} \
+        | grep {{ c.name }}-http | wc -l) = "0" ]; then
+        docker rm -f {{ c.name }}-http || true
+        docker run -td --name {{ c.name }}-http \
+          --net=container:{{ c.name }} \
+          --privileged \
+          --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+          --sysctl net.ipv6.conf.default.disable_ipv6=0 \
+          slankdev/mfplane-agent:develop \
+          mikanectl ifconfig-http -p 80
+        echo CHANGED
+      fi
+      {% endif %}
+      {% endif %}
+      {% endfor %}

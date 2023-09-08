@@ -1,16 +1,277 @@
 all:
   vars:
+    # http_proxy: '{{ lookup("env", "EXP_NODE_HTTP_PROXY") }}'
+    # https_proxy: '{{ lookup("env", "EXP_NODE_HTTPS_PROXY") }}'
+    http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
+    https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
     ansible_ssh_user: '{{ lookup("env", "ANSIBLE_SSH_USER") }}'
     ansible_ssh_pass: '{{ lookup("env", "ANSIBLE_SSH_PASS") }}'
     ansible_sudo_pass: '{{ lookup("env", "ANSIBLE_SUDO_PASS") }}'
     ansible_ssh_common_args: >-
       -o StrictHostKeyChecking=no
       -o UserKnownHostsFile=/dev/null
+    manifestUrl: "\
+      https://raw.githubusercontent.com/\
+      slankdev/mfplane/starbedctl/config/default/compiled.yaml"
 
-mfplaneNodes:
+    routes:
+    - network: net1
+      destination: 0.0.0.0/0
+      nexthop:
+        segs:
+        - fc00:ff00::0
+
+    containers:
+    # w003: client
+    - name: c11
+      host: w003
+      ports:
+      - type: overlay
+        addrs: [{addr: 10.1.0.1}]
+        network: net1
+    - name: c12
+      host: w003
+      ports:
+      - type: overlay
+        addrs: [{addr: 10.1.0.2}]
+        network: net1
+    - name: c21
+      host: w003
+      ports:
+      - type: overlay
+        addrs: [{addr: 10.2.0.1}]
+        network: net2
+    - name: c22
+      host: w003
+      ports:
+      - type: overlay
+        addrs: [{addr: 10.2.0.2}]
+        network: net2
+    - name: s1
+      host: w003
+      ports:
+      - type: underlay
+        addrs: [{addr: 142.1.0.1}]
+      httpApp: true
+    - name: s2
+      host: w003
+      ports:
+      - type: underlay
+        addrs: [{addr: 142.1.0.2}]
+      httpApp: true
+
+    # w004: server
+    - name: c13
+      host: w004
+      ports:
+      - type: overlay
+        addrs: [{addr: 10.1.0.3}]
+        network: net1
+    - name: c14
+      host: w004
+      ports:
+      - type: overlay
+        addrs: [{addr: 10.1.0.4}]
+        network: net1
+    - name: c23
+      host: w004
+      ports:
+      - type: overlay
+        addrs: [{addr: 10.2.0.3}]
+        network: net2
+    - name: c24
+      host: w004
+      ports:
+      - type: overlay
+        addrs: [{addr: 10.2.0.4}]
+        network: net2
+    - name: s3
+      host: w004
+      ports:
+      - type: underlay
+        addrs: [{addr: 142.1.0.3}]
+      httpApp: true
+    - name: s4
+      host: w004
+      ports:
+      - type: underlay
+        addrs: [{addr: 142.1.0.4}]
+      httpApp: true
+
+    # w005: l-node
+    - name: l1
+      host: w005
+      ports:
+      - type: underlay
+        addrs: []
+        bgp: {}
+
+    # w006: n-node
+    - name: n1
+      host: w006
+      ports:
+      - type: underlay
+        addrs: []
+        bgp: {}
+
+#NOTE(slankdev): starbed assignment
+#w[001:013]:
+#w[014:048]:
+#w[101:112]:
+#w[117:126]:
+#x[065:094]:
+
+starbedNode:
+  children:
+    routeServer:
+    dplaneNode:
+
+routeServer:
   hosts:
-    #w[001:013]:
-    w[014:048]:
-    w[101:112]:
-    w[117:126]:
-    x[065:094]:
+    w002:
+      kernelVersion: 5.15.0-82
+      asNumber: 4200000001
+      routerId: 10.0.0.2
+      vrfs:
+      - name: vrf-control1
+        dataplaneInterfaces:
+        - name: eno12399
+          addrs:
+          - {addr: 2001:ff01::2, plen: 64}
+          - {addr: 10.255.1.2, plen: 24}
+      - name: vrf-control2
+        dataplaneInterfaces:
+        - name: eno12409
+          addrs:
+          - {addr: 2001:ff02::2, plen: 64}
+          - {addr: 10.255.2.2, plen: 24}
+      - name: vrf-control3
+        dataplaneInterfaces:
+        - name: ens2f0
+          addrs:
+          - {addr: 2001:ff03::2, plen: 64}
+          - {addr: 10.255.3.2, plen: 24}
+      - name: vrf-control4
+        dataplaneInterfaces:
+        - name: ens2f1
+          addrs:
+          - {addr: 2001:ff04::2, plen: 64}
+          - {addr: 10.255.4.2, plen: 24}
+
+dplaneNode:
+  hosts:
+    w003:
+      kernelVersion: 5.15.0-82
+      asNumber: 4200000001
+      routerId: 10.255.0.3
+      srv6_locators:
+      - prefix: 2001:a003::/32
+        token: '2001:a003'
+      dataplaneInterfaces:
+      - name: eno12399
+        vrf: vrf-control1
+        addrs:
+        - {addr: 2001:ff01::3, plen: 64}
+        - {addr: 10.255.1.3, plen: 24}
+      - name: eno12409
+        vrf: vrf-control2
+        addrs:
+        - {addr: 2001:ff02::3, plen: 64}
+        - {addr: 10.255.2.3, plen: 24}
+      - name: ens2f0
+        vrf: vrf-control3
+        addrs:
+        - {addr: 2001:ff03::3, plen: 64}
+        - {addr: 10.255.3.3, plen: 24}
+      - name: ens2f1
+        vrf: vrf-control4
+        addrs:
+        - {addr: 2001:ff04::3, plen: 64}
+        - {addr: 10.255.4.3, plen: 24}
+
+    w004:
+      kernelVersion: 5.15.0-82
+      asNumber: 4200000001
+      routerId: 10.255.0.4
+      srv6_locators:
+      - prefix: 2001:a004::/32
+        token: '2001:a004'
+      dataplaneInterfaces:
+      - name: eno12399
+        vrf: vrf-control1
+        addrs:
+        - {addr: 2001:ff01::4, plen: 64}
+        - {addr: 10.255.1.4, plen: 24}
+      - name: eno12409
+        vrf: vrf-control2
+        addrs:
+        - {addr: 2001:ff02::4, plen: 64}
+        - {addr: 10.255.2.4, plen: 24}
+      - name: ens2f0
+        vrf: vrf-control3
+        addrs:
+        - {addr: 2001:ff03::4, plen: 64}
+        - {addr: 10.255.3.4, plen: 24}
+      - name: ens2f1
+        vrf: vrf-control4
+        addrs:
+        - {addr: 2001:ff04::4, plen: 64}
+        - {addr: 10.255.4.4, plen: 24}
+
+    w005:
+      kernelVersion: 5.15.0-82
+      asNumber: 4200000001
+      routerId: 10.255.0.5
+      srv6_locators:
+      - prefix: 2001:a005::/32
+        token: '2001:a005'
+      dataplaneInterfaces:
+      - name: eno12399
+        vrf: vrf-control1
+        addrs:
+        - {addr: 2001:ff01::5, plen: 64}
+        - {addr: 10.255.1.5, plen: 24}
+      - name: eno12409
+        vrf: vrf-control2
+        addrs:
+        - {addr: 2001:ff02::5, plen: 64}
+        - {addr: 10.255.2.5, plen: 24}
+      - name: ens2f0
+        vrf: vrf-control3
+        addrs:
+        - {addr: 2001:ff03::5, plen: 64}
+        - {addr: 10.255.3.5, plen: 24}
+      - name: ens2f1
+        vrf: vrf-control4
+        addrs:
+        - {addr: 2001:ff04::5, plen: 64}
+        - {addr: 10.255.4.5, plen: 24}
+
+    w006:
+      kernelVersion: 5.15.0-82
+      asNumber: 4200000001
+      routerId: 10.255.0.6
+      srv6_locators:
+      - prefix: 2001:a006::/32
+        token: '2001:a006'
+      dataplaneInterfaces:
+      - name: eno12399
+        vrf: vrf-control1
+        addrs:
+        - {addr: 2001:ff01::6, plen: 64}
+        - {addr: 10.255.1.6, plen: 24}
+      - name: eno12409
+        vrf: vrf-control2
+        addrs:
+        - {addr: 2001:ff02::6, plen: 64}
+        - {addr: 10.255.2.6, plen: 24}
+      - name: ens2f0
+        vrf: vrf-control3
+        addrs:
+        - {addr: 2001:ff03::6, plen: 64}
+        - {addr: 10.255.3.6, plen: 24}
+      - name: ens2f1
+        vrf: vrf-control4
+        addrs:
+        - {addr: 2001:ff04::6, plen: 64}
+        - {addr: 10.255.4.6, plen: 24}

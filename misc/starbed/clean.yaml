@@ -1,0 +1,95 @@
+- hosts: dplaneNode
+  become: true
+  become_method: sudo
+  tags: [container]
+  gather_facts: no
+  tasks:
+  - name: delete docker container
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      if [ $(docker inspect {{ c.name }} | jq '. | length') != "0" ]; then
+        docker rm -f {{ c.name }}
+        echo CHANGED
+      fi
+      {% endif %}
+      {% endfor %}
+
+  - name: delete docker container (when '-e force=true')
+    when: (force is defined)
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      for c in $(docker ps -a --format {%raw%}"{{.Names}}"{%endraw%}); do
+        docker rm -f $c
+        echo CHANGED
+      done
+
+  - name: delete vrf
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% for p in c.ports %}
+      {% if p.type == "overlay" %}
+      VRF_NAME=vrf-{{ p.network }}
+      if [ $(ip -br link show dev $VRF_NAME | wc -l) != "0" ]; then
+        ip route flush vrf $VRF_NAME
+        ip link del $VRF_NAME
+        echo CHANGED
+      fi
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+      {% endfor %}
+
+  - name: delete vrf (when '-e force=true')
+    when: (force is defined)
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      for dev in $(ip -br link list type vrf | awk '{print $1}'); do
+        ip route flush vrf $dev
+        ip link del $dev
+        echo CHANGED
+      done
+
+  - name: delete veth (when '-e force=true')
+    when: (force is defined)
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      for dev in $(ip -br link list type veth | awk '{print $1}' \
+        | awk -F@ '{print $1}'); do
+        ip link del $dev
+        echo CHANGED
+      done
+
+  - name: delete netns (when '-e force=true')
+    when: (force is defined)
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      for dev in $(ip netns | awk '{print $1}'); do
+        ip netns del $dev
+        echo CHANGED
+      done
+
+  - name: delete seg6local routes
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      if [ $(ip -6 route list proto 100 | wc -l) != "0" ]; then
+        ip -6 route flush proto 100
+        echo CHANGED
+      fi

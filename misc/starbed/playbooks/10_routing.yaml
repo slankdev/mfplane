@@ -1,0 +1,126 @@
+- hosts: routeServer
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tasks:
+
+  # NOTE: LINK LOCAL ADDR
+  # - name: update interface addresses
+  #   when: dataplaneInterfaces is defined
+  #   ansible.builtin.copy:
+  #     dest: /etc/netplan/99-config.yaml
+  #     content: |
+  #       network:
+  #         version: 2
+  #         renderer: networkd
+  #         ethernets:
+  #       {% for di in dataplaneInterfaces %}
+  #           {{ di.name }}:
+  #             dhcp6: true
+  #             addresses:
+  #       {% for addr in di.addrs %}
+  #             - {{ addr.addr }}/{{ addr.plen }}
+  #       {% endfor %}
+  #       {% endfor %}
+
+  # - name: reload interface addresses
+  #   when: dataplaneInterfaces is defined
+  #   shell: |
+  #     netplan apply
+  #     ip -br link show dev bridge_Control && ip link del bridge_Control
+  #     {% for di in dataplaneInterfaces %}
+  #     ip link set {{ di.name }} down
+  #     ip link set {{ di.name }} up
+  #     {% endfor %}
+
+
+  - name: preapre vrf
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      if [ $(ip -br link list | grep vrf-control1 | wc -l) = "0" ]; then
+        ip link add vrf-control1 type vrf table 1001
+        ip link set vrf-control1 up
+        echo CHANGED
+      fi
+      if [ $(ip -br link list | grep vrf-control2 | wc -l) = "0" ]; then
+        ip link add vrf-control2 type vrf table 1002
+        ip link set vrf-control2 up
+        echo CHANGED
+      fi
+      if [ $(ip -br link list | grep vrf-control3 | wc -l) = "0" ]; then
+        ip link add vrf-control3 type vrf table 1003
+        ip link set vrf-control3 up
+        echo CHANGED
+      fi
+      if [ $(ip -br link list | grep vrf-control4 | wc -l) = "0" ]; then
+        ip link add vrf-control4 type vrf table 1004
+        ip link set vrf-control4 up
+        echo CHANGED
+      fi
+
+  - name: prepare dplane interface vrf enslave
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for vrf in vrfs %}
+      {% for di in vrf.dataplaneInterfaces %}
+      ip link set {{di.name}} vrf {{vrf.name}}
+      ip link set {{di.name}} up
+      {% for addr in di.addrs %}
+      ip addr replace {{addr.addr}}/{{addr.plen}} dev {{di.name}}
+      {% endfor %}
+      {% endfor %}
+      {% endfor %}
+
+  - name: configure /etc/frr/daemons
+    ansible.builtin.copy:
+      dest: /etc/frr/daemons
+      content: |
+        bgpd=yes
+        bfdd=yes
+        vtysh_enable=yes
+        zebra_options="  -A 127.0.0.1 -s 90000000"
+        bgpd_options="   -A 127.0.0.1"
+        staticd_options="-A 127.0.0.1"
+        bfdd_options="   -A 127.0.0.1"
+
+  - name: configure /etc/frr/frr.conf
+    ansible.builtin.copy:
+      dest: /etc/frr/frr.conf
+      content: |
+        {% for vrf in vrfs %}
+        router bgp {{ asNumber }} vrf {{ vrf.name }}
+         bgp router-id {{ routerId }}
+         bgp bestpath as-path multipath-relax
+         no bgp ebgp-requires-policy
+         no bgp default ipv4-unicast
+         !
+         neighbor LOWER peer-group
+         neighbor LOWER remote-as internal
+        {% for name in groups['dplaneNode'] %}
+        {% for di in hostvars[name].dataplaneInterfaces %}
+        {% if di.vrf == vrf.name %}
+         neighbor {{ di.addrs[0].addr }} peer-group LOWER
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+         !
+         address-family ipv4 unicast
+          neighbor LOWER activate
+          neighbor LOWER route-reflector-client
+         exit-address-family
+         !
+         address-family ipv6 unicast
+          neighbor LOWER activate
+          neighbor LOWER route-reflector-client
+         exit-address-family
+        !
+        {% endfor %}
+
+  - name: systemctl restart frr
+    ansible.builtin.systemd:
+      name: frr
+      state: restarted
