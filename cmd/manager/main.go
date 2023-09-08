@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	mfplanev1alpha1 "github.com/slankdev/mfplane/api/v1alpha1"
-	"github.com/slankdev/mfplane/internal/controller"
+	controller "github.com/slankdev/mfplane/internal/controller/manager"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -89,13 +89,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.NodeReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Node")
-		os.Exit(1)
-	}
 	if err = (&controller.NatReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -121,7 +114,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	controller.MustRegisterPromCollector(mgr.GetClient())
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
