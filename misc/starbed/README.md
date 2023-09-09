@@ -50,3 +50,9 @@ export ANSIBLE_SUDO_PASS=****
 ssh-keygen
 pipenv run ansible-playbook main.yaml
 ```
+
+```
+export STARBED_ENDPOINT=http://*****
+export STARBED_USERNAME=*****
+export STARBED_PASSWORD=*****
+```
