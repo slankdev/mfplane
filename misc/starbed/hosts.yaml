@@ -1,7 +1,5 @@
 all:
   vars:
-    # http_proxy: '{{ lookup("env", "EXP_NODE_HTTP_PROXY") }}'
-    # https_proxy: '{{ lookup("env", "EXP_NODE_HTTPS_PROXY") }}'
     http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
     https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
     ansible_ssh_user: '{{ lookup("env", "ANSIBLE_SSH_USER") }}'
