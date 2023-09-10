@@ -22,6 +22,7 @@ export HTTPS_PROXY="http://${IPADDR}:8080/"
 export HTTP_PROXY="http://${IPADDR}:8080/"
 export PATH=$PATH:/usr/local/go/bin
 export EDITOR=vim
+export KUBECONFIG=/home/staruser/mfplane.kind.kubeconfig.yaml
 ```
 
 ```

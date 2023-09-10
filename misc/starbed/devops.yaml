@@ -24,6 +24,7 @@
       - bash-completion
       - sshpass
       - silversearcher-ag
+      - bash-completion
 
   - name: install golang
     block:
@@ -94,3 +95,20 @@
     become: false
     openssh_keypair:
       path: ~/.ssh/id_rsa
+
+  - name: install kubectl
+    environment:
+      http_proxy: "{{ http_proxy }}"
+      https_proxy: "{{ https_proxy }}"
+    vars:
+      kubectl_version: v1.28.1
+    ansible.builtin.get_url:
+      url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+      dest: /usr/bin/kubectl
+      mode: 0755
+
+  - name: prepare bash-completion
+    ansible.builtin.copy:
+      dest: /etc/bash_completion.d/mfplane
+      content: |
+        . <(kubectl completion bash)
