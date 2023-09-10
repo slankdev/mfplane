@@ -107,8 +107,24 @@
       dest: /usr/bin/kubectl
       mode: 0755
 
+  - name: install stern
+    block:
+    - ansible.builtin.get_url:
+        url: https://github.com/stern/stern/releases/download/v1.26.0/stern_1.26.0_linux_amd64.tar.gz
+        dest: /tmp/stern.tgz
+        mode: 0755
+      environment:
+        http_proxy: "{{ http_proxy }}"
+        https_proxy: "{{ https_proxy }}"
+      register: stern_dl
+    - unarchive:
+        src: /tmp/stern.tgz
+        dest: /usr/bin
+        remote_src: yes
+
   - name: prepare bash-completion
     ansible.builtin.copy:
       dest: /etc/bash_completion.d/mfplane
       content: |
         . <(kubectl completion bash)
+        . <(stern --completion bash)
