@@ -17,93 +17,93 @@ all:
         - fc00:ff00::0
 
     containers:
-    # w003: client
+    # w002: client
     - name: c11
-      host: w003
+      host: w002
       ports:
       - type: overlay
         addrs: [{addr: 10.1.0.1}]
         network: net1
     - name: c12
-      host: w003
+      host: w002
       ports:
       - type: overlay
         addrs: [{addr: 10.1.0.2}]
         network: net1
     - name: c21
-      host: w003
+      host: w002
       ports:
       - type: overlay
         addrs: [{addr: 10.2.0.1}]
         network: net2
     - name: c22
-      host: w003
+      host: w002
       ports:
       - type: overlay
         addrs: [{addr: 10.2.0.2}]
         network: net2
     - name: s1
-      host: w003
+      host: w002
       ports:
       - type: underlay
         addrs: [{addr: 142.1.0.1}]
       httpApp: true
     - name: s2
-      host: w003
+      host: w002
       ports:
       - type: underlay
         addrs: [{addr: 142.1.0.2}]
       httpApp: true
 
-    # w004: server
+    # w003: server
     - name: c13
-      host: w004
+      host: w003
       ports:
       - type: overlay
         addrs: [{addr: 10.1.0.3}]
         network: net1
     - name: c14
-      host: w004
+      host: w003
       ports:
       - type: overlay
         addrs: [{addr: 10.1.0.4}]
         network: net1
     - name: c23
-      host: w004
+      host: w003
       ports:
       - type: overlay
         addrs: [{addr: 10.2.0.3}]
         network: net2
     - name: c24
-      host: w004
+      host: w003
       ports:
       - type: overlay
         addrs: [{addr: 10.2.0.4}]
         network: net2
     - name: s3
-      host: w004
+      host: w003
       ports:
       - type: underlay
         addrs: [{addr: 142.1.0.3}]
       httpApp: true
     - name: s4
-      host: w004
+      host: w003
       ports:
       - type: underlay
         addrs: [{addr: 142.1.0.4}]
       httpApp: true
 
-    # w005: l-node
+    # w004: l-node
     - name: l1
-      host: w005
+      host: w004
       ports:
       - type: underlay
         addrs: []
         bgp: {}
 
-    # w006: n-node
+    # w005: n-node
     - name: n1
-      host: w006
+      host: w005
       ports:
       - type: underlay
         addrs: []
