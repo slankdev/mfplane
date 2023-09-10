@@ -1,0 +1,92 @@
+- hosts: dplaneNode
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tags: [benchmark,load]
+  tasks:
+  - name: create iperf server contaner
+    register: tmp
+    tags: server
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% if c.benchmark is defined and c.benchmark.role == "server" %}
+      CN={{ c.name }}-iperf
+      docker rm -f $CN || true
+      docker run -td --name $CN --privileged \
+        --net=container:{{ c.name }} \
+        nicolaka/netshoot iperf -su -yc --sum-only -i1
+      echo CHANGED
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+
+  - name: create iperf client contaner
+    register: tmp
+    tags: client
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% if c.benchmark is defined and c.benchmark.role == "client" %}
+      CN={{ c.name }}-iperf
+      docker rm -f $CN || true
+      docker run -td --name $CN --privileged \
+        --net=container:{{ c.name }} \
+        nicolaka/netshoot \
+        iperf -c {{ c.benchmark.dst }} \
+        -u -i1 -t10 -l 1000 -b 10000M \
+        -P100 --sum-only -yc
+      echo CHANGED
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+
+  - name: wait iperf container is finished
+    changed_when: false
+    tags: client
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% if c.benchmark is defined and c.benchmark.role == "client" %}
+      #!/bin/bash
+      while :
+      do
+        echo check
+        if [ $(docker inspect {{ c.name }}-iperf \
+          | jq .[0].State.Running) = "false" ]; then
+          break
+        fi
+        sleep 1
+      done
+      echo done
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+
+  - name: Pause 10s
+    tags: client
+    ansible.builtin.pause:
+      seconds: 5
+
+- hosts: localhost
+  become: false
+  gather_facts: no
+  tags: [benchmark,data]
+  tasks:
+  - name: fetch benchmark output
+    block:
+    - name: docker logs
+      shell: |
+        set -xe
+        mkdir -p /tmp/mfplane
+        {% for c in containers %}
+        {% if c.benchmark is defined and c.benchmark.role == "server" %}
+        docker -H ssh://{{ c.host }} \
+          logs {{ c.name }}-iperf > /tmp/mfplane/{{ c.name }}.iperf.server.out.csv
+        {% endif %}
+        {% endfor %}

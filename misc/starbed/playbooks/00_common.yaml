@@ -10,7 +10,7 @@
       block: |
         {% for name in groups['starbedNode'] %}
         Host {{ name }}
-          User staruser
+          User root
           Hostname {{ name }}
           StrictHostKeyChecking no
           UserKnownHostsFile /dev/null
@@ -27,6 +27,12 @@
       state: present
       key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
 
+  - name: copy authorized_key from staruser to root
+    ansible.builtin.copy:
+      src: /home/staruser/.ssh/authorized_keys
+      dest: /root/.ssh/authorized_keys
+      remote_src: yes
+
   - name: set hostname
     ansible.builtin.hostname:
       name: "{{ inventory_hostname }}"
@@ -40,8 +46,13 @@
         Acquire::https::Proxy "{{ https_proxy }}";
 
   - name: install required packages with apt
+    tags: apt
     ansible.builtin.apt:
       name:
+      - tshark
+      - sysstat
+      - stress
+      - iperf
       - iperf3
       - ca-certificates
       - curl
@@ -144,6 +155,7 @@
       modprobe vrf
 
   - name: sysctl
+    tags: sysctl
     ansible.posix.sysctl:
       name: "{{ item.name }}"
       value: "{{ item.value }}"
@@ -155,6 +167,7 @@
     - {name: net.ipv4.fib_multipath_hash_policy, value: 1}
     - {name: net.ipv6.fib_multipath_hash_policy, value: 1}
     - {name: net.vrf.strict_mode, value: 1}
+    - {name: net.ipv6.seg6_flowlabel, value: 1}
 
   - name: install iproute2-6.3
     vars:
@@ -247,3 +260,49 @@
           if type "mikanectl" > /dev/null 2>&1; then
             . <(mikanectl completion bash)
           fi
+
+  - name: install iperf2
+    vars:
+      iperf2_version: 2.1.n
+    block:
+    - name: install iperf2 (check current version)
+      register: out
+      changed_when: false
+      shell: |
+        if [ $(iperf -v \
+          | grep "iperf version {{ iperf2_version }}" \
+          | wc -l) = "0" ]; then
+          echo NEEDUPDATE
+        fi
+    - when: '"NEEDUPDATE" in out.stdout'
+      block:
+      - name: install iperf2 (build and install)
+        register: tmp
+        changed_when: "'CHANGED' in tmp.stdout"
+        shell: |
+          set -xe
+          export HTTP_PROXY="{{ http_proxy }}"
+          export HTTPS_PROXY="{{ https_proxy }}"
+
+          if [ ! -d "/opt/iperf2" ]; then
+            git clone https://git.code.sf.net/p/iperf2/code /opt/iperf2
+            cd /opt/iperf2
+            git checkout -b remotes/origin/2-1-9
+          fi
+
+          cd /opt/iperf2
+          ./configure --prefix=/usr
+          make clean
+          make
+          make install
+          echo CHANGED
+
+  - name: disable Hyper Threading (HT)
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      if [ $(cat /sys/devices/system/cpu/smt/active) = "1" ]; then
+        echo off | tee /sys/devices/system/cpu/smt/control
+        echo CHANGED
+      fi
