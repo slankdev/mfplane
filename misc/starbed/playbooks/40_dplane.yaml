@@ -2,6 +2,7 @@
   become: true
   become_method: sudo
   gather_facts: no
+  tags: [dplane]
   tasks:
 
   - name: update interface addresses

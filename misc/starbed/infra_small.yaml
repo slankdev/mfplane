@@ -1,0 +1,70 @@
+# x080: management node
+# x081: cplane node (k8s, bgp-rr)
+# x082-x089: dplane node
+version: 0.1
+type: infrastructure
+name: slankdev-small
+nodes:
+- {name: x080, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x080}
+- {name: x081, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x081}
+- {name: x082, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x082}
+- {name: x083, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x083}
+- {name: x084, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x084}
+- {name: x085, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x085}
+- {name: x086, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x086}
+- {name: x087, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x087}
+- {name: x088, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x088}
+- {name: x089, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x089}
+networks:
+- name: Control1
+  vlan: 3675
+  nodes:
+  - {name: x080, interface: bus31.0, ipAddress: 10.255.255.100/24}
+  - {name: x081, interface: bus31.0, ipAddress: 10.255.255.101/24}
+  - {name: x082, interface: bus31.0, ipAddress: 10.255.255.102/24}
+  - {name: x083, interface: bus31.0, ipAddress: 10.255.255.103/24}
+  - {name: x084, interface: bus31.0, ipAddress: 10.255.255.104/24}
+  - {name: x085, interface: bus31.0, ipAddress: 10.255.255.105/24}
+  - {name: x086, interface: bus31.0, ipAddress: 10.255.255.106/24}
+  - {name: x087, interface: bus31.0, ipAddress: 10.255.255.107/24}
+  - {name: x088, interface: bus31.0, ipAddress: 10.255.255.108/24}
+  - {name: x089, interface: bus31.0, ipAddress: 10.255.255.109/24}
+- name: Control2
+  vlan: 3676
+  nodes:
+  - {name: x080, interface: bus31.1, ipAddress: 10.255.255.100/24}
+  - {name: x081, interface: bus31.1, ipAddress: 10.255.255.101/24}
+  - {name: x082, interface: bus31.1, ipAddress: 10.255.255.102/24}
+  - {name: x083, interface: bus31.1, ipAddress: 10.255.255.103/24}
+  - {name: x084, interface: bus31.1, ipAddress: 10.255.255.104/24}
+  - {name: x085, interface: bus31.1, ipAddress: 10.255.255.105/24}
+  - {name: x086, interface: bus31.1, ipAddress: 10.255.255.106/24}
+  - {name: x087, interface: bus31.1, ipAddress: 10.255.255.107/24}
+  - {name: x088, interface: bus31.1, ipAddress: 10.255.255.108/24}
+  - {name: x089, interface: bus31.1, ipAddress: 10.255.255.109/24}
+- name: Control3
+  vlan: 3677
+  nodes:
+  - {name: x080, interface: bus98.0, ipAddress: 10.255.255.100/24}
+  - {name: x081, interface: bus98.0, ipAddress: 10.255.255.101/24}
+  - {name: x082, interface: bus98.0, ipAddress: 10.255.255.102/24}
+  - {name: x083, interface: bus98.0, ipAddress: 10.255.255.103/24}
+  - {name: x084, interface: bus98.0, ipAddress: 10.255.255.104/24}
+  - {name: x085, interface: bus98.0, ipAddress: 10.255.255.105/24}
+  - {name: x086, interface: bus98.0, ipAddress: 10.255.255.106/24}
+  - {name: x087, interface: bus98.0, ipAddress: 10.255.255.107/24}
+  - {name: x088, interface: bus98.0, ipAddress: 10.255.255.108/24}
+  - {name: x089, interface: bus98.0, ipAddress: 10.255.255.109/24}
+- name: Control4
+  vlan: 3678
+  nodes:
+  - {name: x080, interface: bus98.1, ipAddress: 10.255.255.100/24}
+  - {name: x081, interface: bus98.1, ipAddress: 10.255.255.101/24}
+  - {name: x082, interface: bus98.1, ipAddress: 10.255.255.102/24}
+  - {name: x083, interface: bus98.1, ipAddress: 10.255.255.103/24}
+  - {name: x084, interface: bus98.1, ipAddress: 10.255.255.104/24}
+  - {name: x085, interface: bus98.1, ipAddress: 10.255.255.105/24}
+  - {name: x086, interface: bus98.1, ipAddress: 10.255.255.106/24}
+  - {name: x087, interface: bus98.1, ipAddress: 10.255.255.107/24}
+  - {name: x088, interface: bus98.1, ipAddress: 10.255.255.108/24}
+  - {name: x089, interface: bus98.1, ipAddress: 10.255.255.109/24}

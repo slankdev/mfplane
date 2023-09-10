@@ -3,45 +3,6 @@
   gather_facts: no
   tasks:
 
-  - name: install golang
-    block:
-    - ansible.builtin.stat:
-        path: /usr/local/go
-      register: tmp
-    - when: tmp.stat.exists == false
-      block:
-      - ansible.builtin.get_url:
-          url: https://go.dev/dl/go1.19.12.linux-amd64.tar.gz
-          dest: /tmp/go.tgz
-        environment:
-          http_proxy: "{{ http_proxy }}"
-          https_proxy: "{{ https_proxy }}"
-      - shell: |
-          set -xe
-          rm -rf /usr/local/go
-          tar -C /usr/local -xzf /tmp/go.tgz
-      - ansible.builtin.file:
-          src: /usr/local/go/bin/go
-          dest: /usr/bin/go
-          state: link
-
-  - name: install required packages
-    shell: |
-      set -xe
-      export HTTP_PROXY="{{ http_proxy }}"
-      export HTTPS_PROXY="{{ https_proxy }}"
-      apt update && apt install -y \
-        jq \
-        curl \
-        gnupg \
-        iperf3 \
-        python-apt \
-        ca-certificates \
-        bash-completion \
-        sshpass \
-        silversearcher-ag \
-        #END
-
   - name: set apt proxy
     ansible.builtin.copy:
       dest: /etc/apt/apt.conf.d/99curtin-aptproxy
@@ -49,6 +10,46 @@
       content: |
         Acquire::http::Proxy "{{ http_proxy }}";
         Acquire::https::Proxy "{{ https_proxy }}";
+
+  - name: install required packages with apt
+    ansible.builtin.apt:
+      name:
+      - jq
+      - tig
+      - curl
+      - gnupg
+      - iperf3
+      - python-apt
+      - ca-certificates
+      - bash-completion
+      - sshpass
+      - silversearcher-ag
+      - bash-completion
+
+  - name: install golang
+    block:
+    - ansible.builtin.stat:
+        path: /usr/local/go
+      register: tmp
+    - when: tmp.stat.exists == false
+      block:
+      - name: install golang (download binary)
+        ansible.builtin.get_url:
+          url: https://go.dev/dl/go1.19.12.linux-amd64.tar.gz
+          dest: /tmp/go.tgz
+        environment:
+          http_proxy: "{{ http_proxy }}"
+          https_proxy: "{{ https_proxy }}"
+      - name: install golang (extract)
+        shell: |
+          set -xe
+          rm -rf /usr/local/go
+          tar -C /usr/local -xzf /tmp/go.tgz
+      - name: install golang (symlink)
+        ansible.builtin.file:
+          src: /usr/local/go/bin/go
+          dest: /usr/bin/go
+          state: link
 
   - name: install docker
     block:
@@ -89,3 +90,41 @@
         state: restarted
         daemon_reload: true
       when: docker_service_file.changed
+
+  - name: ssh keygen
+    become: false
+    openssh_keypair:
+      path: ~/.ssh/id_rsa
+
+  - name: install kubectl
+    environment:
+      http_proxy: "{{ http_proxy }}"
+      https_proxy: "{{ https_proxy }}"
+    vars:
+      kubectl_version: v1.28.1
+    ansible.builtin.get_url:
+      url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+      dest: /usr/bin/kubectl
+      mode: 0755
+
+  - name: install stern
+    block:
+    - ansible.builtin.get_url:
+        url: https://github.com/stern/stern/releases/download/v1.26.0/stern_1.26.0_linux_amd64.tar.gz
+        dest: /tmp/stern.tgz
+        mode: 0755
+      environment:
+        http_proxy: "{{ http_proxy }}"
+        https_proxy: "{{ https_proxy }}"
+      register: stern_dl
+    - unarchive:
+        src: /tmp/stern.tgz
+        dest: /usr/bin
+        remote_src: yes
+
+  - name: prepare bash-completion
+    ansible.builtin.copy:
+      dest: /etc/bash_completion.d/mfplane
+      content: |
+        . <(kubectl completion bash)
+        . <(stern --completion bash)
