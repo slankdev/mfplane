@@ -1,6 +1,7 @@
 - hosts: localhost
   become: false
   gather_facts: no
+  tags: [common]
   tasks:
   - name: craft ssh-config
     ansible.builtin.blockinfile:
@@ -18,6 +19,7 @@
 - hosts: starbedNode
   become: true
   become_method: sudo
+  tags: [common]
   tasks:
   - name: ssh key distribution
     ansible.posix.authorized_key:

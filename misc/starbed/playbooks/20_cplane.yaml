@@ -2,6 +2,7 @@
   become: true
   become_method: sudo
   gather_facts: no
+  tags: [cplane]
   tasks:
 
   - name: install kind
@@ -148,6 +149,12 @@
       dest: ~/{{ inventory_hostname }}.kind.kubeconfig.yaml
       flat: yes
 
+  - name: fetch kubeconfig
+    ansible.builtin.fetch:
+      src: /etc/kind.kubeconfig.yaml
+      dest: ~/mfplane.kind.kubeconfig.yaml
+      flat: yes
+
 - hosts: localhost
   become: false
   gather_facts: no
@@ -156,7 +163,10 @@
     register: tmp
     changed_when: "('created' in tmp.stdout) or ('changed' in tmp.stdout)"
     shell: |
-      if [ $(kubectl get ns -o name | grep namespace/cplane-system | wc -l) = "0" ]; then
-        kubectl create ns cplane-system
+      if [ $(kubectl get ns -o name \
+        | grep namespace/cplane-system | wc -l) = "0" ]; then
+        kubectl --kubeconfig ~/mfplane.kind.kubeconfig.yaml \
+          create ns cplane-system
       fi
-      kubectl kustomize ../../../config/default/ | kubectl apply -f-
+      kubectl kustomize ../../../config/default/ \
+        | kubectl apply -f- --kubeconfig ~/mfplane.kind.kubeconfig.yaml

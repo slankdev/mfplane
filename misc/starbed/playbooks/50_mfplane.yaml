@@ -16,7 +16,7 @@
   - name: prepare /etc/kubernetes/kubeconfig
     ansible.builtin.copy:
       dest: /etc/kubernetes/kubeconfig
-      src: ~/w002.kind.kubeconfig.yaml
+      src: ~/mfplane.kind.kubeconfig.yaml
 
   - name: prepare /etc/mfplane/docker-compose.yaml
     ansible.builtin.copy:

@@ -2,6 +2,7 @@
   become: true
   become_method: sudo
   gather_facts: no
+  tags: [routing]
   tasks:
 
   # NOTE: LINK LOCAL ADDR
