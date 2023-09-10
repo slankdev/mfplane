@@ -3,6 +3,27 @@
   gather_facts: no
   tasks:
 
+  - name: set apt proxy
+    ansible.builtin.copy:
+      dest: /etc/apt/apt.conf.d/99curtin-aptproxy
+      mode: '0644'
+      content: |
+        Acquire::http::Proxy "{{ http_proxy }}";
+        Acquire::https::Proxy "{{ https_proxy }}";
+
+  - name: install required packages with apt
+    ansible.builtin.apt:
+      name:
+      - jq
+      - curl
+      - gnupg
+      - iperf3
+      - python-apt
+      - ca-certificates
+      - bash-completion
+      - sshpass
+      - silversearcher-ag
+
   - name: install golang
     block:
     - ansible.builtin.stat:
