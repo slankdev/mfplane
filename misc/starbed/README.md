@@ -3,8 +3,11 @@
 ## Constructing management node
 
 ```
-ssh starbed-w001
+#ssh starbed-w001
 ssh starbed-w012
+```
+
+```
 vim ~/.bashrc
 
 export https_proxy="http://${IPADDR}:8080/"
@@ -25,10 +28,8 @@ eval "$(pyenv virtualenv-init -)"
 ```
 
 ```
-pyenv install 3.9
-pyenv global 3.9
+pyenv install 3.9 && pyenv global 3.9
 pip install pipenv
-sudo apt install -y sshpass
 ```
 
 ```
@@ -36,8 +37,7 @@ export GITHUB_USER=slankdev
 export GITHUB_PAT=****
 git clone https://$GITHUB_USER:$GITHUB_PAT@github.com/slankdev/mfplane ~/mfplane
 cd ~/mfplane/misc/starbed
-pipenv sync
-pipenv run ansible-playbook -c local devops.yaml
+pipenv sync && pipenv run ansible-playbook -c local devops.yaml
 ```
 
 ```
@@ -46,8 +46,11 @@ vim ~/.bashrc
 export ANSIBLE_SSH_USER=****
 export ANSIBLE_SSH_PASS=****
 export ANSIBLE_SUDO_PASS=****
+```
 
-ssh-keygen
+## Constructing mfplane environment
+
+```
 pipenv run ansible-playbook main.yaml
 ```
 

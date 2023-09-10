@@ -31,45 +31,23 @@
       register: tmp
     - when: tmp.stat.exists == false
       block:
-      - ansible.builtin.get_url:
+      - name: install golang (download binary)
+        ansible.builtin.get_url:
           url: https://go.dev/dl/go1.19.12.linux-amd64.tar.gz
           dest: /tmp/go.tgz
         environment:
           http_proxy: "{{ http_proxy }}"
           https_proxy: "{{ https_proxy }}"
-      - shell: |
+      - name: install golang (extract)
+        shell: |
           set -xe
           rm -rf /usr/local/go
           tar -C /usr/local -xzf /tmp/go.tgz
-      - ansible.builtin.file:
+      - name: install golang (symlink)
+        ansible.builtin.file:
           src: /usr/local/go/bin/go
           dest: /usr/bin/go
           state: link
-
-  - name: install required packages
-    shell: |
-      set -xe
-      export HTTP_PROXY="{{ http_proxy }}"
-      export HTTPS_PROXY="{{ https_proxy }}"
-      apt update && apt install -y \
-        jq \
-        curl \
-        gnupg \
-        iperf3 \
-        python-apt \
-        ca-certificates \
-        bash-completion \
-        sshpass \
-        silversearcher-ag \
-        #END
-
-  - name: set apt proxy
-    ansible.builtin.copy:
-      dest: /etc/apt/apt.conf.d/99curtin-aptproxy
-      mode: '0644'
-      content: |
-        Acquire::http::Proxy "{{ http_proxy }}";
-        Acquire::https::Proxy "{{ https_proxy }}";
 
   - name: install docker
     block:
@@ -110,3 +88,8 @@
         state: restarted
         daemon_reload: true
       when: docker_service_file.changed
+
+  - name: ssh keygen
+    become: false
+    openssh_keypair:
+      path: ~/.ssh/id_rsa
