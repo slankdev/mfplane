@@ -1,3 +1,6 @@
+# x080: management node
+# x081: cplane node (k8s, bgp-rr)
+# x082-x089: dplane node
 version: 0.1
 type: infrastructure
 name: slankdev-small
