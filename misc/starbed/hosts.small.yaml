@@ -132,26 +132,26 @@ routeServer:
         dataplaneInterfaces:
         - name: eno12399
           addrs:
-          - {addr: 2001:ff01::2, plen: 64}
-          - {addr: 10.255.1.2, plen: 24}
+          - {addr: 2001:ff01::1, plen: 64}
+          - {addr: 10.255.1.1, plen: 24}
       - name: vrf-control2
         dataplaneInterfaces:
         - name: eno12409
           addrs:
-          - {addr: 2001:ff02::2, plen: 64}
-          - {addr: 10.255.2.2, plen: 24}
+          - {addr: 2001:ff02::1, plen: 64}
+          - {addr: 10.255.2.1, plen: 24}
       - name: vrf-control3
         dataplaneInterfaces:
         - name: ens2f0
           addrs:
-          - {addr: 2001:ff03::2, plen: 64}
-          - {addr: 10.255.3.2, plen: 24}
+          - {addr: 2001:ff03::1, plen: 64}
+          - {addr: 10.255.3.1, plen: 24}
       - name: vrf-control4
         dataplaneInterfaces:
         - name: ens2f1
           addrs:
-          - {addr: 2001:ff04::2, plen: 64}
-          - {addr: 10.255.4.2, plen: 24}
+          - {addr: 2001:ff04::1, plen: 64}
+          - {addr: 10.255.4.1, plen: 24}
 
 dplaneNode:
   hosts:
