@@ -8,6 +8,12 @@ ssh starbed-w012
 ```
 
 ```
+vim ~/.bash_profile
+
+. ~/.bashrc
+```
+
+```
 vim ~/.bashrc
 
 export https_proxy="http://${IPADDR}:8080/"
@@ -15,6 +21,7 @@ export http_proxy="http://${IPADDR}:8080/"
 export HTTPS_PROXY="http://${IPADDR}:8080/"
 export HTTP_PROXY="http://${IPADDR}:8080/"
 export PATH=$PATH:/usr/local/go/bin
+export EDITOR=vim
 ```
 
 ```
