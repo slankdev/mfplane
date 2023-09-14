@@ -16,6 +16,15 @@ all:
         segs:
         - fc00:ff00::0
 
+    benchmark:
+      title: "test"
+      time_seconds: 10
+      report_interval_seconds: 1
+      message_size_bytes: 1000
+      bandwidth: 10M
+      #bandwidth: 1000M
+      num_concurrent_session: 100
+
     containers:
     # x082: client
     - name: c11

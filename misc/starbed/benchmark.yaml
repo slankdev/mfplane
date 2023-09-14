@@ -17,7 +17,8 @@
       docker rm -f $CN || true
       docker run -td --name $CN --privileged \
         --net=container:{{ c.name }} \
-        nicolaka/netshoot iperf -su -yc --sum-only -i1
+        nicolaka/netshoot iperf -su -yc --sum-only \
+        -i {{ benchmark.report_interval_seconds }}
       echo CHANGED
       {% endif %}
       {% endif %}
@@ -38,8 +39,13 @@
         --net=container:{{ c.name }} \
         nicolaka/netshoot \
         iperf -c {{ c.benchmark.dst }} \
-        -u -i1 -t10 -l 1000 -b 10000M \
-        -P100 --sum-only -yc
+        -u \
+        -i {{ benchmark.report_interval_seconds }} \
+        -t {{ benchmark.time_seconds }} \
+        -l {{ benchmark.message_size_bytes }} \
+        -b {{ benchmark.bandwidth }} \
+        -P {{ benchmark.num_concurrent_session }} \
+        --sum-only -yc
       echo CHANGED
       {% endif %}
       {% endif %}
@@ -68,7 +74,7 @@
       {% endif %}
       {% endfor %}
 
-  - name: Pause 10s
+  - name: Pause
     tags: client
     ansible.builtin.pause:
       seconds: 5
@@ -83,10 +89,24 @@
     - name: docker logs
       shell: |
         set -xe
-        mkdir -p /tmp/mfplane
+        DIR=/tmp/mfplane
+        rm -rf $DIR
+        mkdir -p $DIR
+
         {% for c in containers %}
         {% if c.benchmark is defined and c.benchmark.role == "server" %}
         docker -H ssh://{{ c.host }} \
-          logs {{ c.name }}-iperf > /tmp/mfplane/{{ c.name }}.iperf.server.out.csv
+          logs {{ c.name }}-iperf > $DIR/{{ c.name }}.iperf.server.out.csv
         {% endif %}
         {% endfor %}
+
+        cat <<EOF > $DIR/metadata.json
+        {
+          "title": "{{ benchmark.title }}",
+          "time_seconds": {{ benchmark.time_seconds }},
+          "report_interval_seconds": {{ benchmark.report_interval_seconds }},
+          "message_size_bytes": {{ benchmark.message_size_bytes }},
+          "bandwidth": "{{ benchmark.bandwidth }}",
+          "num_concurrent_session": {{ benchmark.num_concurrent_session }}
+        }
+        EOF
