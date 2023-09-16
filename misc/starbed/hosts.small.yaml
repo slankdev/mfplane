@@ -122,17 +122,41 @@ all:
       benchmark:
         role: server
 
-    # x084: l-node
+    # x084,x085,0x086: l-node
     - name: l1
       host: x084
       ports:
       - type: underlay
         addrs: []
         bgp: {}
-
-    # x085: n-node
-    - name: n1
+    - name: l2
       host: x085
+      ports:
+      - type: underlay
+        addrs: []
+        bgp: {}
+    - name: l3
+      host: x086
+      ports:
+      - type: underlay
+        addrs: []
+        bgp: {}
+
+    # x087,x088,x089: l-node
+    - name: n1
+      host: x087
+      ports:
+      - type: underlay
+        addrs: []
+        bgp: {}
+    - name: n2
+      host: x088
+      ports:
+      - type: underlay
+        addrs: []
+        bgp: {}
+    - name: n3
+      host: x089
       ports:
       - type: underlay
         addrs: []
@@ -334,8 +358,8 @@ dplaneNode:
       asNumber: 4200000001
       routerId: 10.255.0.7
       srv6_locators:
-      - prefix: 2001:a006::/32
-        token: '2001:a006'
+      - prefix: 2001:a007::/32
+        token: '2001:a007'
       dataplaneInterfaces:
       - name: eno12399
         vrf: vrf-control1
@@ -363,8 +387,8 @@ dplaneNode:
       asNumber: 4200000001
       routerId: 10.255.0.8
       srv6_locators:
-      - prefix: 2001:a006::/32
-        token: '2001:a006'
+      - prefix: 2001:a008::/32
+        token: '2001:a008'
       dataplaneInterfaces:
       - name: eno12399
         vrf: vrf-control1
@@ -392,8 +416,8 @@ dplaneNode:
       asNumber: 4200000001
       routerId: 10.255.0.9
       srv6_locators:
-      - prefix: 2001:a006::/32
-        token: '2001:a006'
+      - prefix: 2001:a009::/32
+        token: '2001:a009'
       dataplaneInterfaces:
       - name: eno12399
         vrf: vrf-control1
