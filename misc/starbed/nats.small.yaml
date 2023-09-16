@@ -1,7 +1,7 @@
 apiVersion: mfplane.mfplane.io/v1alpha1
 kind: Nat
 metadata:
-  name: nat-sample1
+  name: nat1
   namespace: default
 spec:
   vip: 142.0.0.1
