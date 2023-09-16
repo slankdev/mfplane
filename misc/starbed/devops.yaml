@@ -91,6 +91,20 @@
         daemon_reload: true
       when: docker_service_file.changed
 
+  - name: configure docker keybinding
+    become: false
+    tags: hoge
+    block:
+    - ansible.builtin.file:
+        path: ~/.docker
+        state: directory
+    - ansible.builtin.copy:
+        dest: ~/.docker/config.json
+        content: |
+          {
+            "detachKeys": "ctrl-\\"
+          }
+
   - name: ssh keygen
     become: false
     openssh_keypair:
