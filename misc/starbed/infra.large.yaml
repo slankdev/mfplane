@@ -1,0 +1,544 @@
+version: 0.1
+type: infrastructure
+name: slankdev-large
+nodes:
+- {name: w001, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w001}
+- {name: w002, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w002}
+- {name: w003, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w003}
+- {name: w004, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w004}
+- {name: w005, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w005}
+- {name: w006, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w006}
+- {name: w007, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w007}
+- {name: w008, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w008}
+- {name: w009, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w009}
+
+- {name: w010, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w010}
+- {name: w011, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w011}
+- {name: w012, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w012}
+- {name: w013, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w013}
+- {name: w014, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w014}
+- {name: w015, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w015}
+- {name: w016, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w016}
+- {name: w017, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w017}
+- {name: w018, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w018}
+- {name: w019, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w019}
+
+- {name: w020, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w020}
+- {name: w021, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w021}
+- {name: w022, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w022}
+- {name: w023, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w023}
+- {name: w024, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w024}
+- {name: w025, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w025}
+- {name: w026, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w026}
+- {name: w027, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w027}
+- {name: w028, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w028}
+- {name: w029, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w029}
+
+- {name: w030, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w030}
+- {name: w031, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w031}
+- {name: w032, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w032}
+- {name: w033, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w033}
+- {name: w034, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w034}
+- {name: w035, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w035}
+- {name: w036, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w036}
+- {name: w037, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w037}
+- {name: w038, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w038}
+- {name: w039, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w039}
+
+- {name: w040, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w040}
+- {name: w041, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w041}
+- {name: w042, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w042}
+- {name: w043, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w043}
+- {name: w044, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w044}
+- {name: w045, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w045}
+- {name: w046, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w046}
+- {name: w047, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w047}
+- {name: w048, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w048}
+
+- {name: w101, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w101}
+- {name: w102, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w102}
+- {name: w103, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w103}
+- {name: w104, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w104}
+- {name: w105, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w105}
+- {name: w106, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w106}
+- {name: w107, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w107}
+- {name: w108, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w108}
+- {name: w109, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w109}
+
+- {name: w110, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w110}
+- {name: w111, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w111}
+- {name: w112, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w112}
+
+- {name: w117, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w117}
+- {name: w118, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w118}
+- {name: w119, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w119}
+
+- {name: w120, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w120}
+- {name: w121, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w121}
+- {name: w122, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w122}
+- {name: w123, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w123}
+- {name: w124, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w124}
+- {name: w125, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w125}
+- {name: w126, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w126}
+
+- {name: x065, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x065}
+- {name: x066, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x066}
+- {name: x067, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x067}
+- {name: x068, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x068}
+- {name: x069, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x069}
+
+- {name: x070, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x070}
+- {name: x071, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x071}
+- {name: x072, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x072}
+- {name: x073, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x073}
+- {name: x074, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x074}
+- {name: x075, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x075}
+- {name: x076, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x076}
+- {name: x077, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x077}
+- {name: x078, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x078}
+- {name: x079, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x079}
+
+- {name: x080, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x080}
+- {name: x081, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x081}
+- {name: x082, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x082}
+- {name: x083, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x083}
+- {name: x084, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x084}
+- {name: x085, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x085}
+- {name: x086, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x086}
+- {name: x087, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x087}
+- {name: x088, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x088}
+- {name: x089, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x089}
+
+- {name: x090, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x090}
+- {name: x091, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x091}
+- {name: x092, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x092}
+- {name: x093, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x093}
+- {name: x094, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x094}
+
+networks:
+- name: Control1
+  vlan: 3675
+  nodes:
+  - {name: w101, interface: bus31.0, ipAddress: 10.255.1.101/24}
+  - {name: w102, interface: bus31.0, ipAddress: 10.255.1.102/24}
+  - {name: w103, interface: bus31.0, ipAddress: 10.255.1.103/24}
+  - {name: w104, interface: bus31.0, ipAddress: 10.255.1.104/24}
+  - {name: w105, interface: bus31.0, ipAddress: 10.255.1.105/24}
+  - {name: w106, interface: bus31.0, ipAddress: 10.255.1.106/24}
+  - {name: w107, interface: bus31.0, ipAddress: 10.255.1.107/24}
+  - {name: w108, interface: bus31.0, ipAddress: 10.255.1.108/24}
+  - {name: w109, interface: bus31.0, ipAddress: 10.255.1.109/24}
+  - {name: w110, interface: bus31.0, ipAddress: 10.255.1.110/24}
+  - {name: w111, interface: bus31.0, ipAddress: 10.255.1.111/24}
+  - {name: w112, interface: bus31.0, ipAddress: 10.255.1.112/24}
+
+  - {name: w001, interface: bus31.0, ipAddress: 10.255.1.1/24}
+  - {name: w002, interface: bus31.0, ipAddress: 10.255.1.2/24}
+  - {name: w003, interface: bus31.0, ipAddress: 10.255.1.3/24}
+  - {name: w004, interface: bus31.0, ipAddress: 10.255.1.4/24}
+  - {name: w005, interface: bus31.0, ipAddress: 10.255.1.5/24}
+  - {name: w006, interface: bus31.0, ipAddress: 10.255.1.6/24}
+  - {name: w007, interface: bus31.0, ipAddress: 10.255.1.7/24}
+  - {name: w008, interface: bus31.0, ipAddress: 10.255.1.8/24}
+  - {name: w009, interface: bus31.0, ipAddress: 10.255.1.9/24}
+  - {name: w010, interface: bus31.0, ipAddress: 10.255.1.10/24}
+  - {name: w011, interface: bus31.0, ipAddress: 10.255.1.11/24}
+  - {name: w012, interface: bus31.0, ipAddress: 10.255.1.12/24}
+  - {name: w013, interface: bus31.0, ipAddress: 10.255.1.13/24}
+  - {name: w014, interface: bus31.0, ipAddress: 10.255.1.14/24}
+  - {name: w015, interface: bus31.0, ipAddress: 10.255.1.15/24}
+  - {name: w016, interface: bus31.0, ipAddress: 10.255.1.16/24}
+  - {name: w017, interface: bus31.0, ipAddress: 10.255.1.17/24}
+  - {name: w018, interface: bus31.0, ipAddress: 10.255.1.18/24}
+  - {name: w019, interface: bus31.0, ipAddress: 10.255.1.19/24}
+  - {name: w020, interface: bus31.0, ipAddress: 10.255.1.20/24}
+  - {name: w021, interface: bus31.0, ipAddress: 10.255.1.21/24}
+  - {name: w022, interface: bus31.0, ipAddress: 10.255.1.22/24}
+  - {name: w023, interface: bus31.0, ipAddress: 10.255.1.23/24}
+  - {name: w024, interface: bus31.0, ipAddress: 10.255.1.24/24}
+  - {name: w025, interface: bus31.0, ipAddress: 10.255.1.25/24}
+  - {name: w026, interface: bus31.0, ipAddress: 10.255.1.26/24}
+  - {name: w027, interface: bus31.0, ipAddress: 10.255.1.27/24}
+  - {name: w028, interface: bus31.0, ipAddress: 10.255.1.28/24}
+  - {name: w029, interface: bus31.0, ipAddress: 10.255.1.29/24}
+  - {name: w030, interface: bus31.0, ipAddress: 10.255.1.30/24}
+  - {name: w031, interface: bus31.0, ipAddress: 10.255.1.31/24}
+  - {name: w032, interface: bus31.0, ipAddress: 10.255.1.32/24}
+  - {name: w033, interface: bus31.0, ipAddress: 10.255.1.33/24}
+  - {name: w034, interface: bus31.0, ipAddress: 10.255.1.34/24}
+  - {name: w035, interface: bus31.0, ipAddress: 10.255.1.35/24}
+  - {name: w036, interface: bus31.0, ipAddress: 10.255.1.36/24}
+  - {name: w037, interface: bus31.0, ipAddress: 10.255.1.37/24}
+  - {name: w038, interface: bus31.0, ipAddress: 10.255.1.38/24}
+  - {name: w039, interface: bus31.0, ipAddress: 10.255.1.39/24}
+  - {name: w040, interface: bus31.0, ipAddress: 10.255.1.40/24}
+  - {name: w041, interface: bus31.0, ipAddress: 10.255.1.41/24}
+  - {name: w042, interface: bus31.0, ipAddress: 10.255.1.42/24}
+  - {name: w043, interface: bus31.0, ipAddress: 10.255.1.43/24}
+  - {name: w044, interface: bus31.0, ipAddress: 10.255.1.44/24}
+  - {name: w045, interface: bus31.0, ipAddress: 10.255.1.45/24}
+  - {name: w046, interface: bus31.0, ipAddress: 10.255.1.46/24}
+  - {name: w047, interface: bus31.0, ipAddress: 10.255.1.47/24}
+  - {name: w048, interface: bus31.0, ipAddress: 10.255.1.48/24}
+  - {name: w101, interface: bus31.0, ipAddress: 10.255.1.49/24}
+  - {name: w102, interface: bus31.0, ipAddress: 10.255.1.50/24}
+  - {name: w103, interface: bus31.0, ipAddress: 10.255.1.51/24}
+  - {name: w104, interface: bus31.0, ipAddress: 10.255.1.52/24}
+  - {name: w105, interface: bus31.0, ipAddress: 10.255.1.53/24}
+  - {name: w106, interface: bus31.0, ipAddress: 10.255.1.54/24}
+  - {name: w107, interface: bus31.0, ipAddress: 10.255.1.55/24}
+  - {name: w108, interface: bus31.0, ipAddress: 10.255.1.56/24}
+  - {name: w109, interface: bus31.0, ipAddress: 10.255.1.57/24}
+  - {name: w110, interface: bus31.0, ipAddress: 10.255.1.58/24}
+  - {name: w111, interface: bus31.0, ipAddress: 10.255.1.59/24}
+  - {name: w112, interface: bus31.0, ipAddress: 10.255.1.60/24}
+  - {name: w117, interface: bus31.0, ipAddress: 10.255.1.61/24}
+  - {name: w118, interface: bus31.0, ipAddress: 10.255.1.62/24}
+  - {name: w119, interface: bus31.0, ipAddress: 10.255.1.63/24}
+  - {name: w120, interface: bus31.0, ipAddress: 10.255.1.64/24}
+  - {name: w121, interface: bus31.0, ipAddress: 10.255.1.65/24}
+  - {name: w122, interface: bus31.0, ipAddress: 10.255.1.66/24}
+  - {name: w123, interface: bus31.0, ipAddress: 10.255.1.67/24}
+  - {name: w124, interface: bus31.0, ipAddress: 10.255.1.68/24}
+  - {name: w125, interface: bus31.0, ipAddress: 10.255.1.69/24}
+  - {name: w126, interface: bus31.0, ipAddress: 10.255.1.70/24}
+  - {name: x065, interface: bus31.0, ipAddress: 10.255.1.71/24}
+  - {name: x066, interface: bus31.0, ipAddress: 10.255.1.72/24}
+  - {name: x067, interface: bus31.0, ipAddress: 10.255.1.73/24}
+  - {name: x068, interface: bus31.0, ipAddress: 10.255.1.74/24}
+  - {name: x069, interface: bus31.0, ipAddress: 10.255.1.75/24}
+  - {name: x070, interface: bus31.0, ipAddress: 10.255.1.76/24}
+  - {name: x071, interface: bus31.0, ipAddress: 10.255.1.77/24}
+  - {name: x072, interface: bus31.0, ipAddress: 10.255.1.78/24}
+  - {name: x073, interface: bus31.0, ipAddress: 10.255.1.79/24}
+  - {name: x074, interface: bus31.0, ipAddress: 10.255.1.80/24}
+  - {name: x075, interface: bus31.0, ipAddress: 10.255.1.81/24}
+  - {name: x076, interface: bus31.0, ipAddress: 10.255.1.82/24}
+  - {name: x077, interface: bus31.0, ipAddress: 10.255.1.83/24}
+  - {name: x078, interface: bus31.0, ipAddress: 10.255.1.84/24}
+  - {name: x079, interface: bus31.0, ipAddress: 10.255.1.85/24}
+  - {name: x080, interface: bus31.0, ipAddress: 10.255.1.86/24}
+  - {name: x081, interface: bus31.0, ipAddress: 10.255.1.87/24}
+  - {name: x082, interface: bus31.0, ipAddress: 10.255.1.88/24}
+  - {name: x083, interface: bus31.0, ipAddress: 10.255.1.89/24}
+  - {name: x084, interface: bus31.0, ipAddress: 10.255.1.90/24}
+  - {name: x085, interface: bus31.0, ipAddress: 10.255.1.91/24}
+  - {name: x086, interface: bus31.0, ipAddress: 10.255.1.92/24}
+  - {name: x087, interface: bus31.0, ipAddress: 10.255.1.93/24}
+  - {name: x088, interface: bus31.0, ipAddress: 10.255.1.94/24}
+  - {name: x089, interface: bus31.0, ipAddress: 10.255.1.95/24}
+  - {name: x090, interface: bus31.0, ipAddress: 10.255.1.96/24}
+  - {name: x091, interface: bus31.0, ipAddress: 10.255.1.97/24}
+  - {name: x092, interface: bus31.0, ipAddress: 10.255.1.98/24}
+  - {name: x093, interface: bus31.0, ipAddress: 10.255.1.99/24}
+  - {name: x094, interface: bus31.0, ipAddress: 10.255.1.100/24}
+
+- name: Control2
+  vlan: 3676
+  nodes:
+  - {name: w001, interface: bus31.1, ipAddress: 10.255.2.1/24}
+  - {name: w002, interface: bus31.1, ipAddress: 10.255.2.2/24}
+  - {name: w003, interface: bus31.1, ipAddress: 10.255.2.3/24}
+  - {name: w004, interface: bus31.1, ipAddress: 10.255.2.4/24}
+  - {name: w005, interface: bus31.1, ipAddress: 10.255.2.5/24}
+  - {name: w006, interface: bus31.1, ipAddress: 10.255.2.6/24}
+  - {name: w007, interface: bus31.1, ipAddress: 10.255.2.7/24}
+  - {name: w008, interface: bus31.1, ipAddress: 10.255.2.8/24}
+  - {name: w009, interface: bus31.1, ipAddress: 10.255.2.9/24}
+  - {name: w010, interface: bus31.1, ipAddress: 10.255.2.10/24}
+  - {name: w011, interface: bus31.1, ipAddress: 10.255.2.11/24}
+  - {name: w012, interface: bus31.1, ipAddress: 10.255.2.12/24}
+  - {name: w013, interface: bus31.1, ipAddress: 10.255.2.13/24}
+  - {name: w014, interface: bus31.1, ipAddress: 10.255.2.14/24}
+  - {name: w015, interface: bus31.1, ipAddress: 10.255.2.15/24}
+  - {name: w016, interface: bus31.1, ipAddress: 10.255.2.16/24}
+  - {name: w017, interface: bus31.1, ipAddress: 10.255.2.17/24}
+  - {name: w018, interface: bus31.1, ipAddress: 10.255.2.18/24}
+  - {name: w019, interface: bus31.1, ipAddress: 10.255.2.19/24}
+  - {name: w020, interface: bus31.1, ipAddress: 10.255.2.20/24}
+  - {name: w021, interface: bus31.1, ipAddress: 10.255.2.21/24}
+  - {name: w022, interface: bus31.1, ipAddress: 10.255.2.22/24}
+  - {name: w023, interface: bus31.1, ipAddress: 10.255.2.23/24}
+  - {name: w024, interface: bus31.1, ipAddress: 10.255.2.24/24}
+  - {name: w025, interface: bus31.1, ipAddress: 10.255.2.25/24}
+  - {name: w026, interface: bus31.1, ipAddress: 10.255.2.26/24}
+  - {name: w027, interface: bus31.1, ipAddress: 10.255.2.27/24}
+  - {name: w028, interface: bus31.1, ipAddress: 10.255.2.28/24}
+  - {name: w029, interface: bus31.1, ipAddress: 10.255.2.29/24}
+  - {name: w030, interface: bus31.1, ipAddress: 10.255.2.30/24}
+  - {name: w031, interface: bus31.1, ipAddress: 10.255.2.31/24}
+  - {name: w032, interface: bus31.1, ipAddress: 10.255.2.32/24}
+  - {name: w033, interface: bus31.1, ipAddress: 10.255.2.33/24}
+  - {name: w034, interface: bus31.1, ipAddress: 10.255.2.34/24}
+  - {name: w035, interface: bus31.1, ipAddress: 10.255.2.35/24}
+  - {name: w036, interface: bus31.1, ipAddress: 10.255.2.36/24}
+  - {name: w037, interface: bus31.1, ipAddress: 10.255.2.37/24}
+  - {name: w038, interface: bus31.1, ipAddress: 10.255.2.38/24}
+  - {name: w039, interface: bus31.1, ipAddress: 10.255.2.39/24}
+  - {name: w040, interface: bus31.1, ipAddress: 10.255.2.40/24}
+  - {name: w041, interface: bus31.1, ipAddress: 10.255.2.41/24}
+  - {name: w042, interface: bus31.1, ipAddress: 10.255.2.42/24}
+  - {name: w043, interface: bus31.1, ipAddress: 10.255.2.43/24}
+  - {name: w044, interface: bus31.1, ipAddress: 10.255.2.44/24}
+  - {name: w045, interface: bus31.1, ipAddress: 10.255.2.45/24}
+  - {name: w046, interface: bus31.1, ipAddress: 10.255.2.46/24}
+  - {name: w047, interface: bus31.1, ipAddress: 10.255.2.47/24}
+  - {name: w048, interface: bus31.1, ipAddress: 10.255.2.48/24}
+  - {name: w101, interface: bus31.1, ipAddress: 10.255.2.49/24}
+  - {name: w102, interface: bus31.1, ipAddress: 10.255.2.50/24}
+  - {name: w103, interface: bus31.1, ipAddress: 10.255.2.51/24}
+  - {name: w104, interface: bus31.1, ipAddress: 10.255.2.52/24}
+  - {name: w105, interface: bus31.1, ipAddress: 10.255.2.53/24}
+  - {name: w106, interface: bus31.1, ipAddress: 10.255.2.54/24}
+  - {name: w107, interface: bus31.1, ipAddress: 10.255.2.55/24}
+  - {name: w108, interface: bus31.1, ipAddress: 10.255.2.56/24}
+  - {name: w109, interface: bus31.1, ipAddress: 10.255.2.57/24}
+  - {name: w110, interface: bus31.1, ipAddress: 10.255.2.58/24}
+  - {name: w111, interface: bus31.1, ipAddress: 10.255.2.59/24}
+  - {name: w112, interface: bus31.1, ipAddress: 10.255.2.60/24}
+  - {name: w117, interface: bus31.1, ipAddress: 10.255.2.61/24}
+  - {name: w118, interface: bus31.1, ipAddress: 10.255.2.62/24}
+  - {name: w119, interface: bus31.1, ipAddress: 10.255.2.63/24}
+  - {name: w120, interface: bus31.1, ipAddress: 10.255.2.64/24}
+  - {name: w121, interface: bus31.1, ipAddress: 10.255.2.65/24}
+  - {name: w122, interface: bus31.1, ipAddress: 10.255.2.66/24}
+  - {name: w123, interface: bus31.1, ipAddress: 10.255.2.67/24}
+  - {name: w124, interface: bus31.1, ipAddress: 10.255.2.68/24}
+  - {name: w125, interface: bus31.1, ipAddress: 10.255.2.69/24}
+  - {name: w126, interface: bus31.1, ipAddress: 10.255.2.70/24}
+  - {name: x065, interface: bus31.1, ipAddress: 10.255.2.71/24}
+  - {name: x066, interface: bus31.1, ipAddress: 10.255.2.72/24}
+  - {name: x067, interface: bus31.1, ipAddress: 10.255.2.73/24}
+  - {name: x068, interface: bus31.1, ipAddress: 10.255.2.74/24}
+  - {name: x069, interface: bus31.1, ipAddress: 10.255.2.75/24}
+  - {name: x070, interface: bus31.1, ipAddress: 10.255.2.76/24}
+  - {name: x071, interface: bus31.1, ipAddress: 10.255.2.77/24}
+  - {name: x072, interface: bus31.1, ipAddress: 10.255.2.78/24}
+  - {name: x073, interface: bus31.1, ipAddress: 10.255.2.79/24}
+  - {name: x074, interface: bus31.1, ipAddress: 10.255.2.80/24}
+  - {name: x075, interface: bus31.1, ipAddress: 10.255.2.81/24}
+  - {name: x076, interface: bus31.1, ipAddress: 10.255.2.82/24}
+  - {name: x077, interface: bus31.1, ipAddress: 10.255.2.83/24}
+  - {name: x078, interface: bus31.1, ipAddress: 10.255.2.84/24}
+  - {name: x079, interface: bus31.1, ipAddress: 10.255.2.85/24}
+  - {name: x080, interface: bus31.1, ipAddress: 10.255.2.86/24}
+  - {name: x081, interface: bus31.1, ipAddress: 10.255.2.87/24}
+  - {name: x082, interface: bus31.1, ipAddress: 10.255.2.88/24}
+  - {name: x083, interface: bus31.1, ipAddress: 10.255.2.89/24}
+  - {name: x084, interface: bus31.1, ipAddress: 10.255.2.90/24}
+  - {name: x085, interface: bus31.1, ipAddress: 10.255.2.91/24}
+  - {name: x086, interface: bus31.1, ipAddress: 10.255.2.92/24}
+  - {name: x087, interface: bus31.1, ipAddress: 10.255.2.93/24}
+  - {name: x088, interface: bus31.1, ipAddress: 10.255.2.94/24}
+  - {name: x089, interface: bus31.1, ipAddress: 10.255.2.95/24}
+  - {name: x090, interface: bus31.1, ipAddress: 10.255.2.96/24}
+  - {name: x091, interface: bus31.1, ipAddress: 10.255.2.97/24}
+  - {name: x092, interface: bus31.1, ipAddress: 10.255.2.98/24}
+  - {name: x093, interface: bus31.1, ipAddress: 10.255.2.99/24}
+  - {name: x094, interface: bus31.1, ipAddress: 10.255.2.100/24}
+- name: Control3
+  vlan: 3677
+  nodes:
+  - {name: w001, interface: bus98.0, ipAddress: 10.255.3.1/24}
+  - {name: w002, interface: bus98.0, ipAddress: 10.255.3.2/24}
+  - {name: w003, interface: bus98.0, ipAddress: 10.255.3.3/24}
+  - {name: w004, interface: bus98.0, ipAddress: 10.255.3.4/24}
+  - {name: w005, interface: bus98.0, ipAddress: 10.255.3.5/24}
+  - {name: w006, interface: bus98.0, ipAddress: 10.255.3.6/24}
+  - {name: w007, interface: bus98.0, ipAddress: 10.255.3.7/24}
+  - {name: w008, interface: bus98.0, ipAddress: 10.255.3.8/24}
+  - {name: w009, interface: bus98.0, ipAddress: 10.255.3.9/24}
+  - {name: w010, interface: bus98.0, ipAddress: 10.255.3.10/24}
+  - {name: w011, interface: bus98.0, ipAddress: 10.255.3.11/24}
+  - {name: w012, interface: bus98.0, ipAddress: 10.255.3.12/24}
+  - {name: w013, interface: bus98.0, ipAddress: 10.255.3.13/24}
+  - {name: w014, interface: bus98.0, ipAddress: 10.255.3.14/24}
+  - {name: w015, interface: bus98.0, ipAddress: 10.255.3.15/24}
+  - {name: w016, interface: bus98.0, ipAddress: 10.255.3.16/24}
+  - {name: w017, interface: bus98.0, ipAddress: 10.255.3.17/24}
+  - {name: w018, interface: bus98.0, ipAddress: 10.255.3.18/24}
+  - {name: w019, interface: bus98.0, ipAddress: 10.255.3.19/24}
+  - {name: w020, interface: bus98.0, ipAddress: 10.255.3.20/24}
+  - {name: w021, interface: bus98.0, ipAddress: 10.255.3.21/24}
+  - {name: w022, interface: bus98.0, ipAddress: 10.255.3.22/24}
+  - {name: w023, interface: bus98.0, ipAddress: 10.255.3.23/24}
+  - {name: w024, interface: bus98.0, ipAddress: 10.255.3.24/24}
+  - {name: w025, interface: bus98.0, ipAddress: 10.255.3.25/24}
+  - {name: w026, interface: bus98.0, ipAddress: 10.255.3.26/24}
+  - {name: w027, interface: bus98.0, ipAddress: 10.255.3.27/24}
+  - {name: w028, interface: bus98.0, ipAddress: 10.255.3.28/24}
+  - {name: w029, interface: bus98.0, ipAddress: 10.255.3.29/24}
+  - {name: w030, interface: bus98.0, ipAddress: 10.255.3.30/24}
+  - {name: w031, interface: bus98.0, ipAddress: 10.255.3.31/24}
+  - {name: w032, interface: bus98.0, ipAddress: 10.255.3.32/24}
+  - {name: w033, interface: bus98.0, ipAddress: 10.255.3.33/24}
+  - {name: w034, interface: bus98.0, ipAddress: 10.255.3.34/24}
+  - {name: w035, interface: bus98.0, ipAddress: 10.255.3.35/24}
+  - {name: w036, interface: bus98.0, ipAddress: 10.255.3.36/24}
+  - {name: w037, interface: bus98.0, ipAddress: 10.255.3.37/24}
+  - {name: w038, interface: bus98.0, ipAddress: 10.255.3.38/24}
+  - {name: w039, interface: bus98.0, ipAddress: 10.255.3.39/24}
+  - {name: w040, interface: bus98.0, ipAddress: 10.255.3.40/24}
+  - {name: w041, interface: bus98.0, ipAddress: 10.255.3.41/24}
+  - {name: w042, interface: bus98.0, ipAddress: 10.255.3.42/24}
+  - {name: w043, interface: bus98.0, ipAddress: 10.255.3.43/24}
+  - {name: w044, interface: bus98.0, ipAddress: 10.255.3.44/24}
+  - {name: w045, interface: bus98.0, ipAddress: 10.255.3.45/24}
+  - {name: w046, interface: bus98.0, ipAddress: 10.255.3.46/24}
+  - {name: w047, interface: bus98.0, ipAddress: 10.255.3.47/24}
+  - {name: w048, interface: bus98.0, ipAddress: 10.255.3.48/24}
+  - {name: w101, interface: bus98.0, ipAddress: 10.255.3.49/24}
+  - {name: w102, interface: bus98.0, ipAddress: 10.255.3.50/24}
+  - {name: w103, interface: bus98.0, ipAddress: 10.255.3.51/24}
+  - {name: w104, interface: bus98.0, ipAddress: 10.255.3.52/24}
+  - {name: w105, interface: bus98.0, ipAddress: 10.255.3.53/24}
+  - {name: w106, interface: bus98.0, ipAddress: 10.255.3.54/24}
+  - {name: w107, interface: bus98.0, ipAddress: 10.255.3.55/24}
+  - {name: w108, interface: bus98.0, ipAddress: 10.255.3.56/24}
+  - {name: w109, interface: bus98.0, ipAddress: 10.255.3.57/24}
+  - {name: w110, interface: bus98.0, ipAddress: 10.255.3.58/24}
+  - {name: w111, interface: bus98.0, ipAddress: 10.255.3.59/24}
+  - {name: w112, interface: bus98.0, ipAddress: 10.255.3.60/24}
+  - {name: w117, interface: bus98.0, ipAddress: 10.255.3.61/24}
+  - {name: w118, interface: bus98.0, ipAddress: 10.255.3.62/24}
+  - {name: w119, interface: bus98.0, ipAddress: 10.255.3.63/24}
+  - {name: w120, interface: bus98.0, ipAddress: 10.255.3.64/24}
+  - {name: w121, interface: bus98.0, ipAddress: 10.255.3.65/24}
+  - {name: w122, interface: bus98.0, ipAddress: 10.255.3.66/24}
+  - {name: w123, interface: bus98.0, ipAddress: 10.255.3.67/24}
+  - {name: w124, interface: bus98.0, ipAddress: 10.255.3.68/24}
+  - {name: w125, interface: bus98.0, ipAddress: 10.255.3.69/24}
+  - {name: w126, interface: bus98.0, ipAddress: 10.255.3.70/24}
+  - {name: x065, interface: bus98.0, ipAddress: 10.255.3.71/24}
+  - {name: x066, interface: bus98.0, ipAddress: 10.255.3.72/24}
+  - {name: x067, interface: bus98.0, ipAddress: 10.255.3.73/24}
+  - {name: x068, interface: bus98.0, ipAddress: 10.255.3.74/24}
+  - {name: x069, interface: bus98.0, ipAddress: 10.255.3.75/24}
+  - {name: x070, interface: bus98.0, ipAddress: 10.255.3.76/24}
+  - {name: x071, interface: bus98.0, ipAddress: 10.255.3.77/24}
+  - {name: x072, interface: bus98.0, ipAddress: 10.255.3.78/24}
+  - {name: x073, interface: bus98.0, ipAddress: 10.255.3.79/24}
+  - {name: x074, interface: bus98.0, ipAddress: 10.255.3.80/24}
+  - {name: x075, interface: bus98.0, ipAddress: 10.255.3.81/24}
+  - {name: x076, interface: bus98.0, ipAddress: 10.255.3.82/24}
+  - {name: x077, interface: bus98.0, ipAddress: 10.255.3.83/24}
+  - {name: x078, interface: bus98.0, ipAddress: 10.255.3.84/24}
+  - {name: x079, interface: bus98.0, ipAddress: 10.255.3.85/24}
+  - {name: x080, interface: bus98.0, ipAddress: 10.255.3.86/24}
+  - {name: x081, interface: bus98.0, ipAddress: 10.255.3.87/24}
+  - {name: x082, interface: bus98.0, ipAddress: 10.255.3.88/24}
+  - {name: x083, interface: bus98.0, ipAddress: 10.255.3.89/24}
+  - {name: x084, interface: bus98.0, ipAddress: 10.255.3.90/24}
+  - {name: x085, interface: bus98.0, ipAddress: 10.255.3.91/24}
+  - {name: x086, interface: bus98.0, ipAddress: 10.255.3.92/24}
+  - {name: x087, interface: bus98.0, ipAddress: 10.255.3.93/24}
+  - {name: x088, interface: bus98.0, ipAddress: 10.255.3.94/24}
+  - {name: x089, interface: bus98.0, ipAddress: 10.255.3.95/24}
+  - {name: x090, interface: bus98.0, ipAddress: 10.255.3.96/24}
+  - {name: x091, interface: bus98.0, ipAddress: 10.255.3.97/24}
+  - {name: x092, interface: bus98.0, ipAddress: 10.255.3.98/24}
+  - {name: x093, interface: bus98.0, ipAddress: 10.255.3.99/24}
+  - {name: x094, interface: bus98.0, ipAddress: 10.255.3.100/24}
+- name: Control4
+  vlan: 3678
+  nodes:
+  - {name: w001, interface: bus98.1, ipAddress: 10.255.4.1/24}
+  - {name: w002, interface: bus98.1, ipAddress: 10.255.4.2/24}
+  - {name: w003, interface: bus98.1, ipAddress: 10.255.4.3/24}
+  - {name: w004, interface: bus98.1, ipAddress: 10.255.4.4/24}
+  - {name: w005, interface: bus98.1, ipAddress: 10.255.4.5/24}
+  - {name: w006, interface: bus98.1, ipAddress: 10.255.4.6/24}
+  - {name: w007, interface: bus98.1, ipAddress: 10.255.4.7/24}
+  - {name: w008, interface: bus98.1, ipAddress: 10.255.4.8/24}
+  - {name: w009, interface: bus98.1, ipAddress: 10.255.4.9/24}
+  - {name: w010, interface: bus98.1, ipAddress: 10.255.4.10/24}
+  - {name: w011, interface: bus98.1, ipAddress: 10.255.4.11/24}
+  - {name: w012, interface: bus98.1, ipAddress: 10.255.4.12/24}
+  - {name: w013, interface: bus98.1, ipAddress: 10.255.4.13/24}
+  - {name: w014, interface: bus98.1, ipAddress: 10.255.4.14/24}
+  - {name: w015, interface: bus98.1, ipAddress: 10.255.4.15/24}
+  - {name: w016, interface: bus98.1, ipAddress: 10.255.4.16/24}
+  - {name: w017, interface: bus98.1, ipAddress: 10.255.4.17/24}
+  - {name: w018, interface: bus98.1, ipAddress: 10.255.4.18/24}
+  - {name: w019, interface: bus98.1, ipAddress: 10.255.4.19/24}
+  - {name: w020, interface: bus98.1, ipAddress: 10.255.4.20/24}
+  - {name: w021, interface: bus98.1, ipAddress: 10.255.4.21/24}
+  - {name: w022, interface: bus98.1, ipAddress: 10.255.4.22/24}
+  - {name: w023, interface: bus98.1, ipAddress: 10.255.4.23/24}
+  - {name: w024, interface: bus98.1, ipAddress: 10.255.4.24/24}
+  - {name: w025, interface: bus98.1, ipAddress: 10.255.4.25/24}
+  - {name: w026, interface: bus98.1, ipAddress: 10.255.4.26/24}
+  - {name: w027, interface: bus98.1, ipAddress: 10.255.4.27/24}
+  - {name: w028, interface: bus98.1, ipAddress: 10.255.4.28/24}
+  - {name: w029, interface: bus98.1, ipAddress: 10.255.4.29/24}
+  - {name: w030, interface: bus98.1, ipAddress: 10.255.4.30/24}
+  - {name: w031, interface: bus98.1, ipAddress: 10.255.4.31/24}
+  - {name: w032, interface: bus98.1, ipAddress: 10.255.4.32/24}
+  - {name: w033, interface: bus98.1, ipAddress: 10.255.4.33/24}
+  - {name: w034, interface: bus98.1, ipAddress: 10.255.4.34/24}
+  - {name: w035, interface: bus98.1, ipAddress: 10.255.4.35/24}
+  - {name: w036, interface: bus98.1, ipAddress: 10.255.4.36/24}
+  - {name: w037, interface: bus98.1, ipAddress: 10.255.4.37/24}
+  - {name: w038, interface: bus98.1, ipAddress: 10.255.4.38/24}
+  - {name: w039, interface: bus98.1, ipAddress: 10.255.4.39/24}
+  - {name: w040, interface: bus98.1, ipAddress: 10.255.4.40/24}
+  - {name: w041, interface: bus98.1, ipAddress: 10.255.4.41/24}
+  - {name: w042, interface: bus98.1, ipAddress: 10.255.4.42/24}
+  - {name: w043, interface: bus98.1, ipAddress: 10.255.4.43/24}
+  - {name: w044, interface: bus98.1, ipAddress: 10.255.4.44/24}
+  - {name: w045, interface: bus98.1, ipAddress: 10.255.4.45/24}
+  - {name: w046, interface: bus98.1, ipAddress: 10.255.4.46/24}
+  - {name: w047, interface: bus98.1, ipAddress: 10.255.4.47/24}
+  - {name: w048, interface: bus98.1, ipAddress: 10.255.4.48/24}
+  - {name: w101, interface: bus98.1, ipAddress: 10.255.4.49/24}
+  - {name: w102, interface: bus98.1, ipAddress: 10.255.4.50/24}
+  - {name: w103, interface: bus98.1, ipAddress: 10.255.4.51/24}
+  - {name: w104, interface: bus98.1, ipAddress: 10.255.4.52/24}
+  - {name: w105, interface: bus98.1, ipAddress: 10.255.4.53/24}
+  - {name: w106, interface: bus98.1, ipAddress: 10.255.4.54/24}
+  - {name: w107, interface: bus98.1, ipAddress: 10.255.4.55/24}
+  - {name: w108, interface: bus98.1, ipAddress: 10.255.4.56/24}
+  - {name: w109, interface: bus98.1, ipAddress: 10.255.4.57/24}
+  - {name: w110, interface: bus98.1, ipAddress: 10.255.4.58/24}
+  - {name: w111, interface: bus98.1, ipAddress: 10.255.4.59/24}
+  - {name: w112, interface: bus98.1, ipAddress: 10.255.4.60/24}
+  - {name: w117, interface: bus98.1, ipAddress: 10.255.4.61/24}
+  - {name: w118, interface: bus98.1, ipAddress: 10.255.4.62/24}
+  - {name: w119, interface: bus98.1, ipAddress: 10.255.4.63/24}
+  - {name: w120, interface: bus98.1, ipAddress: 10.255.4.64/24}
+  - {name: w121, interface: bus98.1, ipAddress: 10.255.4.65/24}
+  - {name: w122, interface: bus98.1, ipAddress: 10.255.4.66/24}
+  - {name: w123, interface: bus98.1, ipAddress: 10.255.4.67/24}
+  - {name: w124, interface: bus98.1, ipAddress: 10.255.4.68/24}
+  - {name: w125, interface: bus98.1, ipAddress: 10.255.4.69/24}
+  - {name: w126, interface: bus98.1, ipAddress: 10.255.4.70/24}
+  - {name: x065, interface: bus98.1, ipAddress: 10.255.4.71/24}
+  - {name: x066, interface: bus98.1, ipAddress: 10.255.4.72/24}
+  - {name: x067, interface: bus98.1, ipAddress: 10.255.4.73/24}
+  - {name: x068, interface: bus98.1, ipAddress: 10.255.4.74/24}
+  - {name: x069, interface: bus98.1, ipAddress: 10.255.4.75/24}
+  - {name: x070, interface: bus98.1, ipAddress: 10.255.4.76/24}
+  - {name: x071, interface: bus98.1, ipAddress: 10.255.4.77/24}
+  - {name: x072, interface: bus98.1, ipAddress: 10.255.4.78/24}
+  - {name: x073, interface: bus98.1, ipAddress: 10.255.4.79/24}
+  - {name: x074, interface: bus98.1, ipAddress: 10.255.4.80/24}
+  - {name: x075, interface: bus98.1, ipAddress: 10.255.4.81/24}
+  - {name: x076, interface: bus98.1, ipAddress: 10.255.4.82/24}
+  - {name: x077, interface: bus98.1, ipAddress: 10.255.4.83/24}
+  - {name: x078, interface: bus98.1, ipAddress: 10.255.4.84/24}
+  - {name: x079, interface: bus98.1, ipAddress: 10.255.4.85/24}
+  - {name: x080, interface: bus98.1, ipAddress: 10.255.4.86/24}
+  - {name: x081, interface: bus98.1, ipAddress: 10.255.4.87/24}
+  - {name: x082, interface: bus98.1, ipAddress: 10.255.4.88/24}
+  - {name: x083, interface: bus98.1, ipAddress: 10.255.4.89/24}
+  - {name: x084, interface: bus98.1, ipAddress: 10.255.4.90/24}
+  - {name: x085, interface: bus98.1, ipAddress: 10.255.4.91/24}
+  - {name: x086, interface: bus98.1, ipAddress: 10.255.4.92/24}
+  - {name: x087, interface: bus98.1, ipAddress: 10.255.4.93/24}
+  - {name: x088, interface: bus98.1, ipAddress: 10.255.4.94/24}
+  - {name: x089, interface: bus98.1, ipAddress: 10.255.4.95/24}
+  - {name: x090, interface: bus98.1, ipAddress: 10.255.4.96/24}
+  - {name: x091, interface: bus98.1, ipAddress: 10.255.4.97/24}
+  - {name: x092, interface: bus98.1, ipAddress: 10.255.4.98/24}
+  - {name: x093, interface: bus98.1, ipAddress: 10.255.4.99/24}
+  - {name: x094, interface: bus98.1, ipAddress: 10.255.4.100/24}
