@@ -16,6 +16,15 @@ all:
         segs:
         - fc00:ff00::0
 
+    benchmark:
+      title: "test"
+      time_seconds: 10
+      report_interval_seconds: 1
+      message_size_bytes: 1000
+      bandwidth: 10M
+      #bandwidth: 1000M
+      num_concurrent_session: 100
+
     containers:
     # x082: client
     - name: c11
@@ -24,12 +33,18 @@ all:
       - type: overlay
         addrs: [{addr: 10.1.0.1}]
         network: net1
+      benchmark:
+        role: client
+        dst: 142.1.0.1
     - name: c12
       host: x082
       ports:
       - type: overlay
         addrs: [{addr: 10.1.0.2}]
         network: net1
+      benchmark:
+        role: client
+        dst: 142.1.0.2
     - name: c21
       host: x082
       ports:
@@ -48,12 +63,16 @@ all:
       - type: underlay
         addrs: [{addr: 142.1.0.1}]
       httpApp: true
+      benchmark:
+        role: server
     - name: s2
       host: x082
       ports:
       - type: underlay
         addrs: [{addr: 142.1.0.2}]
       httpApp: true
+      benchmark:
+        role: server
 
     # x083: server
     - name: c13
@@ -62,12 +81,18 @@ all:
       - type: overlay
         addrs: [{addr: 10.1.0.3}]
         network: net1
+      benchmark:
+        role: client
+        dst: 142.1.0.3
     - name: c14
       host: x083
       ports:
       - type: overlay
         addrs: [{addr: 10.1.0.4}]
         network: net1
+      benchmark:
+        role: client
+        dst: 142.1.0.4
     - name: c23
       host: x083
       ports:
@@ -86,12 +111,16 @@ all:
       - type: underlay
         addrs: [{addr: 142.1.0.3}]
       httpApp: true
+      benchmark:
+        role: server
     - name: s4
       host: x083
       ports:
       - type: underlay
         addrs: [{addr: 142.1.0.4}]
       httpApp: true
+      benchmark:
+        role: server
 
     # x084: l-node
     - name: l1

@@ -1,0 +1,8 @@
+{
+  "title": "test",
+  "time_seconds": 10,
+  "report_interval_seconds": 1,
+  "message_size_bytes": 1000,
+  "bandwidth": "10M",
+  "num_concurrent_session": 100
+}

@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 ansible = "*"
+numpy = "*"
+matplotlib = "*"
 
 [dev-packages]
 

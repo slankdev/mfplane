@@ -75,6 +75,8 @@
         ip link add $HIF type veth peer name $CIF netns {{ c.name }}
       {% if p.type == "overlay" %}
         ip link set $HIF vrf vrf-{{ p.network }}
+        ip link set $HIF mtu 1400
+        ip netns exec {{ c.name }} ip link set $CIF mtu 1400
       {% endif %}
         ip link set $HIF up
         ip netns exec {{ c.name }} ip link set $CIF up
