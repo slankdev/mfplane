@@ -30,4 +30,3 @@ cmd = f"docker -H ssh://{host} run --rm "
 cmd += f"--net container:{args.node} -it -e PS1='{args.node}> ' "
 cmd += f"nicolaka/netshoot {args.command}"
 subprocess.run(cmd, shell=True)
-
