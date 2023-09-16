@@ -31,12 +31,12 @@ if args.ssh:
   subprocess.run(cmd, shell=True)
   sys.exit(0)
 if args.host:
-  cmd = f"docker -H ssh://{host} run --rm "
+  cmd = f"docker -H ssh://{host} run --rm --privileged "
   cmd += f"--net host -it -e PS1='{args.node}-{host}> ' "
   cmd += f"nicolaka/netshoot {args.command}"
   subprocess.run(cmd, shell=True)
   sys.exit(0)
-cmd = f"docker -H ssh://{host} run --rm "
+cmd = f"docker -H ssh://{host} run --rm --privileged "
 cmd += f"--net container:{args.node} -it -e PS1='{args.node}> ' "
 cmd += f"nicolaka/netshoot {args.command}"
 subprocess.run(cmd, shell=True)
