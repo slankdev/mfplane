@@ -129,54 +129,54 @@ all:
       - type: underlay
         addrs: []
         bgp: {}
-    - name: l4
-      host: x084
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
-    - name: l7
-      host: x084
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
+    # - name: l4
+    #   host: x084
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
+    # - name: l7
+    #   host: x084
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
     - name: l2
       host: x085
       ports:
       - type: underlay
         addrs: []
         bgp: {}
-    - name: l5
-      host: x085
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
-    - name: l8
-      host: x085
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
+    # - name: l5
+    #   host: x085
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
+    # - name: l8
+    #   host: x085
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
     - name: l3
       host: x086
       ports:
       - type: underlay
         addrs: []
         bgp: {}
-    - name: l6
-      host: x086
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
-    - name: l9
-      host: x086
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
+    # - name: l6
+    #   host: x086
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
+    # - name: l9
+    #   host: x086
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
 
     # x087,x088,x089: l-node
     - name: n1
@@ -185,54 +185,54 @@ all:
       - type: underlay
         addrs: []
         bgp: {}
-    - name: n4
-      host: x087
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
-    - name: n7
-      host: x087
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
+    # - name: n4
+    #   host: x087
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
+    # - name: n7
+    #   host: x087
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
     - name: n2
       host: x088
       ports:
       - type: underlay
         addrs: []
         bgp: {}
-    - name: n5
-      host: x088
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
-    - name: n8
-      host: x088
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
+    # - name: n5
+    #   host: x088
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
+    # - name: n8
+    #   host: x088
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
     - name: n3
       host: x089
       ports:
       - type: underlay
         addrs: []
         bgp: {}
-    - name: n6
-      host: x089
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
-    - name: n9
-      host: x089
-      ports:
-      - type: underlay
-        addrs: []
-        bgp: {}
+    # - name: n6
+    #   host: x089
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
+    # - name: n9
+    #   host: x089
+    #   ports:
+    #   - type: underlay
+    #     addrs: []
+    #     bgp: {}
 
 #NOTE(slankdev): starbed assignment
 #w[001:013]:
