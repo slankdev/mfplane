@@ -8,10 +8,9 @@ import subprocess
 # Arg parse
 parser = argparse.ArgumentParser()
 parser.add_argument("node", help="specify network-node name")
-parser.add_argument("-c", "--command", default="bash",
-                    help="specify command to execute")
-parser.add_argument("-i", "--inventory", default="hosts.small.yaml",
-                    help="specify inventory file")
+parser.add_argument("-c", "--command", default="bash")
+parser.add_argument("-i", "--inventory", default="hosts.small.yaml")
+parser.add_argument("-H", "--host", action='store_true')
 args = parser.parse_args()
 
 # Load inventory file
@@ -26,7 +25,13 @@ if host is None:
   sys.exit("Error")
 
 # Execute remote login command
-cmd = f"docker -H ssh://{host} run --rm "
-cmd += f"--net container:{args.node} -it -e PS1='{args.node}> ' "
-cmd += f"nicolaka/netshoot {args.command}"
-subprocess.run(cmd, shell=True)
+if args.host:
+  cmd = f"docker -H ssh://{host} run --rm "
+  cmd += f"--net host -it -e PS1='{args.node}-{host}> ' "
+  cmd += f"nicolaka/netshoot {args.command}"
+  subprocess.run(cmd, shell=True)
+else:
+  cmd = f"docker -H ssh://{host} run --rm "
+  cmd += f"--net container:{args.node} -it -e PS1='{args.node}> ' "
+  cmd += f"nicolaka/netshoot {args.command}"
+  subprocess.run(cmd, shell=True)
