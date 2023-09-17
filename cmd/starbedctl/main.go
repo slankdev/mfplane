@@ -428,27 +428,17 @@ func NewCommandResourceList() *cobra.Command {
 				return err
 			}
 
-			names := []string{}
-			for _, node := range r.Nodes {
-				names = append(names, node.NodeName)
-			}
-			p, err := powerStatusCheck(names)
-			if err != nil {
-				println("2")
-				return err
-			}
-
-			//pp.Println(r)
 			table := util.NewTableWriter(os.Stdout)
-			table.SetHeader([]string{"Name", "Power"})
+			table.SetHeader([]string{"Name", "IPMI"})
 			for _, node := range r.Nodes {
-				power := "n/a"
-				if v, ok := p[node.NodeName]; ok {
-					power = v
-				}
-				table.Append([]string{node.NodeName, power})
+				table.Append([]string{
+					node.NodeName,
+					fmt.Sprintf("https://%s-ctrl.pub.starbed.org/", node.NodeName),
+				})
 			}
 			table.Render()
+
+			pp.Println(r.Nodes[0])
 			return nil
 		},
 	}
