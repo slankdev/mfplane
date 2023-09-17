@@ -11,7 +11,7 @@
         {% for name in groups['starbedNode'] %}
         Host {{ name }}
           User root
-          Hostname {{ name }}
+          Hostname {{ hostvars[name]["ansible_host"] }}
           StrictHostKeyChecking no
           UserKnownHostsFile /dev/null
         {% endfor %}
@@ -45,40 +45,64 @@
         Acquire::http::Proxy "{{ http_proxy }}";
         Acquire::https::Proxy "{{ https_proxy }}";
 
+  # - name: python-apt
+  #   block:
+  #   - name: python-apt
+  #     register: apt_result
+  #     changed_when: false
+  #     ignore_errors: true
+  #     ansible.builtin.apt:
+  #       name: [python-apt]
+  #   - name: python-apt
+  #     when: apt_result.failed
+  #     shell: |
+  #       apt update && apt install -y python-apt python3-apt python-is-python3
+
+  # - name: install required packages with apt
+  #   tags: apt
+  #   ansible.builtin.apt:
+  #     name:
+  #     - tshark
+  #     - sysstat
+  #     - stress
+  #     - iperf
+  #     - iperf3
+  #     - ca-certificates
+  #     - curl
+  #     - gnupg
+  #     - frr
+  #     - frr-pythontools
+  #     - jq
+  #     - bash-completion
+  #     - python-apt
+  #     - bc
+  #     - git
+  #     - autoconf
+  #     - automake
+  #     - libtool
+  #     - make
+  #     - libreadline-dev
+  #     - pkg-config
+  #     - libpam0g-dev
+  #     - libjson-c-dev
+  #     - bison
+  #     - flex
+  #     - libc-ares-dev
+  #     - libsnmp-dev
+  #     - libcap-dev
+  #     - libelf-dev
+  #     - libmnl-dev
   - name: install required packages with apt
     tags: apt
-    ansible.builtin.apt:
-      name:
-      - tshark
-      - sysstat
-      - stress
-      - iperf
-      - iperf3
-      - ca-certificates
-      - curl
-      - gnupg
-      - frr
-      - frr-pythontools
-      - jq
-      - bash-completion
-      - python-apt
-      - bc
-      - git
-      - autoconf
-      - automake
-      - libtool
-      - make
-      - libreadline-dev
-      - pkg-config
-      - libpam0g-dev
-      - libjson-c-dev
-      - bison
-      - flex
-      - libc-ares-dev
-      - libsnmp-dev
-      - libcap-dev
-      - libelf-dev
-      - libmnl-dev
+    changed_when: false
+    shell: |
+      export DEBIAN_FRONTEND=noninteractive
+      apt update && apt install -y -qq \
+        tshark sysstat stress iperf iperf3 ca-certificates curl gnupg frr \
+        frr-pythontools jq bash-completion python-apt bc git autoconf \
+        automake libtool make libreadline-dev pkg-config libpam0g-dev \
+        libjson-c-dev bison flex libc-ares-dev libsnmp-dev \
+        libcap-dev libelf-dev libmnl-dev
 
   - name: gather the package facts
     ansible.builtin.package_facts:
