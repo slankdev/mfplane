@@ -27,18 +27,12 @@ export KUBECONFIG=/home/staruser/mfplane.kind.kubeconfig.yaml
 alias gb='git branch'
 alias gs='git status'
 alias gl='git log --pretty=format:" %h  %s %d"'
-alias gl40='git log --pretty=format:" %h  %s %d" | head -n40'
-alias glog='git log --graph --decorate'
 alias ga='git add'
-alias gaall='git add -u .'
-alias gch='git checkout'
+alias gd='git diff'
 alias gc='git commit'
 alias gco='git commit -m'
 alias gca='git commit --amend'
 alias gce='git commit -m  "`date +%Y.%m.%d-%H:%M`"'
-alias gp='git push'
-alias gd='git diff'
-alias gf='git log --pretty=format:" - %s %n   http://github.com/slankdev/$(basename `pwd`)/commit/%H " '
 alias gdo="git diff origin/\$(git symbolic-ref --short HEAD)"
 ```
 
