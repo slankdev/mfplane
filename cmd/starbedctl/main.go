@@ -233,6 +233,7 @@ func NewCommandResourceVlan() *cobra.Command {
 		Use: "vlan",
 	}
 	cmd.AddCommand(NewCommandResourceVlanCheck())
+	cmd.AddCommand(NewCommandResourceVlanDelete())
 	return cmd
 }
 
@@ -504,6 +505,7 @@ func NewCommandResourceList() *cobra.Command {
 
 func NewCommandResourceVlanCheck() *cobra.Command {
 	var verbose bool
+	var nodeNames []string
 	cmd := &cobra.Command{
 		Use: "check",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -513,8 +515,19 @@ func NewCommandResourceVlanCheck() *cobra.Command {
 				return err
 			}
 			names := []string{}
+			nodes := []NodeResource{}
 			for _, node := range r.Nodes {
-				names = append(names, node.NodeName)
+				if len(nodeNames) == 0 {
+					names = append(names, node.NodeName)
+					nodes = append(nodes, node)
+				} else {
+					for _, nodeName := range nodeNames {
+						if nodeName == node.NodeName {
+							names = append(names, node.NodeName)
+							nodes = append(nodes, node)
+						}
+					}
+				}
 			}
 
 			// Get Vlan status
@@ -539,7 +552,7 @@ func NewCommandResourceVlanCheck() *cobra.Command {
 			// Craft Table
 			table := util.NewTableWriter(os.Stdout)
 			table.SetHeader(append([]string{"Name"}, ifaceNames...))
-			for _, node := range r.Nodes {
+			for _, node := range nodes {
 
 				vlanArray := []string{}
 				for _, vlan := range p {
@@ -547,11 +560,14 @@ func NewCommandResourceVlanCheck() *cobra.Command {
 						for _, name := range ifaceNames {
 							for _, i := range vlan.Interfaces {
 								if i.PortName == name {
-									v := "nil"
-									if i.PortVlan != nil {
-										v = fmt.Sprintf("PortVlan(%d)", *i.PortVlan)
-									} else {
-										v = fmt.Sprintf("Trunk(%v)", i.TaggedVlan)
+									v := "unknown"
+									switch i.Mode {
+									case "none":
+										v = "none"
+									case "trunk":
+										v = fmt.Sprintf("trunk(%v)", i.TaggedVlan)
+									case "port":
+										v = fmt.Sprintf("port(%d)", *i.PortVlan)
 									}
 									vlanArray = append(vlanArray, v)
 								}
@@ -574,6 +590,8 @@ func NewCommandResourceVlanCheck() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	cmd.Flags().StringArrayVarP(&nodeNames, "name", "n", []string{},
+		"node-name like w001")
 	return cmd
 }
 
@@ -607,6 +625,20 @@ func NewCommandResourcePowerCheck() *cobra.Command {
 	cmd.Flags().BoolVarP(&allNodes, "all", "a", false, "check all nodes")
 	cmd.Flags().StringArrayVarP(&nodeNames, "name", "n", []string{},
 		"node-name like w001")
+	return cmd
+}
+
+func NewCommandResourceVlanDelete() *cobra.Command {
+	var nodeName string
+	var portName string
+	cmd := &cobra.Command{
+		Use: "delete",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vlanStatusDelete(nodeName, portName)
+		},
+	}
+	cmd.Flags().StringVarP(&nodeName, "name", "n", "", "node-name like w001")
+	cmd.Flags().StringVarP(&portName, "port", "p", "", "port-name like bus31.0")
 	return cmd
 }
 
@@ -763,6 +795,36 @@ func powerStatusCheck(nodeNames []string,
 		return nil, err
 	}
 	return resData, nil
+}
+
+func vlanStatusDelete(name, port string) error {
+	token, err := tokenIssue()
+	if err != nil {
+		return err
+	}
+
+	method := "DELETE"
+	endpoint := os.Getenv("STARBED_ENDPOINT")
+	req, err := http.NewRequest(method,
+		fmt.Sprintf("%s/api/mfplane-23/vlan/%s/%s", endpoint, name, port), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	http.DefaultTransport = &http.Transport{Proxy: nil}
+	client := new(http.Client)
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code %d",
+			res.StatusCode)
+	}
+	return nil
 }
 
 func powerStatusOn(name string) error {
