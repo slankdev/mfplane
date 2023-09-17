@@ -5,6 +5,7 @@ ssh -t w003 sudo ip netns exec c11 ping 8.8.8.8
 cat /sys/kernel/tracing/trace_pipe
 ssh -t w006 sudo docker run --rm -it --net host nicolaka/netshoot tcpdump -qt -nni any -l not tcp port 22 and not icmp6 and not arp and not tcp port 6443 and not tcp port 179
 ssh -t w006 sudo docker run --rm -it --net host -v /tmp:/tmp nicolaka/netshoot tcpdump -qt -nni any -l not tcp port 22 and not arp and not tcp port 6443 and not tcp port 179 and not icmp6[0] == 135 and not icmp6[0] == 134
+docker run --rm -it --net host -v /tmp:/tmp nicolaka/netshoot tcpdump -qt -nni any -l not tcp port 22 and not arp and not tcp port 6443 and not tcp port 179 and not icmp6[0] == 135 and not icmp6[0] == 134
 tcpdump -qt -nni any -l not tcp port 22 and not arp and not tcp port 6443 and not tcp port 179 and not icmp6[0] == 135 and not icmp6[0] == 134
 ssh -t x082 sudo ip netns exec c11 ping 142.1.0.1
 tshark -i l1-eth0 -f "ip6 src net 2001:ff00::/24" -c 100 -T fields -e ipv6.src -e ipv6.dst -e ipv6.flow
