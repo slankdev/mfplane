@@ -24,6 +24,8 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/k0kubun/pp"
@@ -183,6 +185,19 @@ type NodeStorage struct {
 	Purposes []string `json:"purposes"`
 }
 
+type NodeVlan struct {
+	NodeName   string              `json:"nodeName"`
+	Interfaces []NodeVlanInterface `json:"interfaces"`
+}
+
+type NodeVlanInterface struct {
+	Name       string `json:"name"`
+	Mode       string `json:"mode"`
+	PortName   string `json:"portName"`
+	PortVlan   *int   `json:"portVlan"`
+	TaggedVlan []int  `json:"taggedVlan"`
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	if err := NewCommand().Execute(); err != nil {
@@ -208,7 +223,16 @@ func NewCommandResource() *cobra.Command {
 		Use: "resource",
 	}
 	cmd.AddCommand(NewCommandResourceList())
+	cmd.AddCommand(NewCommandResourceVlan())
 	cmd.AddCommand(NewCommandResourcePower())
+	return cmd
+}
+
+func NewCommandResourceVlan() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "vlan",
+	}
+	cmd.AddCommand(NewCommandResourceVlanCheck())
 	return cmd
 }
 
@@ -478,6 +502,81 @@ func NewCommandResourceList() *cobra.Command {
 	return cmd
 }
 
+func NewCommandResourceVlanCheck() *cobra.Command {
+	var verbose bool
+	cmd := &cobra.Command{
+		Use: "check",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			r, err := resourceList()
+			if err != nil {
+				println("1")
+				return err
+			}
+			names := []string{}
+			for _, node := range r.Nodes {
+				names = append(names, node.NodeName)
+			}
+
+			// Get Vlan status
+			p, err := vlanStatusCheck(names)
+			if err != nil {
+				return err
+			}
+
+			// Craft ifacemap
+			ifaceNamesMap := map[string]bool{}
+			for _, vlan := range p {
+				for _, iface := range vlan.Interfaces {
+					ifaceNamesMap[iface.PortName] = true
+				}
+			}
+			ifaceNames := []string{}
+			for key := range ifaceNamesMap {
+				ifaceNames = append(ifaceNames, key)
+			}
+			sort.Strings(ifaceNames)
+
+			// Craft Table
+			table := util.NewTableWriter(os.Stdout)
+			table.SetHeader(append([]string{"Name"}, ifaceNames...))
+			for _, node := range r.Nodes {
+
+				vlanArray := []string{}
+				for _, vlan := range p {
+					if vlan.NodeName == node.NodeName {
+						for _, name := range ifaceNames {
+							for _, i := range vlan.Interfaces {
+								if i.PortName == name {
+									v := "nil"
+									if i.PortVlan != nil {
+										v = fmt.Sprintf("PortVlan(%d)", *i.PortVlan)
+									} else {
+										v = fmt.Sprintf("Trunk(%v)", i.TaggedVlan)
+									}
+									vlanArray = append(vlanArray, v)
+								}
+							}
+						}
+					}
+				}
+
+				table.Append(append([]string{
+					node.NodeName,
+				}, vlanArray...))
+			}
+
+			// Rendering
+			table.Render()
+			if verbose {
+				pp.Println(p)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	return cmd
+}
+
 func NewCommandResourcePowerCheck() *cobra.Command {
 	var allNodes bool
 	var nodeNames []string
@@ -494,18 +593,14 @@ func NewCommandResourcePowerCheck() *cobra.Command {
 				for _, node := range r.Nodes {
 					names = append(names, node.NodeName)
 				}
-				p, err := powerStatusCheck(names)
-				if err != nil {
-					return err
-				}
-				pp.Println(p)
-			} else {
-				p0, err := powerStatusCheck(nodeNames)
-				if err != nil {
-					return err
-				}
-				pp.Println(p0)
+				nodeNames = names
 			}
+
+			p, err := powerStatusCheck(nodeNames)
+			if err != nil {
+				return err
+			}
+			pp.Println(p)
 			return nil
 		},
 	}
@@ -575,6 +670,54 @@ func jobList() (*JobsResponse, error) {
 		return nil, err
 	}
 	return &resData, nil
+}
+
+func vlanStatusCheck(nodeNames []string,
+) ([]NodeVlan, error) {
+	token, err := tokenIssue()
+	if err != nil {
+		return nil, err
+	}
+
+	reqBodyBytes, err := json.Marshal(nodeNames)
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint := os.Getenv("STARBED_ENDPOINT")
+	req, err := http.NewRequest("GET",
+		fmt.Sprintf("%s/api/mfplane-23/vlan/", endpoint),
+		bytes.NewBuffer(reqBodyBytes))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	q := req.URL.Query()
+	q.Add("nodes", strings.Join(nodeNames, ","))
+	req.URL.RawQuery = q.Encode()
+
+	http.DefaultTransport = &http.Transport{Proxy: nil}
+	client := new(http.Client)
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %d",
+			res.StatusCode)
+	}
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	resData := []NodeVlan{}
+	if err := json.Unmarshal(b, &resData); err != nil {
+		return nil, err
+	}
+	return resData, nil
 }
 
 func powerStatusCheck(nodeNames []string,
