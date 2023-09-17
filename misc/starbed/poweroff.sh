@@ -101,7 +101,7 @@ starbedctl resource power off -n x077
 starbedctl resource power off -n x078
 starbedctl resource power off -n x079
 
-#starbedctl resource power off -n x080
+starbedctl resource power off -n x080
 starbedctl resource power off -n x081
 starbedctl resource power off -n x082
 starbedctl resource power off -n x083

@@ -456,18 +456,37 @@ func NewCommandResourceList() *cobra.Command {
 }
 
 func NewCommandResourcePowerCheck() *cobra.Command {
+	var allNodes bool
 	var nodeNames []string
 	cmd := &cobra.Command{
 		Use: "check",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			p0, err := powerStatusCheck(nodeNames)
-			if err != nil {
-				return err
+			if allNodes {
+				r, err := resourceList()
+				if err != nil {
+					println("1")
+					return err
+				}
+				names := []string{}
+				for _, node := range r.Nodes {
+					names = append(names, node.NodeName)
+				}
+				p, err := powerStatusCheck(names)
+				if err != nil {
+					return err
+				}
+				pp.Println(p)
+			} else {
+				p0, err := powerStatusCheck(nodeNames)
+				if err != nil {
+					return err
+				}
+				pp.Println(p0)
 			}
-			pp.Println(p0)
 			return nil
 		},
 	}
+	cmd.Flags().BoolVarP(&allNodes, "all", "a", false, "check all nodes")
 	cmd.Flags().StringArrayVarP(&nodeNames, "name", "n", []string{},
 		"node-name like w001")
 	return cmd
