@@ -193,6 +193,12 @@
     - {name: net.vrf.strict_mode, value: 1}
     - {name: net.ipv6.seg6_flowlabel, value: 1}
 
+  - name: iptables default policy
+    changed_when: false
+    shell: |
+      set -xe
+      iptables -P FORWARD ACCEPT
+
   - name: install iproute2-6.3
     vars:
       iproute2_version: 6.3.0
