@@ -419,6 +419,7 @@ func NewCommandJobList() *cobra.Command {
 }
 
 func NewCommandResourceList() *cobra.Command {
+	var verbose bool
 	cmd := &cobra.Command{
 		Use: "list",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -428,20 +429,52 @@ func NewCommandResourceList() *cobra.Command {
 				return err
 			}
 
-			table := util.NewTableWriter(os.Stdout)
-			table.SetHeader([]string{"Name", "IPMI"})
+			// Craft Ifacemap
+			ifaceNamesMap := map[string]bool{}
 			for _, node := range r.Nodes {
-				table.Append([]string{
+				for _, iface := range node.Interfaces {
+					ifaceNamesMap[iface.Port] = true
+				}
+			}
+			ifaceNames := []string{}
+			for key, _ := range ifaceNamesMap {
+				ifaceNames = append(ifaceNames, key)
+			}
+
+			// Craft Table
+			table := util.NewTableWriter(os.Stdout)
+			table.SetHeader(append([]string{"Name", "IPMI"}, ifaceNames...))
+			for _, node := range r.Nodes {
+				ifaceInfo := []string{}
+				for _, name := range ifaceNames {
+					for _, iface := range node.Interfaces {
+						if name == iface.Port {
+							ifaceType := "nil"
+							if iface.Type != "" {
+								ifaceType = iface.Type
+							}
+							ifaceInfo = append(ifaceInfo, fmt.Sprintf("%s:%s",
+								iface.Purposes[0], ifaceType))
+						}
+					}
+				}
+
+				table.Append(append([]string{
 					node.NodeName,
 					fmt.Sprintf("https://%s-ctrl.pub.starbed.org/", node.NodeName),
-				})
+				}, ifaceInfo...))
 			}
+
+			// Rendering
 			table.Render()
 
-			pp.Println(r.Nodes[0])
+			if verbose {
+				pp.Println(r)
+			}
 			return nil
 		},
 	}
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	return cmd
 }
 
