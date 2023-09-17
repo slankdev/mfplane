@@ -20,6 +20,8 @@ base:
       ansible_ssh_common_args: >-
         -o StrictHostKeyChecking=no
         -o UserKnownHostsFile=/dev/null
+      routes: []
+      containers: []
 parameter:
   minRouterId: 10.255.0.0
   asNumber: 4200000000

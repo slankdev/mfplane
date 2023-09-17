@@ -4,8 +4,10 @@ all:
     ansible_ssh_pass: '{{ lookup("env", "ANSIBLE_SSH_PASS") }}'
     ansible_ssh_user: '{{ lookup("env", "ANSIBLE_SSH_USER") }}'
     ansible_sudo_pass: '{{ lookup("env", "ANSIBLE_SUDO_PASS") }}'
+    containers: []
     http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
     https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
+    routes: []
 dplaneNode:
   hosts:
     node006:
