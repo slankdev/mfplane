@@ -1,0 +1,52 @@
+all:
+  vars:
+    ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    ansible_ssh_pass: '{{ lookup("env", "ANSIBLE_SSH_PASS") }}'
+    ansible_ssh_user: '{{ lookup("env", "ANSIBLE_SSH_USER") }}'
+    ansible_sudo_pass: '{{ lookup("env", "ANSIBLE_SUDO_PASS") }}'
+    http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
+    https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
+routeServer:
+  hosts:
+    node003:
+      ansible_host: w003
+      asNumber: 4200000000
+      kernelVersion: 5.15.0-82
+      routerId: 10.255.0.3
+      vrfs:
+      - dataplaneInterfaces:
+        - addrs:
+          - addr: 2001:ff00:1::3
+            plen: 64
+          - addr: 10.255.1.3
+            plen: 24
+          name: eno12399
+        name: vrf-control1
+      - dataplaneInterfaces:
+        - addrs:
+          - addr: 2001:ff00:2::3
+            plen: 64
+          - addr: 10.255.2.3
+            plen: 24
+          name: eno12409
+        name: vrf-control2
+      - dataplaneInterfaces:
+        - addrs:
+          - addr: 2001:ff00:3::3
+            plen: 64
+          - addr: 10.255.3.3
+            plen: 24
+          name: ens2f0
+        name: vrf-control3
+      - dataplaneInterfaces:
+        - addrs:
+          - addr: 2001:ff00:4::3
+            plen: 64
+          - addr: 10.255.4.3
+            plen: 24
+          name: ens2f1
+        name: vrf-control4
+starbedNode:
+  children:
+    dplaneNode: {}
+    routeServer: {}

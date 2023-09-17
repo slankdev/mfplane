@@ -1,0 +1,142 @@
+infraManifests:
+- name: infra.large001.yaml
+- name: infra.large002.yaml
+- name: infra.large003.yaml
+- name: infra.large004.yaml
+- name: infra.large005.yaml
+- name: infra.large006.yaml
+- name: infra.large007.yaml
+- name: infra.large008.yaml
+- name: infra.large009.yaml
+- name: infra.large010.yaml
+base:
+  all:
+    vars:
+      http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
+      https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
+      ansible_ssh_user: '{{ lookup("env", "ANSIBLE_SSH_USER") }}'
+      ansible_ssh_pass: '{{ lookup("env", "ANSIBLE_SSH_PASS") }}'
+      ansible_sudo_pass: '{{ lookup("env", "ANSIBLE_SUDO_PASS") }}'
+      ansible_ssh_common_args: >-
+        -o StrictHostKeyChecking=no
+        -o UserKnownHostsFile=/dev/null
+parameter:
+  minRouterId: 10.255.0.0
+  asNumber: 4200000000
+  kernelVersion: 5.15.0-82
+  srv6LocatorPrefix: 2001:a000
+  interfaceInet4AddrNet: 10.255.0.0/16
+  interfaceInet6AddrNet: 2001:ff00::/64
+hosts:
+  routeServer:
+    interfaces:
+    - {name: eno12399, vrf: vrf-control1}
+    - {name: eno12409, vrf: vrf-control2}
+    - {name: ens2f0  , vrf: vrf-control3}
+    - {name: ens2f1  , vrf: vrf-control4}
+    nodes:
+    - name: node003
+    # - name: node004
+    # - name: node005
+  dplaneNode:
+    interfaces:
+    - {name: eno12399, vrf: vrf-control1}
+    - {name: eno12409, vrf: vrf-control2}
+    - {name: ens2f0  , vrf: vrf-control3}
+    - {name: ens2f1  , vrf: vrf-control4}
+    nodes:
+    - name: node006
+    # - name: node007
+    # - name: node008
+    # - name: node009
+    # - name: node010
+    # - name: node011
+    # - name: node012                                                                                                                                                                                                                                                            
+    # - name: node013                                                                                                                                                                                                                                                            
+    # - name: node014                                                                                                                                                                                                                                                            
+    # - name: node015                                                                                                                                                                                                                                                            
+    # - name: node016                                                                                                                                                                                                                                                            
+    # - name: node017                                                                                                                                                                                                                                                            
+    # - name: node018                                                                                                                                                                                                                                                            
+    # - name: node019                                                                                                                                                                                                                                                            
+    # - name: node020                                                                                                                                                                                                                                                            
+    # - name: node021                                                                                                                                                                                                                                                            
+    # - name: node022                                                                                                                                                                                                                                                            
+    # - name: node023                                                                                                                                                                                                                                                            
+    # - name: node024                                                                                                                                                                                                                                                            
+    # - name: node025                                                                                                                                                                                                                                                            
+    # - name: node026                                                                                                                                                                                                                                                            
+    # - name: node027                                                                                                                                                                                                                                                            
+    # - name: node028                                                                                                                                                                                                                                                            
+    # - name: node029                                                                                                                                                                                                                                                            
+    # - name: node030
+    # - name: node031                                                                                                                                                                                                                                                            
+    # - name: node032                                                                                                                                                                                                                                                            
+    # - name: node033                                                                                                                                                                                                                                                            
+    # - name: node034                                                                                                                                                                                                                                                            
+    # - name: node035                                                                                                                                                                                                                                                            
+    # - name: node036                                                                                                                                                                                                                                                            
+    # - name: node037
+    # - name: node038
+    # - name: node039
+    # - name: node040
+    # - name: node041
+    # - name: node042
+    # - name: node043
+    # - name: node044
+    # - name: node045
+    # - name: node046
+    # - name: node047
+    # - name: node048
+    # - name: node049
+    # - name: node050
+    # - name: node051
+    # - name: node052
+    # - name: node053
+    # - name: node054
+    # - name: node055
+    # - name: node056
+    # - name: node057
+    # - name: node058
+    # - name: node059
+    # - name: node060
+    # - name: node061
+    # - name: node062
+    # - name: node063
+    # - name: node064
+    # - name: node065
+    # - name: node066
+    # - name: node067
+    # - name: node068
+    # - name: node069
+    # - name: node070
+    # - name: node071
+    # - name: node072
+    # - name: node073
+    # - name: node074
+    # - name: node075
+    # - name: node076
+    # - name: node077
+    # - name: node078
+    # - name: node079
+    # - name: node080
+    # - name: node081
+    # - name: node082
+    # - name: node083
+    # - name: node084
+    # - name: node085
+    # - name: node086
+    # - name: node087
+    # - name: node088
+    # - name: node089
+    # - name: node090
+    # - name: node091
+    # - name: node092
+    # - name: node093
+    # - name: node094
+    # - name: node095
+    # - name: node096
+    # - name: node097
+    # - name: node098
+    # - name: node099
+    # - name: node100
