@@ -4,7 +4,45 @@ all:
     ansible_ssh_pass: '{{ lookup("env", "ANSIBLE_SSH_PASS") }}'
     ansible_ssh_user: '{{ lookup("env", "ANSIBLE_SSH_USER") }}'
     ansible_sudo_pass: '{{ lookup("env", "ANSIBLE_SUDO_PASS") }}'
-    containers: []
+    containers:
+    - benchmark:
+        dst: 142.1.0.1
+        role: client
+      host: node006
+      name: c1
+      ports:
+      - addrs:
+        - addr: 10.1.0.1
+        network: net1
+        type: overlay
+    - benchmark:
+        role: server
+      host: node006
+      httpApp: true
+      name: s1
+      ports:
+      - addrs:
+        - addr: 142.1.0.1
+        type: underlay
+    - benchmark:
+        dst: 142.1.0.2
+        role: client
+      host: node007
+      name: c2
+      ports:
+      - addrs:
+        - addr: 10.1.0.2
+        network: net1
+        type: overlay
+    - benchmark:
+        role: server
+      host: node007
+      httpApp: true
+      name: s2
+      ports:
+      - addrs:
+        - addr: 142.1.0.2
+        type: underlay
     http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
     https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
     routes: []

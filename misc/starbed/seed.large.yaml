@@ -21,7 +21,42 @@ base:
         -o StrictHostKeyChecking=no
         -o UserKnownHostsFile=/dev/null
       routes: []
-      containers: []
+      containers:
+      - name: c1
+        host: node006
+        ports:
+        - type: overlay
+          addrs: [{addr: 10.1.0.1}]
+          network: net1
+        benchmark:
+          role: client
+          dst: 142.1.0.1
+      - name: s1
+        host: node006
+        ports:
+        - type: underlay
+          addrs: [{addr: 142.1.0.1}]
+        httpApp: true
+        benchmark:
+          role: server
+      - name: c2
+        host: node007
+        ports:
+        - type: overlay
+          addrs: [{addr: 10.1.0.2}]
+          network: net1
+        benchmark:
+          role: client
+          dst: 142.1.0.2
+      - name: s2
+        host: node007
+        ports:
+        - type: underlay
+          addrs: [{addr: 142.1.0.2}]
+        httpApp: true
+        benchmark:
+          role: server
+
 parameter:
   minRouterId: 10.255.0.0
   asNumber: 4200000000
