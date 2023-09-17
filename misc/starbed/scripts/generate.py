@@ -114,6 +114,56 @@ for node in inputObj["hosts"]["dplaneNode"]["nodes"]:
         }],
     }
 
+# Craft Data (3): Containers
+containers = []
+dplaneNodeIdx = 0
+for i in range(inputObj["container"]["numClientServer"]):
+    nodeName = inputObj["hosts"]["dplaneNode"]["nodes"][dplaneNodeIdx]["name"]
+    dplaneNodeIdx = dplaneNodeIdx + 1
+    containers.append({
+        "name": "c{}".format(i+1),
+        "host": nodeName,
+        "ports": [{
+            "network": "net1",
+            "type": "overlay",
+            "addrs": [{"addr": "10.1.0.{}".format(i+1)}],
+        }],
+        "benchmark": {
+            "role": "client",
+            "dst": "142.1.0.{}".format(i+1),
+        },
+    })
+    containers.append({
+        "name": "s{}".format(i+1),
+        "host": nodeName,
+        "ports": [{
+            "type": "underlay",
+            "addrs": [{"addr": "142.1.0.{}".format(i+1)}],
+        }],
+        "httpApp": True,
+        "benchmark": {
+            "role": "server",
+        },
+    })
+for i in range(inputObj["container"]["numLnodes"]):
+    nodeName = inputObj["hosts"]["dplaneNode"]["nodes"][dplaneNodeIdx]["name"]
+    dplaneNodeIdx = dplaneNodeIdx + 1
+    containers.append({
+        "name": "l{}".format(i+1),
+        "host": nodeName,
+        "ports": [{"type": "underlay", "addrs": [], "bgp": {}}],
+    })
+for i in range(inputObj["container"]["numNnodes"]):
+    nodeName = inputObj["hosts"]["dplaneNode"]["nodes"][dplaneNodeIdx]["name"]
+    dplaneNodeIdx = dplaneNodeIdx + 1
+    containers.append({
+        "name": "n{}".format(i+1),
+        "host": nodeName,
+        "ports": [{"type": "underlay", "addrs": [], "bgp": {}}],
+    })
+output["all"]["vars"]["containers"] = containers
+output["all"]["vars"]["routes"] = []
+
 # Write back to output file
 with open(args.output, "w") as f:
     yaml.dump(output, f)

@@ -43,6 +43,68 @@ all:
       - addrs:
         - addr: 142.1.0.2
         type: underlay
+    - benchmark:
+        dst: 142.1.0.3
+        role: client
+      host: node008
+      name: c3
+      ports:
+      - addrs:
+        - addr: 10.1.0.3
+        network: net1
+        type: overlay
+    - benchmark:
+        role: server
+      host: node008
+      httpApp: true
+      name: s3
+      ports:
+      - addrs:
+        - addr: 142.1.0.3
+        type: underlay
+    - benchmark:
+        dst: 142.1.0.4
+        role: client
+      host: node009
+      name: c4
+      ports:
+      - addrs:
+        - addr: 10.1.0.4
+        network: net1
+        type: overlay
+    - benchmark:
+        role: server
+      host: node009
+      httpApp: true
+      name: s4
+      ports:
+      - addrs:
+        - addr: 142.1.0.4
+        type: underlay
+    - host: node010
+      name: l1
+      ports:
+      - addrs: []
+        bgp: {}
+        type: underlay
+    - host: node011
+      name: l2
+      ports:
+      - addrs: []
+        bgp: {}
+        type: underlay
+    - host: node012
+      name: n1
+      ports:
+      - addrs: []
+        bgp: {}
+        type: underlay
+    - host: node013
+      name: n2
+      ports:
+      - addrs: []
+        bgp: {}
+        type: underlay
     http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
     https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
     routes: []
