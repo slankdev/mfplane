@@ -46,7 +46,7 @@ with open(args.input, "r") as f:
     inputObj = yaml.safe_load(f)
 infraData = readInfraFiles(inputObj["infraManifests"])
 
-# Craft Data (1): Route Server
+# Craft Data (0): Common
 output = {}
 output = inputObj["base"]
 output["starbedNode"] = {
@@ -55,9 +55,9 @@ output["starbedNode"] = {
         "dplaneNode": {},
     },
 }
-output["routeServer"] = {
-    "hosts": {},
-}
+
+# Craft Data (1): Route Server
+output["routeServer"] = {"hosts": {}}
 for node in inputObj["hosts"]["routeServer"]["nodes"]:
     name = node["name"]
     nodeIdx = infraData[name]["index"] + 1
@@ -76,7 +76,6 @@ for node in inputObj["hosts"]["routeServer"]["nodes"]:
             ]
         }]
         vrfs.append(vrf)
-
     output["routeServer"]["hosts"][name] = {
         "kernelVersion": inputObj["parameter"]["kernelVersion"],
         "asNumber": inputObj["parameter"]["asNumber"],
@@ -85,34 +84,35 @@ for node in inputObj["hosts"]["routeServer"]["nodes"]:
         "vrfs": vrfs,
     }
 
-# Craft Data (1): Route Server
-# for node in inputObj["hosts"]["routeServer"]["nodes"]:
-#     name = node["name"]
-#     nodeIdx = infraData[name]["index"] + 1
-#     vrfs = []
-#     vrfIdx = 0
-#     for interface in inputObj["hosts"]["routeServer"]["interfaces"]:
-#         vrfIdx = vrfIdx + 1
-#         dataplaneInterfaces = []
-#         vrf = {}
-#         vrf["name"] = interface["vrf"]
-#         vrf["dataplaneInterfaces"] = [{
-#             "name": interface["name"],
-#             "addrs": [
-#                 {"addr": "2001:ff00:{}::{}".format(vrfIdx, nodeIdx), "plen": 64},
-#                 {"addr": "10.255.{}.{}".format(vrfIdx, nodeIdx), "plen": 24},
-#             ]
-#         }]
-#         vrfs.append(vrf)
-
-#     output["routeServer"]["hosts"][name] = {
-#         "kernelVersion": inputObj["parameter"]["kernelVersion"],
-#         "asNumber": inputObj["parameter"]["asNumber"],
-#         "routerId": getRouterId(name),
-#         "ansible_host": infraData[name]["node"]["nodeName"],
-#         "vrfs": vrfs,
-#     }
-
+# Craft Data (2): Dplane node
+output["dplaneNode"] = {"hosts": {}}
+for node in inputObj["hosts"]["dplaneNode"]["nodes"]:
+    name = node["name"]
+    nodeIdx = infraData[name]["index"] + 1
+    vrfIdx = 0
+    dataplaneInterfaces = []
+    for interface in inputObj["hosts"]["dplaneNode"]["interfaces"]:
+        vrfIdx = vrfIdx + 1
+        dataplaneInterface = {
+            "name": interface["name"],
+            "vrf": interface["vrf"],
+            "addrs": [
+                {"addr": "2001:ff00:{}::{}".format(vrfIdx, nodeIdx), "plen": 64},
+                {"addr": "10.255.{}.{}".format(vrfIdx, nodeIdx), "plen": 24},
+            ],
+        }
+        dataplaneInterfaces.append(dataplaneInterface)
+    output["dplaneNode"]["hosts"][name] = {
+        "kernelVersion": inputObj["parameter"]["kernelVersion"],
+        "asNumber": inputObj["parameter"]["asNumber"],
+        "routerId": getRouterId(name),
+        "ansible_host": infraData[name]["node"]["nodeName"],
+        "dataplaneInterfaces": dataplaneInterfaces,
+        "srv6_locators": [{
+            "prefix": "2001:a:{}::/48".format(nodeIdx),
+            "token": "2001:a:{}".format(nodeIdx),
+        }],
+    }
 
 # Write back to output file
 with open(args.output, "w") as f:

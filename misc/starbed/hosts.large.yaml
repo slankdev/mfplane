@@ -6,6 +6,45 @@ all:
     ansible_sudo_pass: '{{ lookup("env", "ANSIBLE_SUDO_PASS") }}'
     http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
     https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
+dplaneNode:
+  hosts:
+    node006:
+      ansible_host: w006
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::6
+          plen: 64
+        - addr: 10.255.1.6
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::6
+          plen: 64
+        - addr: 10.255.2.6
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::6
+          plen: 64
+        - addr: 10.255.3.6
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::6
+          plen: 64
+        - addr: 10.255.4.6
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      routerId: 10.255.0.6
+      srv6_locators:
+      - prefix: 2001:a:6::/48
+        token: 2001:a:6
 routeServer:
   hosts:
     node003:
