@@ -34,4 +34,3 @@ try:
     subprocess.run(cmd, shell=True)
 except KeyboardInterrupt:
     print(f"QUIT: {cmd}")
-    #raise
