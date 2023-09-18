@@ -38,6 +38,7 @@ def getRouterId(name):
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", required=True)
 parser.add_argument("-o", "--output", required=True)
+parser.add_argument("-O", "--output-manifest", required=True)
 args = parser.parse_args()
 
 # Open file
@@ -152,6 +153,8 @@ for i in range(inputObj["container"]["numLnodes"]):
         "name": "l{}".format(i+1),
         "host": nodeName,
         "ports": [{"type": "underlay", "addrs": [], "bgp": {}}],
+        "role": "lnode",
+        "nodeIdx": i+1,
     })
 for i in range(inputObj["container"]["numNnodes"]):
     nodeName = inputObj["hosts"]["dplaneNode"]["nodes"][dplaneNodeIdx]["name"]
@@ -160,6 +163,8 @@ for i in range(inputObj["container"]["numNnodes"]):
         "name": "n{}".format(i+1),
         "host": nodeName,
         "ports": [{"type": "underlay", "addrs": [], "bgp": {}}],
+        "role": "nnode",
+        "nodeIdx": i+1,
     })
 output["all"]["vars"]["containers"] = containers
 output["all"]["vars"]["routes"] = []
@@ -167,3 +172,119 @@ output["all"]["vars"]["routes"] = []
 # Write back to output file
 with open(args.output, "w") as f:
     yaml.dump(output, f)
+
+# Craft Data (10)): Common
+items = []
+for container in output["all"]["vars"]["containers"]:
+    if "role" in container and container["role"] == "lnode":
+        v = format(container["nodeIdx"], "02x")
+        item = {
+            "apiVersion": "mfplane.mfplane.io/v1alpha1",
+            "kind": "Node",
+            "metadata": {
+                "name": container["host"],
+                "namespace": "default",
+            },
+            "spec": {
+                "hostname":container["host"],
+                "functions": [{
+                    "name": container["name"],
+                    "netns": container["name"],
+                    "device": "eth0",
+                    "type": "clb",
+                    "mode": "xdpgeneric",
+                    "labels": {
+                      "lbGroup": "lbGroup1",
+                      "lbMaxRules": "2",
+                      "lbMaxBackends": "7",
+                    },
+                    "segmentRoutingSrv6": {
+                        "encapSource": "fc01:{}00::0".format(v),
+                        "locators": [
+                            {
+                                "name": "default",
+                                "prefix": "fc01:{}00::/24".format(v),
+                                "block": "fc00::0",
+                            },
+                            {
+                                "name": "anycast",
+                                "prefix": "fc00:ff00::/24",
+                                "block": "fc00::0",
+                                "anycast": True,
+                            },
+                        ],
+                    },
+                }],
+            },
+        }
+        items.append(item)
+for container in output["all"]["vars"]["containers"]:
+    if "role" in container and container["role"] == "nnode":
+        v = format(container["nodeIdx"], "02x")
+        configFile = """\
+fib4:
+- prefix: 10.1.0.1/32
+    action:
+    encapSeg6:
+      mode: encap
+      segs:
+      - 2001:a003:2782::0
+- prefix: 10.1.0.2/32
+    action:
+    encapSeg6:
+      mode: encap
+      segs:
+      - 2001:a003:2782::0
+- prefix: 10.1.0.3/32
+    action:
+    encapSeg6:
+      mode: encap
+      segs:
+      - 2001:a003:c16d::0
+- prefix: 10.1.0.4/32
+    action:
+    encapSeg6:
+      mode: encap
+      segs:
+      - 2001:a003:c16d::0"""
+        item = {
+            "apiVersion": "mfplane.mfplane.io/v1alpha1",
+            "kind": "Node",
+            "metadata": {
+                "name": container["host"],
+                "namespace": "default",
+            },
+            "spec": {
+                "hostname":container["host"],
+                "functions": [{
+                    "name": container["name"],
+                    "netns": container["name"],
+                    "device": "eth0",
+                    "type": "nat",
+                    "mode": "xdpgeneric",
+                    "labels": {
+                      "natGroup": "natGroup1",
+                    },
+                    "segmentRoutingSrv6": {
+                        "encapSource": "fc02:{}00::0".format(v),
+                        "locators": [
+                            {
+                                "name": "default",
+                                "prefix": "fc02:{}00::/24".format(v),
+                                "block": "fc00::0",
+                            },
+                        ],
+                    },
+                    "configFile": configFile
+                }],
+            },
+        }
+        items.append(item)
+output1 = {
+    "apiVersion": "v1",
+    "kind": "List",
+    "metadata": {"resourceVersion": ""},
+    "items": items,
+}
+with open(args.output_manifest, "w") as f:
+    yaml.dump(output1, f)

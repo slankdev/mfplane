@@ -83,28 +83,36 @@ all:
         type: underlay
     - host: node010
       name: l1
+      nodeIdx: 1
       ports:
       - addrs: []
         bgp: {}
         type: underlay
+      role: lnode
     - host: node011
       name: l2
+      nodeIdx: 2
       ports:
       - addrs: []
         bgp: {}
         type: underlay
+      role: lnode
     - host: node012
       name: n1
+      nodeIdx: 1
       ports:
       - addrs: []
         bgp: {}
         type: underlay
+      role: nnode
     - host: node013
       name: n2
+      nodeIdx: 2
       ports:
       - addrs: []
         bgp: {}
         type: underlay
+      role: nnode
     http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
     https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
     routes: []
