@@ -147,25 +147,30 @@ for i in range(inputObj["container"]["numClientServer"]):
             "role": "server",
         },
     })
+mfpNodeIdx = 0
 for i in range(inputObj["container"]["numLnodes"]):
     nodeName = inputObj["hosts"]["dplaneNode"]["nodes"][dplaneNodeIdx]["name"]
     dplaneNodeIdx = dplaneNodeIdx + 1
+    mfpNodeIdx = mfpNodeIdx + 1
     containers.append({
         "name": "l{}".format(i+1),
         "host": nodeName,
         "ports": [{"type": "underlay", "addrs": [], "bgp": {}}],
         "role": "lnode",
         "nodeIdx": i+1,
+        "mfpNodeIdx": mfpNodeIdx,
     })
 for i in range(inputObj["container"]["numNnodes"]):
     nodeName = inputObj["hosts"]["dplaneNode"]["nodes"][dplaneNodeIdx]["name"]
     dplaneNodeIdx = dplaneNodeIdx + 1
+    mfpNodeIdx = mfpNodeIdx + 1
     containers.append({
         "name": "n{}".format(i+1),
         "host": nodeName,
         "ports": [{"type": "underlay", "addrs": [], "bgp": {}}],
         "role": "nnode",
         "nodeIdx": i+1,
+        "mfpNodeIdx": mfpNodeIdx,
     })
 output["all"]["vars"]["containers"] = containers
 
@@ -177,7 +182,7 @@ with open(args.output, "w") as f:
 items = []
 for container in output["all"]["vars"]["containers"]:
     if "role" in container and container["role"] == "lnode":
-        v = format(container["nodeIdx"], "02x")
+        v = format(container["mfpNodeIdx"], "02x")
         item = {
             "apiVersion": "mfplane.mfplane.io/v1alpha1",
             "kind": "Node",
@@ -199,11 +204,11 @@ for container in output["all"]["vars"]["containers"]:
                       "lbMaxBackends": "7",
                     },
                     "segmentRoutingSrv6": {
-                        "encapSource": "fc01:{}00::0".format(v),
+                        "encapSource": "fc00:{}00::0".format(v),
                         "locators": [
                             {
                                 "name": "default",
-                                "prefix": "fc01:{}00::/24".format(v),
+                                "prefix": "fc00:{}00::/24".format(v),
                                 "block": "fc00::0",
                             },
                             {
@@ -249,7 +254,7 @@ configFileObj = {"fib4":fib4}
 # Craft k8s manifests
 for container in output["all"]["vars"]["containers"]:
     if "role" in container and container["role"] == "nnode":
-        v = format(container["nodeIdx"], "02x")
+        v = format(container["mfpNodeIdx"], "02x")
         configFile = yaml.dump({"fib4":fib4})
         item = {
             "apiVersion": "mfplane.mfplane.io/v1alpha1",
@@ -270,11 +275,11 @@ for container in output["all"]["vars"]["containers"]:
                       "natGroup": "natGroup1",
                     },
                     "segmentRoutingSrv6": {
-                        "encapSource": "fc02:{}00::0".format(v),
+                        "encapSource": "fc00:{}00::0".format(v),
                         "locators": [
                             {
                                 "name": "default",
-                                "prefix": "fc02:{}00::/24".format(v),
+                                "prefix": "fc00:{}00::/24".format(v),
                                 "block": "fc00::0",
                             },
                         ],

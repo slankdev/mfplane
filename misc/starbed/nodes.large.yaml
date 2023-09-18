@@ -16,11 +16,11 @@ items:
       name: l1
       netns: l1
       segmentRoutingSrv6:
-        encapSource: fc01:0100::0
+        encapSource: fc00:0100::0
         locators:
         - block: fc00::0
           name: default
-          prefix: fc01:0100::/24
+          prefix: fc00:0100::/24
         - anycast: true
           block: fc00::0
           name: anycast
@@ -43,11 +43,11 @@ items:
       name: l2
       netns: l2
       segmentRoutingSrv6:
-        encapSource: fc01:0200::0
+        encapSource: fc00:0200::0
         locators:
         - block: fc00::0
           name: default
-          prefix: fc01:0200::/24
+          prefix: fc00:0200::/24
         - anycast: true
           block: fc00::0
           name: anycast
@@ -74,11 +74,11 @@ items:
       name: n1
       netns: n1
       segmentRoutingSrv6:
-        encapSource: fc02:0100::0
+        encapSource: fc00:0300::0
         locators:
         - block: fc00::0
           name: default
-          prefix: fc02:0100::/24
+          prefix: fc00:0300::/24
       type: nat
     hostname: node012
 - apiVersion: mfplane.mfplane.io/v1alpha1
@@ -101,11 +101,11 @@ items:
       name: n2
       netns: n2
       segmentRoutingSrv6:
-        encapSource: fc02:0200::0
+        encapSource: fc00:0400::0
         locators:
         - block: fc00::0
           name: default
-          prefix: fc02:0200::/24
+          prefix: fc00:0400::/24
       type: nat
     hostname: node013
 kind: List

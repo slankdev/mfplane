@@ -82,6 +82,7 @@ all:
         - addr: 142.1.0.4
         type: underlay
     - host: node010
+      mfpNodeIdx: 1
       name: l1
       nodeIdx: 1
       ports:
@@ -90,6 +91,7 @@ all:
         type: underlay
       role: lnode
     - host: node011
+      mfpNodeIdx: 2
       name: l2
       nodeIdx: 2
       ports:
@@ -98,6 +100,7 @@ all:
         type: underlay
       role: lnode
     - host: node012
+      mfpNodeIdx: 3
       name: n1
       nodeIdx: 1
       ports:
@@ -106,6 +109,7 @@ all:
         type: underlay
       role: nnode
     - host: node013
+      mfpNodeIdx: 4
       name: n2
       nodeIdx: 2
       ports:
