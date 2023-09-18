@@ -50,5 +50,23 @@ while True:
     data = tsdata.pop(key)
     lock.release()
 
-    pprint.pprint(data)
+    # Summarization
+    total_bps = 0
+    total_msg = 0
+    total_err = 0
+    total_rod = 0
+    for container in data:
+        val = data[container]
+        total_bps += int(val[8])
+        total_err += int(val[10])
+        total_msg += int(val[11])
+        total_rod += int(val[13])
+    total_bps = total_bps / len(data.keys())
+    total_msg = total_msg / len(data.keys())
+    total_err = total_err / len(data.keys())
+    total_rod = total_rod / len(data.keys())
+
+    # Output
+    # FORMAT: timestamp,bps,error-cnt,total-msg,accuracy,reordering
+    print(f"{key},{total_bps},{total_err},{total_msg},{total_rod}")
     time.sleep(1)
