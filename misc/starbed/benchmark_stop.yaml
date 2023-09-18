@@ -8,37 +8,15 @@
     register: tmp
     tags: client
     changed_when: "'CHANGED' in tmp.stdout"
+    timeout: 20
     shell: |
       set -xe
       {% for c in containers %}
       {% if c.host == inventory_hostname %}
       {% if c.benchmark is defined and c.benchmark.role == "client" %}
       CN={{ c.name }}-iperf
-      docker stop $CN || true
+      docker rm -f $CN || true
       echo CHANGED
-      {% endif %}
-      {% endif %}
-      {% endfor %}
-
-  - name: wait iperf container is finished
-    changed_when: false
-    tags: client
-    shell: |
-      set -xe
-      {% for c in containers %}
-      {% if c.host == inventory_hostname %}
-      {% if c.benchmark is defined and c.benchmark.role == "client" %}
-      #!/bin/bash
-      while :
-      do
-        echo check
-        if [ $(docker inspect {{ c.name }}-iperf \
-          | jq .[0].State.Running) = "false" ]; then
-          break
-        fi
-        sleep 1
-      done
-      echo done
       {% endif %}
       {% endif %}
       {% endfor %}
@@ -47,13 +25,14 @@
     register: tmp
     tags: server
     changed_when: "'CHANGED' in tmp.stdout"
+    timeout: 20
     shell: |
       set -xe
       {% for c in containers %}
       {% if c.host == inventory_hostname %}
       {% if c.benchmark is defined and c.benchmark.role == "server" %}
       CN={{ c.name }}-iperf
-      docker stop $CN || true
+      docker rm -f $CN || true
       echo CHANGED
       {% endif %}
       {% endif %}

@@ -9,7 +9,9 @@
       time_seconds: 100000
       report_interval_seconds: 1
       message_size_bytes: 1000
-      bandwidth: 5M
+      bandwidth: 200M
+      #bandwidth: 100M
+      #bandwidth: 5M
       #bandwidth: 100G
       num_concurrent_session: 10
   tasks:
