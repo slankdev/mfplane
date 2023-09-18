@@ -31,9 +31,21 @@ parser.add_argument("-i", "--inventory", default="hosts.large.yaml")
 args = parser.parse_args()
 
 # Launch child thread
+containers = []
+with open(args.inventory, "r") as fileobj:
+  obj = yaml.safe_load(fileobj)
+  containers = obj["all"]["vars"]["containers"]
+
+index = 0
 lock = threading.Lock()
-threading.Thread(target=f, args=("node006", "s1", lock, 0)).start()
-threading.Thread(target=f, args=("node007", "s2", lock, 1)).start()
+for c in containers:
+    if "benchmark" in c and \
+       "role" in c["benchmark"] and \
+       c["benchmark"]["role"] == "server":
+        print(f"launch monitor thread for {c['host']}:{c['name']}")
+        threading.Thread(target=f, args=(c["host"], c["name"], lock,
+                         index)).start()
+        index = index + 1
 
 # Wait
 wait_sec = 3
@@ -55,18 +67,19 @@ while True:
     total_msg = 0
     total_err = 0
     total_rod = 0
+    data_cnt = len(data.keys())
     for container in data:
         val = data[container]
         total_bps += int(val[8])
         total_err += int(val[10])
         total_msg += int(val[11])
         total_rod += int(val[13])
-    total_bps = total_bps / len(data.keys())
-    total_msg = total_msg / len(data.keys())
-    total_err = total_err / len(data.keys())
-    total_rod = total_rod / len(data.keys())
+    total_bps = total_bps / data_cnt
+    total_msg = total_msg / data_cnt
+    total_err = total_err / data_cnt
+    total_rod = total_rod / data_cnt
 
     # Output
     # FORMAT: timestamp,bps,error-cnt,total-msg,accuracy,reordering
-    print(f"{key},{total_bps},{total_err},{total_msg},{total_rod}")
+    print(f"{key},{total_bps},{total_err},{total_msg},{total_rod},{data_cnt}")
     time.sleep(1)
