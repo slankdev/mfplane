@@ -133,7 +133,7 @@
       {% for p in c.ports %}
       {% if p.type == "overlay" %}
       TABLE=$(printf '%d' "0x$(echo -n {{ p.network }} | md5sum | cut -c 1-8)")
-      SID="{{ srv6_locators[0].token }}:$(echo -n {{ p.network }} | md5sum | cut -c 1-4)::/48"
+      SID="{{ srv6_locators[0].token }}:$(echo -n {{ p.network }} | md5sum | cut -c 1-4)::/64"
       if [ $(ip -6 route list ${SID} | wc -l) = "0" ]; then
         ip -6 route add ${SID} encap seg6local \
           action End.DT4 vrftable $TABLE dev sr0 proto 100

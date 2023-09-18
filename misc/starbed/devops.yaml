@@ -12,6 +12,7 @@
         Acquire::https::Proxy "{{ https_proxy }}";
 
   - name: install required packages with apt
+    register: apt_result
     ansible.builtin.apt:
       name:
       - jq
@@ -25,6 +26,13 @@
       - sshpass
       - silversearcher-ag
       - bash-completion
+  - name: install required packages with apt (1)
+    when: apt_result.failed
+    shell: |
+      set -xe
+      apt update && apt install -y \
+        jq tig curl gnupg iperf3 python-apt ca-certificates bash-completion \
+        sshpass silversearcher-ag bash-completion
 
   - name: install golang
     block:

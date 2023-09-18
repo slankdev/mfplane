@@ -1,0 +1,67 @@
+version: 0.1
+type: infrastructure
+name: slankdev-large001
+nodes:
+- {name: node001, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w001}
+- {name: node002, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w002}
+- {name: node003, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w003}
+- {name: node004, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w004}
+- {name: node005, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w005}
+- {name: node006, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w006}
+- {name: node007, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w007}
+- {name: node008, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w008}
+- {name: node009, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w009}
+- {name: node010, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: w010}
+networks:
+- name: Control1
+  vlan: 3675
+  nodes:
+  - {name: node001, interface: bus31.0, ipAddress: 10.255.1.1/24}
+  - {name: node002, interface: bus31.0, ipAddress: 10.255.1.2/24}
+  - {name: node003, interface: bus31.0, ipAddress: 10.255.1.3/24}
+  - {name: node004, interface: bus31.0, ipAddress: 10.255.1.4/24}
+  - {name: node005, interface: bus31.0, ipAddress: 10.255.1.5/24}
+  - {name: node006, interface: bus31.0, ipAddress: 10.255.1.6/24}
+  - {name: node007, interface: bus31.0, ipAddress: 10.255.1.7/24}
+  - {name: node008, interface: bus31.0, ipAddress: 10.255.1.8/24}
+  - {name: node009, interface: bus31.0, ipAddress: 10.255.1.9/24}
+  - {name: node010, interface: bus31.0, ipAddress: 10.255.1.10/24}
+- name: Control2
+  vlan: 3676
+  nodes:
+  - {name: node001, interface: bus31.1, ipAddress: 10.255.2.1/24}
+  - {name: node002, interface: bus31.1, ipAddress: 10.255.2.2/24}
+  - {name: node003, interface: bus31.1, ipAddress: 10.255.2.3/24}
+  - {name: node004, interface: bus31.1, ipAddress: 10.255.2.4/24}
+  - {name: node005, interface: bus31.1, ipAddress: 10.255.2.5/24}
+  - {name: node006, interface: bus31.1, ipAddress: 10.255.2.6/24}
+  - {name: node007, interface: bus31.1, ipAddress: 10.255.2.7/24}
+  - {name: node008, interface: bus31.1, ipAddress: 10.255.2.8/24}
+  - {name: node009, interface: bus31.1, ipAddress: 10.255.2.9/24}
+  - {name: node010, interface: bus31.1, ipAddress: 10.255.2.10/24}
+- name: Control3
+  vlan: 3677
+  nodes:
+  - {name: node001, interface: bus98.0, ipAddress: 10.255.3.1/24}
+  - {name: node002, interface: bus98.0, ipAddress: 10.255.3.2/24}
+  - {name: node003, interface: bus98.0, ipAddress: 10.255.3.3/24}
+  - {name: node004, interface: bus98.0, ipAddress: 10.255.3.4/24}
+  - {name: node005, interface: bus98.0, ipAddress: 10.255.3.5/24}
+  - {name: node006, interface: bus98.0, ipAddress: 10.255.3.6/24}
+  - {name: node007, interface: bus98.0, ipAddress: 10.255.3.7/24}
+  - {name: node008, interface: bus98.0, ipAddress: 10.255.3.8/24}
+  - {name: node009, interface: bus98.0, ipAddress: 10.255.3.9/24}
+  - {name: node010, interface: bus98.0, ipAddress: 10.255.3.10/24}
+- name: Control4
+  vlan: 3678
+  nodes:
+  - {name: node001, interface: bus98.1, ipAddress: 10.255.4.1/24}
+  - {name: node002, interface: bus98.1, ipAddress: 10.255.4.2/24}
+  - {name: node003, interface: bus98.1, ipAddress: 10.255.4.3/24}
+  - {name: node004, interface: bus98.1, ipAddress: 10.255.4.4/24}
+  - {name: node005, interface: bus98.1, ipAddress: 10.255.4.5/24}
+  - {name: node006, interface: bus98.1, ipAddress: 10.255.4.6/24}
+  - {name: node007, interface: bus98.1, ipAddress: 10.255.4.7/24}
+  - {name: node008, interface: bus98.1, ipAddress: 10.255.4.8/24}
+  - {name: node009, interface: bus98.1, ipAddress: 10.255.4.9/24}
+  - {name: node010, interface: bus98.1, ipAddress: 10.255.4.10/24}

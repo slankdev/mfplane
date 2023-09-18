@@ -24,6 +24,8 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/k0kubun/pp"
@@ -183,6 +185,19 @@ type NodeStorage struct {
 	Purposes []string `json:"purposes"`
 }
 
+type NodeVlan struct {
+	NodeName   string              `json:"nodeName"`
+	Interfaces []NodeVlanInterface `json:"interfaces"`
+}
+
+type NodeVlanInterface struct {
+	Name       string `json:"name"`
+	Mode       string `json:"mode"`
+	PortName   string `json:"portName"`
+	PortVlan   *int   `json:"portVlan"`
+	TaggedVlan []int  `json:"taggedVlan"`
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	if err := NewCommand().Execute(); err != nil {
@@ -208,7 +223,17 @@ func NewCommandResource() *cobra.Command {
 		Use: "resource",
 	}
 	cmd.AddCommand(NewCommandResourceList())
+	cmd.AddCommand(NewCommandResourceVlan())
 	cmd.AddCommand(NewCommandResourcePower())
+	return cmd
+}
+
+func NewCommandResourceVlan() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "vlan",
+	}
+	cmd.AddCommand(NewCommandResourceVlanCheck())
+	cmd.AddCommand(NewCommandResourceVlanDelete())
 	return cmd
 }
 
@@ -419,6 +444,7 @@ func NewCommandJobList() *cobra.Command {
 }
 
 func NewCommandResourceList() *cobra.Command {
+	var verbose bool
 	cmd := &cobra.Command{
 		Use: "list",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -428,48 +454,191 @@ func NewCommandResourceList() *cobra.Command {
 				return err
 			}
 
-			names := []string{}
+			// Craft Ifacemap
+			ifaceNamesMap := map[string]bool{}
 			for _, node := range r.Nodes {
-				names = append(names, node.NodeName)
+				for _, iface := range node.Interfaces {
+					ifaceNamesMap[iface.Port] = true
+				}
 			}
-			p, err := powerStatusCheck(names)
-			if err != nil {
-				println("2")
-				return err
+			ifaceNames := []string{}
+			for key, _ := range ifaceNamesMap {
+				ifaceNames = append(ifaceNames, key)
 			}
 
-			//pp.Println(r)
+			// Craft Table
 			table := util.NewTableWriter(os.Stdout)
-			table.SetHeader([]string{"Name", "Power"})
+			table.SetHeader(append([]string{"Name", "IPMI"}, ifaceNames...))
 			for _, node := range r.Nodes {
-				power := "n/a"
-				if v, ok := p[node.NodeName]; ok {
-					power = v
+				ifaceInfo := []string{}
+				for _, name := range ifaceNames {
+					for _, iface := range node.Interfaces {
+						if name == iface.Port {
+							ifaceType := "nil"
+							if iface.Type != "" {
+								ifaceType = iface.Type
+							}
+							ifaceInfo = append(ifaceInfo, fmt.Sprintf("%s:%s",
+								iface.Purposes[0], ifaceType))
+						}
+					}
 				}
-				table.Append([]string{node.NodeName, power})
+
+				table.Append(append([]string{
+					node.NodeName,
+					fmt.Sprintf("https://%s-ctrl.pub.starbed.org/", node.NodeName),
+				}, ifaceInfo...))
 			}
+
+			// Rendering
 			table.Render()
+
+			if verbose {
+				pp.Println(r)
+			}
 			return nil
 		},
 	}
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	return cmd
 }
 
-func NewCommandResourcePowerCheck() *cobra.Command {
+func NewCommandResourceVlanCheck() *cobra.Command {
+	var verbose bool
 	var nodeNames []string
 	cmd := &cobra.Command{
 		Use: "check",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			p0, err := powerStatusCheck(nodeNames)
+			r, err := resourceList()
+			if err != nil {
+				println("1")
+				return err
+			}
+			names := []string{}
+			nodes := []NodeResource{}
+			for _, node := range r.Nodes {
+				if len(nodeNames) == 0 {
+					names = append(names, node.NodeName)
+					nodes = append(nodes, node)
+				} else {
+					for _, nodeName := range nodeNames {
+						if nodeName == node.NodeName {
+							names = append(names, node.NodeName)
+							nodes = append(nodes, node)
+						}
+					}
+				}
+			}
+
+			// Get Vlan status
+			p, err := vlanStatusCheck(names)
 			if err != nil {
 				return err
 			}
-			pp.Println(p0)
+
+			// Craft ifacemap
+			ifaceNamesMap := map[string]bool{}
+			for _, vlan := range p {
+				for _, iface := range vlan.Interfaces {
+					ifaceNamesMap[iface.PortName] = true
+				}
+			}
+			ifaceNames := []string{}
+			for key := range ifaceNamesMap {
+				ifaceNames = append(ifaceNames, key)
+			}
+			sort.Strings(ifaceNames)
+
+			// Craft Table
+			table := util.NewTableWriter(os.Stdout)
+			table.SetHeader(append([]string{"Name"}, ifaceNames...))
+			for _, node := range nodes {
+
+				vlanArray := []string{}
+				for _, vlan := range p {
+					if vlan.NodeName == node.NodeName {
+						for _, name := range ifaceNames {
+							for _, i := range vlan.Interfaces {
+								if i.PortName == name {
+									v := "unknown"
+									switch i.Mode {
+									case "none":
+										v = "none"
+									case "trunk":
+										v = fmt.Sprintf("trunk(%v)", i.TaggedVlan)
+									case "port":
+										v = fmt.Sprintf("port(%d)", *i.PortVlan)
+									}
+									vlanArray = append(vlanArray, v)
+								}
+							}
+						}
+					}
+				}
+
+				table.Append(append([]string{
+					node.NodeName,
+				}, vlanArray...))
+			}
+
+			// Rendering
+			table.Render()
+			if verbose {
+				pp.Println(p)
+			}
 			return nil
 		},
 	}
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	cmd.Flags().StringArrayVarP(&nodeNames, "name", "n", []string{},
 		"node-name like w001")
+	return cmd
+}
+
+func NewCommandResourcePowerCheck() *cobra.Command {
+	var allNodes bool
+	var nodeNames []string
+	cmd := &cobra.Command{
+		Use: "check",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if allNodes {
+				r, err := resourceList()
+				if err != nil {
+					println("1")
+					return err
+				}
+				names := []string{}
+				for _, node := range r.Nodes {
+					names = append(names, node.NodeName)
+				}
+				nodeNames = names
+			}
+
+			p, err := powerStatusCheck(nodeNames)
+			if err != nil {
+				return err
+			}
+			pp.Println(p)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&allNodes, "all", "a", false, "check all nodes")
+	cmd.Flags().StringArrayVarP(&nodeNames, "name", "n", []string{},
+		"node-name like w001")
+	return cmd
+}
+
+func NewCommandResourceVlanDelete() *cobra.Command {
+	var nodeName string
+	var portName string
+	cmd := &cobra.Command{
+		Use: "delete",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vlanStatusDelete(nodeName, portName)
+		},
+	}
+	cmd.Flags().StringVarP(&nodeName, "name", "n", "", "node-name like w001")
+	cmd.Flags().StringVarP(&portName, "port", "p", "", "port-name like bus31.0")
 	return cmd
 }
 
@@ -535,6 +704,54 @@ func jobList() (*JobsResponse, error) {
 	return &resData, nil
 }
 
+func vlanStatusCheck(nodeNames []string,
+) ([]NodeVlan, error) {
+	token, err := tokenIssue()
+	if err != nil {
+		return nil, err
+	}
+
+	reqBodyBytes, err := json.Marshal(nodeNames)
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint := os.Getenv("STARBED_ENDPOINT")
+	req, err := http.NewRequest("GET",
+		fmt.Sprintf("%s/api/mfplane-23/vlan/", endpoint),
+		bytes.NewBuffer(reqBodyBytes))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	q := req.URL.Query()
+	q.Add("nodes", strings.Join(nodeNames, ","))
+	req.URL.RawQuery = q.Encode()
+
+	http.DefaultTransport = &http.Transport{Proxy: nil}
+	client := new(http.Client)
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %d",
+			res.StatusCode)
+	}
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	resData := []NodeVlan{}
+	if err := json.Unmarshal(b, &resData); err != nil {
+		return nil, err
+	}
+	return resData, nil
+}
+
 func powerStatusCheck(nodeNames []string,
 ) (map[string]string, error) {
 	token, err := tokenIssue()
@@ -578,6 +795,36 @@ func powerStatusCheck(nodeNames []string,
 		return nil, err
 	}
 	return resData, nil
+}
+
+func vlanStatusDelete(name, port string) error {
+	token, err := tokenIssue()
+	if err != nil {
+		return err
+	}
+
+	method := "DELETE"
+	endpoint := os.Getenv("STARBED_ENDPOINT")
+	req, err := http.NewRequest(method,
+		fmt.Sprintf("%s/api/mfplane-23/vlan/%s/%s", endpoint, name, port), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	http.DefaultTransport = &http.Transport{Proxy: nil}
+	client := new(http.Client)
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code %d",
+			res.StatusCode)
+	}
+	return nil
 }
 
 func powerStatusOn(name string) error {

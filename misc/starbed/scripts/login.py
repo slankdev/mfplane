@@ -9,7 +9,7 @@ import subprocess
 parser = argparse.ArgumentParser()
 parser.add_argument("node", help="specify network-node name")
 parser.add_argument("-c", "--command", default="bash")
-parser.add_argument("-i", "--inventory", default="hosts.small.yaml")
+parser.add_argument("-i", "--inventory", default="hosts.large.yaml")
 parser.add_argument("-H", "--host", action='store_true')
 parser.add_argument("-S", "--ssh", action='store_true')
 args = parser.parse_args()

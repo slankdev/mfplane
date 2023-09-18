@@ -23,6 +23,17 @@ export HTTP_PROXY="http://${IPADDR}:8080/"
 export PATH=$PATH:/usr/local/go/bin
 export EDITOR=vim
 export KUBECONFIG=/home/staruser/mfplane.kind.kubeconfig.yaml
+
+alias gb='git branch'
+alias gs='git status'
+alias gl='git log --pretty=format:" %h  %s %d"'
+alias ga='git add'
+alias gd='git diff'
+alias gc='git commit'
+alias gco='git commit -m'
+alias gca='git commit --amend'
+alias gce='git commit -m  "`date +%Y.%m.%d-%H:%M`"'
+alias gdo="git diff origin/\$(git symbolic-ref --short HEAD)"
 ```
 
 ```
