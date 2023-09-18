@@ -168,7 +168,6 @@ for i in range(inputObj["container"]["numNnodes"]):
         "nodeIdx": i+1,
     })
 output["all"]["vars"]["containers"] = containers
-output["all"]["vars"]["routes"] = []
 
 # Write back to output file
 with open(args.output, "w") as f:
@@ -231,13 +230,13 @@ for container in output["all"]["vars"]["containers"]:
                     dpnode = output["dplaneNode"]["hosts"][key]
                     token = dpnode["srv6_locators"][0]["token"]
                     nid = hashlib.md5(port["network"].encode()).hexdigest()[:4]
-                    seg = f"{token}:{nid}::"
+                    seg = f"{token}:{nid}::0"
             if seg == "":
                 print("ERROR: sid resolving")
                 sys.exit(1)
             item = {
                 "prefix": "{}/32".format(port["addrs"][0]["addr"]),
-                "actions": {
+                "action": {
                     "encapSeg6": {
                         "mode": "encap",
                         "segs": [seg],

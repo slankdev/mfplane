@@ -115,7 +115,12 @@ all:
       role: nnode
     http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
     https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
-    routes: []
+    routes:
+    - destination: 0.0.0.0/0
+      network: net1
+      nexthop:
+        segs:
+        - fc00:ff00::0
 dplaneNode:
   hosts:
     node006:
