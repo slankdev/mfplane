@@ -2,6 +2,7 @@
 import sys
 import yaml
 import pprint
+import hashlib
 import argparse
 import subprocess
 import ipaddress
@@ -218,35 +219,39 @@ for container in output["all"]["vars"]["containers"]:
             },
         }
         items.append(item)
+
+# Craft Fib4
+fib4 = []
+for container in output["all"]["vars"]["containers"]:
+    for port in container["ports"]:
+        if port["type"] == "overlay":
+            seg = ""
+            for key in output["dplaneNode"]["hosts"]:
+                if key == container["host"]:
+                    dpnode = output["dplaneNode"]["hosts"][key]
+                    token = dpnode["srv6_locators"][0]["token"]
+                    nid = hashlib.md5(port["network"].encode()).hexdigest()[:4]
+                    seg = f"{token}:{nid}::"
+            if seg == "":
+                print("ERROR: sid resolving")
+                sys.exit(1)
+            item = {
+                "prefix": "{}/32".format(port["addrs"][0]["addr"]),
+                "actions": {
+                    "encapSeg6": {
+                        "mode": "encap",
+                        "segs": [seg],
+                    },
+                },
+            }
+            fib4.append(item)
+configFileObj = {"fib4":fib4}
+
+# Craft k8s manifests
 for container in output["all"]["vars"]["containers"]:
     if "role" in container and container["role"] == "nnode":
         v = format(container["nodeIdx"], "02x")
-        configFile = """\
-fib4:
-- prefix: 10.1.0.1/32
-    action:
-    encapSeg6:
-      mode: encap
-      segs:
-      - 2001:a003:2782::0
-- prefix: 10.1.0.2/32
-    action:
-    encapSeg6:
-      mode: encap
-      segs:
-      - 2001:a003:2782::0
-- prefix: 10.1.0.3/32
-    action:
-    encapSeg6:
-      mode: encap
-      segs:
-      - 2001:a003:c16d::0
-- prefix: 10.1.0.4/32
-    action:
-    encapSeg6:
-      mode: encap
-      segs:
-      - 2001:a003:c16d::0"""
+        configFile = yaml.dump({"fib4":fib4})
         item = {
             "apiVersion": "mfplane.mfplane.io/v1alpha1",
             "kind": "Node",
