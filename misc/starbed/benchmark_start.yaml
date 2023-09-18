@@ -3,6 +3,15 @@
   become_method: sudo
   gather_facts: no
   tags: [benchmark,load]
+  vars:
+    benchmark:
+      title: "test"
+      time_seconds: 100000
+      report_interval_seconds: 1
+      message_size_bytes: 1000
+      bandwidth: 5M
+      #bandwidth: 100G
+      num_concurrent_session: 10
   tasks:
   - name: create iperf server contaner
     register: tmp
