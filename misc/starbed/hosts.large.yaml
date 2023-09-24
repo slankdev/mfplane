@@ -46,20 +46,20 @@ all:
     - benchmark:
         dst: 142.1.0.4
         role: client
-      host: node009
+      host: node008
       name: c3
       ports:
       - addrs:
         - addr: 10.1.0.3
         network: net1
         type: overlay
-    - host: node009
+    - host: node008
       name: s3
       ports:
       - addrs:
         - addr: 142.1.0.3
         type: underlay
-    - host: node010
+    - host: node009
       name: c4
       ports:
       - addrs:
@@ -68,13 +68,13 @@ all:
         type: overlay
     - benchmark:
         role: server
-      host: node010
+      host: node009
       name: s4
       ports:
       - addrs:
         - addr: 142.1.0.4
         type: underlay
-    - host: node011
+    - host: node010
       mfpNodeIdx: 1
       name: l1
       nodeIdx: 1
@@ -83,7 +83,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node012
+    - host: node011
       mfpNodeIdx: 2
       name: l2
       nodeIdx: 2
@@ -92,7 +92,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node013
+    - host: node012
       mfpNodeIdx: 3
       name: l3
       nodeIdx: 3
@@ -101,7 +101,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node014
+    - host: node013
       mfpNodeIdx: 4
       name: l4
       nodeIdx: 4
@@ -110,7 +110,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node015
+    - host: node014
       mfpNodeIdx: 5
       name: n1
       nodeIdx: 1
@@ -119,7 +119,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node016
+    - host: node015
       mfpNodeIdx: 6
       name: n2
       nodeIdx: 2
@@ -128,7 +128,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node017
+    - host: node016
       mfpNodeIdx: 7
       name: n3
       nodeIdx: 3
@@ -137,7 +137,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node018
+    - host: node017
       mfpNodeIdx: 8
       name: n4
       nodeIdx: 4
@@ -235,6 +235,44 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:7::/48
         token: 2001:a:7
+    node008:
+      ansible_host: w008
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::8
+          plen: 64
+        - addr: 10.255.1.8
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::8
+          plen: 64
+        - addr: 10.255.2.8
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::8
+          plen: 64
+        - addr: 10.255.3.8
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::8
+          plen: 64
+        - addr: 10.255.4.8
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.8
+      routerId: 10.255.0.8
+      srv6_locators:
+      - prefix: 2001:a:8::/48
+        token: 2001:a:8
     node009:
       ansible_host: w009
       asNumber: 4200000000

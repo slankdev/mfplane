@@ -79,7 +79,7 @@ hosts:
     nodes:
     - name: node006
     - name: node007
-    # - name: node008
+    - name: node008
     - name: node009
     - name: node010
     - name: node011
