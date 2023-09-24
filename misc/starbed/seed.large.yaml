@@ -26,13 +26,13 @@ base:
         nexthop:
           segs:
           - fc00:ff00::0
-    benchmark:
-      title: "test"
-      time_seconds: 100000
-      report_interval_seconds: 1
-      message_size_bytes: 1000
-      bandwidth: 100G
-      num_concurrent_session: 100
+      benchmark:
+        title: "test"
+        time_seconds: 100000
+        report_interval_seconds: 1
+        message_size_bytes: 1000
+        bandwidth: 100G
+        num_concurrent_session: 100
 container:
   numClientServer: 10
   numLnodes: 1
