@@ -74,6 +74,7 @@ while True:
         total_err += int(val[10])
         total_msg += int(val[11])
         total_rod += int(val[13])
+    err_rate = float(total_err) / total_msg
     #total_bps = total_bps / data_cnt
     #total_msg = total_msg / data_cnt
     #total_err = total_err / data_cnt
@@ -81,5 +82,5 @@ while True:
 
     # Output
     # FORMAT: timestamp,bps,error-cnt,total-msg,accuracy,reordering
-    print(f"{key},{total_bps:.2f},{total_err:.2f},{total_msg:.2f},{total_rod:.2f},{data_cnt:.2f}")
+    print(f"{key},{total_bps:.2f},{total_err:.2f},{total_msg:.2f},{err_rate:.2f},{total_rod:.2f},{data_cnt:.2f}")
     time.sleep(1)
