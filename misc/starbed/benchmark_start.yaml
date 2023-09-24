@@ -16,6 +16,17 @@
     #   bandwidth: 100G
     #   num_concurrent_session: 100
   tasks:
+  - name: delete docker container for iperf (when '-e force=true')
+    when: (force is defined)
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      for c in $(docker ps -a --format {%raw%}"{{.Names}}"{%endraw%} | grep iperf); do
+        docker rm -f $c
+        echo CHANGED
+      done
+
   - name: create iperf server contaner
     register: tmp
     tags: server
