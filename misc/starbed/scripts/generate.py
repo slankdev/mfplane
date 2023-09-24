@@ -2,6 +2,7 @@
 import sys
 import yaml
 import pprint
+import socket
 import hashlib
 import argparse
 import subprocess
@@ -37,9 +38,9 @@ def getRouterId(name):
 
 # Arg parse
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--input", required=True)
-parser.add_argument("-o", "--output", required=True)
-parser.add_argument("-O", "--output-manifest", required=True)
+parser.add_argument("-i", "--input", default="seed.large.yaml")
+parser.add_argument("-o", "--output", default="hosts.large.yaml")
+parser.add_argument("-O", "--output-manifest", default="nodes.large.yaml")
 args = parser.parse_args()
 
 # Open file
@@ -83,6 +84,7 @@ for node in inputObj["hosts"]["routeServer"]["nodes"]:
         "asNumber": inputObj["parameter"]["asNumber"],
         "routerId": getRouterId(name),
         "ansible_host": infraData[name]["node"]["nodeName"],
+        "mgmt_addr": socket.gethostbyname(infraData[name]["node"]["nodeName"]),
         "vrfs": vrfs,
     }
 
@@ -109,6 +111,7 @@ for node in inputObj["hosts"]["dplaneNode"]["nodes"]:
         "asNumber": inputObj["parameter"]["asNumber"],
         "routerId": getRouterId(name),
         "ansible_host": infraData[name]["node"]["nodeName"],
+        "mgmt_addr": socket.gethostbyname(infraData[name]["node"]["nodeName"]),
         "dataplaneInterfaces": dataplaneInterfaces,
         "srv6_locators": [{
             "prefix": "2001:a:{}::/48".format(nodeIdx),

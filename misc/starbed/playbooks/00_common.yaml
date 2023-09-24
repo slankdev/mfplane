@@ -16,6 +16,17 @@
           UserKnownHostsFile /dev/null
         {% endfor %}
 
+  - name: craft hosts
+    tags: hoge
+    become: true
+    ansible.builtin.blockinfile:
+      path: /etc/hosts
+      create: true
+      block: |
+        {% for name in groups['starbedNode'] %}
+        {{ hostvars[name]["mgmt_addr"]}} {{ name }}
+        {% endfor %}
+
 - hosts: starbedNode
   become: true
   become_method: sudo

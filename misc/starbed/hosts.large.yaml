@@ -192,6 +192,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.6
       routerId: 10.255.0.6
       srv6_locators:
       - prefix: 2001:a:6::/48
@@ -229,6 +230,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.7
       routerId: 10.255.0.7
       srv6_locators:
       - prefix: 2001:a:7::/48
@@ -266,6 +268,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.9
       routerId: 10.255.0.9
       srv6_locators:
       - prefix: 2001:a:9::/48
@@ -303,6 +306,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.10
       routerId: 10.255.0.10
       srv6_locators:
       - prefix: 2001:a:10::/48
@@ -340,6 +344,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.11
       routerId: 10.255.0.11
       srv6_locators:
       - prefix: 2001:a:11::/48
@@ -377,6 +382,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.12
       routerId: 10.255.0.12
       srv6_locators:
       - prefix: 2001:a:12::/48
@@ -414,6 +420,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.13
       routerId: 10.255.0.13
       srv6_locators:
       - prefix: 2001:a:13::/48
@@ -451,6 +458,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.14
       routerId: 10.255.0.14
       srv6_locators:
       - prefix: 2001:a:14::/48
@@ -488,6 +496,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.15
       routerId: 10.255.0.15
       srv6_locators:
       - prefix: 2001:a:15::/48
@@ -525,6 +534,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.16
       routerId: 10.255.0.16
       srv6_locators:
       - prefix: 2001:a:16::/48
@@ -562,6 +572,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.17
       routerId: 10.255.0.17
       srv6_locators:
       - prefix: 2001:a:17::/48
@@ -599,6 +610,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.18
       routerId: 10.255.0.18
       srv6_locators:
       - prefix: 2001:a:18::/48
@@ -636,6 +648,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.19
       routerId: 10.255.0.19
       srv6_locators:
       - prefix: 2001:a:19::/48
@@ -673,6 +686,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.20
       routerId: 10.255.0.20
       srv6_locators:
       - prefix: 2001:a:20::/48
@@ -710,6 +724,7 @@ dplaneNode:
         name: ens2f1
         vrf: vrf-control4
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.21
       routerId: 10.255.0.21
       srv6_locators:
       - prefix: 2001:a:21::/48
@@ -720,6 +735,7 @@ routeServer:
       ansible_host: w003
       asNumber: 4200000000
       kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.3
       routerId: 10.255.0.3
       vrfs:
       - dataplaneInterfaces:
