@@ -94,8 +94,30 @@
         echo CHANGED
       fi
 
-  # - name: cleanup all nats.mfplane.io
-  # - name: cleanup all segments.mfplane.io
-  #   shell: |
-  #     kubectl get seg nat1-lnode-4dddg -o json \
-  #       | jq .metadata.finalizers=[] | kubectl apply -f -
+- hosts: localhost
+  become: false
+  gather_facts: no
+  tasks:
+
+  - name: cleanup all nats.mfplane.io
+    shell: |
+      set -xe
+      for name in $(kubectl -n default get nat -o name); do
+        kubectl -n default get $name -o json \
+          | jq .metadata.finalizers=[] | kubectl apply -f -
+      done
+      kubectl -n default delete nat --all
+
+  - name: cleanup all segments.mfplane.io
+    shell: |
+      set -xe
+      for name in $(kubectl -n default get seg -o name); do
+        kubectl -n default get $name -o json \
+          | jq .metadata.finalizers=[] | kubectl apply -f -
+      done
+      kubectl -n default delete seg --all
+
+  - name: cleanup all segments.mfplane.io
+    shell: |
+      set -xe
+      kubectl -n default delete nodes.mfplane.io --all
