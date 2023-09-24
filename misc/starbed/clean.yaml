@@ -93,3 +93,9 @@
         ip -6 route flush proto 100
         echo CHANGED
       fi
+
+  # - name: cleanup all nats.mfplane.io
+  # - name: cleanup all segments.mfplane.io
+  #   shell: |
+  #     kubectl get seg nat1-lnode-4dddg -o json \
+  #       | jq .metadata.finalizers=[] | kubectl apply -f -
