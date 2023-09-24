@@ -4,11 +4,15 @@ all:
     ansible_ssh_pass: '{{ lookup("env", "ANSIBLE_SSH_PASS") }}'
     ansible_ssh_user: '{{ lookup("env", "ANSIBLE_SSH_USER") }}'
     ansible_sudo_pass: '{{ lookup("env", "ANSIBLE_SUDO_PASS") }}'
+    benchmark:
+      bandwidth: 100G
+      message_size_bytes: 1000
+      num_concurrent_session: 100
+      report_interval_seconds: 1
+      time_seconds: 100000
+      title: test
     containers:
-    - benchmark:
-        dst: 142.1.0.1
-        role: client
-      host: node006
+    - host: node006
       name: c1
       ports:
       - addrs:
@@ -16,18 +20,15 @@ all:
         network: net1
         type: overlay
     - benchmark:
-        role: server
+        dst: 142.1.0.2
+        role: client
       host: node006
-      httpApp: true
       name: s1
       ports:
       - addrs:
         - addr: 142.1.0.1
         type: underlay
-    - benchmark:
-        dst: 142.1.0.2
-        role: client
-      host: node007
+    - host: node007
       name: c2
       ports:
       - addrs:
@@ -37,16 +38,12 @@ all:
     - benchmark:
         role: server
       host: node007
-      httpApp: true
       name: s2
       ports:
       - addrs:
         - addr: 142.1.0.2
         type: underlay
-    - benchmark:
-        dst: 142.1.0.3
-        role: client
-      host: node008
+    - host: node008
       name: c3
       ports:
       - addrs:
@@ -54,18 +51,15 @@ all:
         network: net1
         type: overlay
     - benchmark:
-        role: server
+        dst: 142.1.0.4
+        role: client
       host: node008
-      httpApp: true
       name: s3
       ports:
       - addrs:
         - addr: 142.1.0.3
         type: underlay
-    - benchmark:
-        dst: 142.1.0.4
-        role: client
-      host: node009
+    - host: node009
       name: c4
       ports:
       - addrs:
@@ -75,16 +69,12 @@ all:
     - benchmark:
         role: server
       host: node009
-      httpApp: true
       name: s4
       ports:
       - addrs:
         - addr: 142.1.0.4
         type: underlay
-    - benchmark:
-        dst: 142.1.0.5
-        role: client
-      host: node011
+    - host: node011
       name: c5
       ports:
       - addrs:
@@ -92,18 +82,15 @@ all:
         network: net1
         type: overlay
     - benchmark:
-        role: server
+        dst: 142.1.0.6
+        role: client
       host: node011
-      httpApp: true
       name: s5
       ports:
       - addrs:
         - addr: 142.1.0.5
         type: underlay
-    - benchmark:
-        dst: 142.1.0.6
-        role: client
-      host: node012
+    - host: node012
       name: c6
       ports:
       - addrs:
@@ -113,16 +100,12 @@ all:
     - benchmark:
         role: server
       host: node012
-      httpApp: true
       name: s6
       ports:
       - addrs:
         - addr: 142.1.0.6
         type: underlay
-    - benchmark:
-        dst: 142.1.0.7
-        role: client
-      host: node013
+    - host: node013
       name: c7
       ports:
       - addrs:
@@ -130,18 +113,15 @@ all:
         network: net1
         type: overlay
     - benchmark:
-        role: server
+        dst: 142.1.0.8
+        role: client
       host: node013
-      httpApp: true
       name: s7
       ports:
       - addrs:
         - addr: 142.1.0.7
         type: underlay
-    - benchmark:
-        dst: 142.1.0.8
-        role: client
-      host: node014
+    - host: node014
       name: c8
       ports:
       - addrs:
@@ -151,16 +131,12 @@ all:
     - benchmark:
         role: server
       host: node014
-      httpApp: true
       name: s8
       ports:
       - addrs:
         - addr: 142.1.0.8
         type: underlay
-    - benchmark:
-        dst: 142.1.0.9
-        role: client
-      host: node015
+    - host: node015
       name: c9
       ports:
       - addrs:
@@ -168,18 +144,15 @@ all:
         network: net1
         type: overlay
     - benchmark:
-        role: server
+        dst: 142.1.0.10
+        role: client
       host: node015
-      httpApp: true
       name: s9
       ports:
       - addrs:
         - addr: 142.1.0.9
         type: underlay
-    - benchmark:
-        dst: 142.1.0.10
-        role: client
-      host: node016
+    - host: node016
       name: c10
       ports:
       - addrs:
@@ -189,7 +162,6 @@ all:
     - benchmark:
         role: server
       host: node016
-      httpApp: true
       name: s10
       ports:
       - addrs:
