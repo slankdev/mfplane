@@ -199,8 +199,7 @@
       set -xe
       iptables -P FORWARD ACCEPT
 
-  - name: install ethtool-6.3
-    tags: hoge
+  - name: install ethtool
     vars:
       ethtool_version: 6.3
     block:
