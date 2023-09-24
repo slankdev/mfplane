@@ -45,9 +45,9 @@ base:
       rxRingEntries: 8160
 
 container:
-  numClientServer: 4
-  numLnodes: 4
-  numNnodes: 4
+  numClientServer: 40
+  numLnodes: 16
+  numNnodes: 16
 parameter:
   minRouterId: 10.255.0.0
   asNumber: 4200000000
@@ -93,68 +93,68 @@ hosts:
     - name: node019
     - name: node020
     - name: node021
-    # - name: node022
-    # - name: node023
-    # - name: node024
-    # - name: node025
-    # - name: node026
-    # - name: node027
-    # - name: node028
-    # - name: node029
-    # - name: node030
-    # - name: node031
-    # - name: node032
-    # - name: node033
-    # - name: node034
-    # # - name: node035 hw-failure
-    # - name: node036
-    # - name: node037
-    # - name: node038
-    # - name: node039
-    # - name: node040
-    # - name: node041
-    # - name: node042
-    # - name: node043
-    # - name: node044
-    # - name: node045
-    # - name: node046
-    # - name: node047
-    # - name: node048
-    # - name: node049
-    # - name: node050
-    # - name: node051
-    # - name: node052
-    # - name: node053
-    # - name: node054
-    # - name: node055
-    # - name: node056
-    # - name: node057
-    # - name: node058
-    # - name: node059
-    # - name: node060
-    # - name: node061
-    # - name: node062
-    # - name: node063
-    # - name: node064
-    # - name: node065
-    # - name: node066
-    # - name: node067
-    # - name: node068
-    # - name: node069
-    # - name: node070
-    # - name: node071
-    # - name: node072
-    # - name: node073
-    # - name: node074
-    # - name: node075
-    # - name: node076
-    # - name: node077
-    # - name: node078
-    # - name: node079
-    # - name: node080
-    # - name: node081
-    # - name: node082
-    # - name: node083
+    - name: node022
+    - name: node023
+    - name: node024
+    - name: node025
+    - name: node026
+    - name: node027
+    - name: node028
+    - name: node029
+    - name: node030
+    - name: node031
+    - name: node032
+    - name: node033
+    - name: node034
+    # - name: node035 #past-failure
+    - name: node036
+    - name: node037
+    - name: node038
+    - name: node039
+    - name: node040
+    - name: node041
+    - name: node042
+    - name: node043
+    - name: node044
+    - name: node045
+    - name: node046
+    - name: node047
+    - name: node048
+    - name: node049
+    - name: node050
+    - name: node051
+    - name: node052
+    - name: node053
+    - name: node054
+    - name: node055
+    - name: node056
+    - name: node057
+    - name: node058
+    - name: node059
+    - name: node060
+    - name: node061
+    - name: node062
+    - name: node063
+    - name: node064
+    - name: node065
+    - name: node066
+    - name: node067
+    - name: node068
+    - name: node069
+    - name: node070
+    - name: node071
+    - name: node072
+    - name: node073
+    - name: node074
+    - name: node075
+    - name: node076
+    - name: node077
+    - name: node078
+    - name: node079
+    - name: node080
+    - name: node081
+    - name: node082
+    - name: node083
     # - name: node084
     # - name: node085
     # - name: node086
