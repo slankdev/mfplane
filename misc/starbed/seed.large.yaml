@@ -56,8 +56,27 @@ parameter:
   interfaceInet4AddrNet: 10.255.0.0/16
   interfaceInet6AddrNet: 2001:ff00::/64
 benchmarkPair:
-- {client: c1, server: s2}
-- {client: c3, server: s4}
+- {client: c1 , server: c2 }
+- {client: c3 , server: c4 }
+- {client: c5 , server: c6 }
+- {client: c7 , server: c8 }
+- {client: c9 , server: c10}
+- {client: c11, server: c12}
+- {client: c13, server: c14}
+- {client: c15, server: c16}
+- {client: c17, server: c18}
+- {client: c19, server: c20}
+- {client: c21, server: c22}
+- {client: c23, server: c24}
+- {client: c25, server: c26}
+- {client: c27, server: c28}
+- {client: c29, server: c30}
+- {client: c31, server: c32}
+- {client: c33, server: c34}
+- {client: c35, server: c36}
+- {client: c37, server: c38}
+- {client: c39, server: c40}
+
 hosts:
   routeServer:
     interfaces:
@@ -154,7 +173,7 @@ hosts:
     - name: node080
     - name: node081
     - name: node082
-    - name: node083
+    # - name: node083 #failure?
     # - name: node084
     # - name: node085
     # - name: node086
