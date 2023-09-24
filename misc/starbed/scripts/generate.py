@@ -132,10 +132,6 @@ for i in range(inputObj["container"]["numClientServer"]):
             "type": "overlay",
             "addrs": [{"addr": "10.1.0.{}".format(i+1)}],
         }],
-        "benchmark": {
-            "role": "client",
-            "dst": "142.1.0.{}".format(i+1),
-        },
     })
     containers.append({
         "name": "s{}".format(i+1),
@@ -144,10 +140,6 @@ for i in range(inputObj["container"]["numClientServer"]):
             "type": "underlay",
             "addrs": [{"addr": "142.1.0.{}".format(i+1)}],
         }],
-        "httpApp": True,
-        "benchmark": {
-            "role": "server",
-        },
     })
 mfpNodeIdx = 0
 for i in range(inputObj["container"]["numLnodes"]):
@@ -174,6 +166,22 @@ for i in range(inputObj["container"]["numNnodes"]):
         "nodeIdx": i+1,
         "mfpNodeIdx": mfpNodeIdx,
     })
+for i, c in enumerate(containers):
+    for p in inputObj["benchmarkPair"]:
+        dst = ""
+        for c0 in containers:
+            if c0["name"] == p["server"]:
+                dst = c0["ports"][0]["addrs"][0]["addr"]
+        if dst == "":
+            print("ERROR dst resolve")
+            sys.exit(0)
+        if p["client"] == c["name"]:
+            containers[i]["benchmark"] = {
+                "role": "client",
+                "dst": dst,
+            }
+        elif p["server"] == c["name"]:
+            containers[i]["benchmark"] = {"role": "server"}
 output["all"]["vars"]["containers"] = containers
 
 # Write back to output file

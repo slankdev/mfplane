@@ -330,7 +330,6 @@
       set -xe
       {% for c in containers %}
       {% if c.host == inventory_hostname %}
-      {% if c.httpApp is defined and c.httpApp %}
       if [ $(docker ps --format {%raw%}"{{.Names}}"{%endraw%} \
         | grep {{ c.name }}-http | wc -l) = "0" ]; then
         docker rm -f {{ c.name }}-http || true
@@ -343,6 +342,5 @@
           mikanectl ifconfig-http -p 80
         echo CHANGED
       fi
-      {% endif %}
       {% endif %}
       {% endfor %}
