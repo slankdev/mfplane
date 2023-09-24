@@ -27,9 +27,9 @@ base:
           segs:
           - fc00:ff00::0
 container:
-  numClientServer: 5
-  numLnodes: 4
-  numNnodes: 4
+  numClientServer: 4
+  numLnodes: 1
+  numNnodes: 1
 parameter:
   minRouterId: 10.255.0.0
   asNumber: 4200000000

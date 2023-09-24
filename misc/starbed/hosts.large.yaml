@@ -81,26 +81,7 @@ all:
       - addrs:
         - addr: 142.1.0.4
         type: underlay
-    - benchmark:
-        dst: 142.1.0.5
-        role: client
-      host: node011
-      name: c5
-      ports:
-      - addrs:
-        - addr: 10.1.0.5
-        network: net1
-        type: overlay
-    - benchmark:
-        role: server
-      host: node011
-      httpApp: true
-      name: s5
-      ports:
-      - addrs:
-        - addr: 142.1.0.5
-        type: underlay
-    - host: node012
+    - host: node011
       mfpNodeIdx: 1
       name: l1
       nodeIdx: 1
@@ -109,64 +90,10 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node013
+    - host: node012
       mfpNodeIdx: 2
-      name: l2
-      nodeIdx: 2
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: lnode
-    - host: node014
-      mfpNodeIdx: 3
-      name: l3
-      nodeIdx: 3
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: lnode
-    - host: node015
-      mfpNodeIdx: 4
-      name: l4
-      nodeIdx: 4
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: lnode
-    - host: node016
-      mfpNodeIdx: 5
       name: n1
       nodeIdx: 1
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: nnode
-    - host: node017
-      mfpNodeIdx: 6
-      name: n2
-      nodeIdx: 2
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: nnode
-    - host: node018
-      mfpNodeIdx: 7
-      name: n3
-      nodeIdx: 3
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: nnode
-    - host: node019
-      mfpNodeIdx: 8
-      name: n4
-      nodeIdx: 4
       ports:
       - addrs: []
         bgp: {}
