@@ -174,10 +174,18 @@
           scrape_configs:
           - job_name: node
             static_configs:
-            - targets:
+          {% for c in containers %}
+            - labels:
+                containerName: {{ c.name }}
+                containerRole: {{ c.role }}
+                hostName: {{ c.host }}
           {% for name in groups['dplaneNode'] %}
-              - {{ hostvars[name]["mgmt_addr"]}}:9100
+          {% if name == c.host %}
+              targets: [{{ hostvars[name]["mgmt_addr"]}}:9100]
+          {% endif %}
           {% endfor %}
+          {% endfor %}
+
     - name: prometheus
       register: tmp
       changed_when: "'CHANGED' in tmp.stdout"

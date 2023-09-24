@@ -135,6 +135,7 @@ for i in range(inputObj["container"]["numClientServer"]):
             "type": "overlay",
             "addrs": [{"addr": "10.1.0.{}".format(i+1)}],
         }],
+        "role": "user",
     })
     containers.append({
         "name": "s{}".format(i+1),
@@ -143,6 +144,7 @@ for i in range(inputObj["container"]["numClientServer"]):
             "type": "underlay",
             "addrs": [{"addr": "142.1.0.{}".format(i+1)}],
         }],
+        "role": "user",
     })
 mfpNodeIdx = 0
 for i in range(inputObj["container"]["numLnodes"]):
