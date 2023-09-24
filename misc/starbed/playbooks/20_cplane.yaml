@@ -193,8 +193,6 @@
           echo CHANGED
         fi
     - name: prometheus reload
-      register: tmp
-      changed_when: "'CHANGED' in tmp.stdout"
       shell: |
         docker exec prometheus kill -HUP 1
 
