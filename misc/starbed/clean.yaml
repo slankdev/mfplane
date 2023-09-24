@@ -117,7 +117,7 @@
       done
       kubectl -n default delete seg --all
 
-  - name: cleanup all segments.mfplane.io
+  - name: cleanup all nodes.mfplane.mfplane.io
     shell: |
       set -xe
-      kubectl -n default delete nodes.mfplane.io --all
+      kubectl -n default delete nodes.mfplane.mfplane.io --all
