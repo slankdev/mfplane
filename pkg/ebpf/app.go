@@ -137,12 +137,16 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 			for _, def := range clioptDefine {
 				cflags += " -D " + def
 			}
+			cmdstr := fmt.Sprintf(
+				"clang %s -c %s/code/%s -o %s/bin/out.o",
+				cflags, tmppath, file, tmppath)
 			if _, err := util.LocalExecutef(
 				"clang %s -c %s/code/%s -o %s/bin/out.o",
 				cflags, tmppath, file, tmppath); err != nil {
 				return err
 			}
 			if clioptVerbose {
+				log.Info(cmdstr)
 				log.Info("build c files",
 					"main", fmt.Sprintf("%s/code/%s", tmppath, file),
 					"out", fmt.Sprintf("%s/bin/out.o", tmppath),
