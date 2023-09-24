@@ -30,16 +30,24 @@ base:
         title: "test"
         time_seconds: 100000
         report_interval_seconds: 1
-        message_size_bytes: 1000
+        message_size_bytes: 100
         bandwidth: 100G
         num_concurrent_session: 100
+
+      # ##[FACTORY_DEFAULT]
+      # netdev_max_backlog: 1000
+      # dev_weight: 64
+      # rxRingEntries: 2048
+      # ##---
+      ## [BEST_PERFORMANCE]
       netdev_max_backlog: 1000
       dev_weight: 1000
       rxRingEntries: 8160
+
 container:
   numClientServer: 10
-  numLnodes: 1
-  numNnodes: 1
+  numLnodes: 2
+  numNnodes: 2
 parameter:
   minRouterId: 10.255.0.0
   asNumber: 4200000000
@@ -48,11 +56,12 @@ parameter:
   interfaceInet4AddrNet: 10.255.0.0/16
   interfaceInet6AddrNet: 2001:ff00::/64
 benchmarkPair:
-- {client: s1, server: s2}
-- {client: s3, server: s4}
-- {client: s5, server: s6}
-- {client: s7, server: s8}
-- {client: s9, server: s10}
+- {client: c1, server: s2}
+#- {client: s1, server: s2}
+# - {client: c3, server: c4}
+# - {client: c5, server: c6}
+# - {client: c7, server: c8}
+# - {client: c9, server: c10}
 hosts:
   routeServer:
     interfaces:
@@ -76,7 +85,7 @@ hosts:
     - name: node007
     - name: node008
     - name: node009
-    #- name: node010 hw-failure
+    - name: node010
     - name: node011
     - name: node012
     - name: node013
@@ -86,21 +95,21 @@ hosts:
     - name: node017
     - name: node018
     - name: node019
-    # - name: node020
-    # - name: node021
-    # - name: node022
-    # - name: node023
-    # - name: node024
-    # - name: node025
-    # - name: node026
-    # - name: node027
-    # - name: node028
-    # - name: node029
-    # - name: node030
-    # - name: node031
-    # - name: node032
-    # - name: node033
-    # - name: node034
+    - name: node020
+    - name: node021
+    - name: node022
+    - name: node023
+    - name: node024
+    - name: node025
+    - name: node026
+    - name: node027
+    - name: node028
+    - name: node029
+    - name: node030
+    - name: node031
+    - name: node032
+    - name: node033
+    - name: node034
     # # - name: node035 hw-failure
     # - name: node036
     # - name: node037
