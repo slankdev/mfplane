@@ -141,8 +141,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.6
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:6::/48
         token: 2001:a:6
@@ -178,8 +181,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.7
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:7::/48
         token: 2001:a:7
@@ -215,8 +221,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.8
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:8::/48
         token: 2001:a:8
@@ -252,8 +261,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.9
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:9::/48
         token: 2001:a:9
@@ -289,8 +301,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.11
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:11::/48
         token: 2001:a:11
@@ -326,8 +341,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.12
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:12::/48
         token: 2001:a:12
@@ -363,8 +381,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.13
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:13::/48
         token: 2001:a:13
@@ -400,8 +421,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.14
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:14::/48
         token: 2001:a:14
@@ -437,8 +461,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.15
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:15::/48
         token: 2001:a:15
@@ -474,8 +501,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.16
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:16::/48
         token: 2001:a:16
@@ -511,8 +541,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.17
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:17::/48
         token: 2001:a:17
@@ -548,8 +581,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.18
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:18::/48
         token: 2001:a:18
@@ -585,8 +621,11 @@ dplaneNode:
           plen: 24
         name: ens2f1
         vrf: vrf-control4
+      dev_weight: 1000
       kernelVersion: 5.15.0-82
+      netdev_max_backlog: 1000
       routerId: 10.255.0.19
+      rxRingEntries: 8160
       srv6_locators:
       - prefix: 2001:a:19::/48
         token: 2001:a:19
