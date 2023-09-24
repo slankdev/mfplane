@@ -33,6 +33,9 @@ base:
         message_size_bytes: 1000
         bandwidth: 100G
         num_concurrent_session: 100
+      netdev_max_backlog: 1000
+      dev_weight: 1000
+      rxRingEntries: 8160
 container:
   numClientServer: 10
   numLnodes: 1
@@ -62,10 +65,7 @@ hosts:
     # - name: node004
     # - name: node005
   dplaneNode:
-    vars:
-      netdev_max_backlog: 1000
-      dev_weight: 1000
-      rxRingEntries: 8160
+    vars: {}
     interfaces:
     - {name: eno12399, vrf: vrf-control1}
     - {name: eno12409, vrf: vrf-control2}
