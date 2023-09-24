@@ -22,12 +22,14 @@ all:
         - addr: 10.1.0.1
         network: net1
         type: overlay
+      role: user
     - host: node006
       name: s1
       ports:
       - addrs:
         - addr: 142.1.0.1
         type: underlay
+      role: user
     - host: node007
       name: c2
       ports:
@@ -35,6 +37,7 @@ all:
         - addr: 10.1.0.2
         network: net1
         type: overlay
+      role: user
     - benchmark:
         role: server
       host: node007
@@ -43,6 +46,7 @@ all:
       - addrs:
         - addr: 142.1.0.2
         type: underlay
+      role: user
     - benchmark:
         dst: 142.1.0.4
         role: client
@@ -53,12 +57,14 @@ all:
         - addr: 10.1.0.3
         network: net1
         type: overlay
+      role: user
     - host: node008
       name: s3
       ports:
       - addrs:
         - addr: 142.1.0.3
         type: underlay
+      role: user
     - host: node009
       name: c4
       ports:
@@ -66,6 +72,7 @@ all:
         - addr: 10.1.0.4
         network: net1
         type: overlay
+      role: user
     - benchmark:
         role: server
       host: node009
@@ -74,6 +81,7 @@ all:
       - addrs:
         - addr: 142.1.0.4
         type: underlay
+      role: user
     - host: node010
       mfpNodeIdx: 1
       name: l1
