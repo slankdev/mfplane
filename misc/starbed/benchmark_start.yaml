@@ -4,16 +4,17 @@
   gather_facts: no
   tags: [benchmark,load]
   vars:
-    benchmark:
-      title: "test"
-      time_seconds: 100000
-      report_interval_seconds: 1
-      message_size_bytes: 1000
-      #bandwidth: 200M
-      #bandwidth: 100M
-      #bandwidth: 5M
-      bandwidth: 100G
-      num_concurrent_session: 1
+    # [DEFINED_BY_SEED_YAML]
+    # benchmark:
+    #   title: "test"
+    #   time_seconds: 100000
+    #   report_interval_seconds: 1
+    #   message_size_bytes: 1000
+    #   #bandwidth: 200M
+    #   #bandwidth: 100M
+    #   #bandwidth: 5M
+    #   bandwidth: 100G
+    #   num_concurrent_session: 100
   tasks:
   - name: create iperf server contaner
     register: tmp
