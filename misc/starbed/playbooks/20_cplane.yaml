@@ -155,6 +155,49 @@
       dest: ~/mfplane.kind.kubeconfig.yaml
       flat: yes
 
+  - name: prepare prometheus
+    tags: prom
+    block:
+    - name: prepare /etc/prometheus/prometheus.yml (dir)
+      ansible.builtin.file:
+        path: /etc/prometheus
+        state: directory
+    - name: prepare /etc/prometheus/prometheus.yml
+      ansible.builtin.copy:
+        dest: /etc/prometheus/prometheus.yml
+        content: |
+          global:
+            scrape_interval: 5s
+            evaluation_interval: 15s
+            external_labels:
+              monitor: 'codelab-monitor'
+          scrape_configs:
+          - job_name: node
+            static_configs:
+            - targets:
+          {% for name in groups['dplaneNode'] %}
+              - {{ hostvars[name]["mgmt_addr"]}}:9100
+          {% endfor %}
+    - name: prometheus
+      register: tmp
+      changed_when: "'CHANGED' in tmp.stdout"
+      shell: |
+        set -xe
+        if [ $(docker ps --format {%raw%}"{{.Names}}"{%endraw%} \
+          | grep prometheus | wc -l) = "0" ]; then
+          docker rm -f prometheus || true
+          docker run -d --name prometheus \
+            -p 9090:9090 \
+            -v /etc/prometheus:/etc/prometheus \
+            prom/prometheus
+          echo CHANGED
+        fi
+    - name: prometheus reload
+      register: tmp
+      changed_when: "'CHANGED' in tmp.stdout"
+      shell: |
+        docker exec prometheus kill -HUP 1
+
 - hosts: localhost
   become: false
   gather_facts: no
