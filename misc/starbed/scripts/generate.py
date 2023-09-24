@@ -115,6 +115,8 @@ for node in inputObj["hosts"]["dplaneNode"]["nodes"]:
             "token": "2001:a:{}".format(nodeIdx),
         }],
     }
+    for k in inputObj["hosts"]["dplaneNode"]["vars"]:
+        output["dplaneNode"]["hosts"][name][k] = inputObj["hosts"]["dplaneNode"]["vars"][k]
 
 # Craft Data (3): Containers
 containers = []
