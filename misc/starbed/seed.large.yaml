@@ -27,7 +27,7 @@ base:
           segs:
           - fc00:ff00::0
 container:
-  numClientServer: 4
+  numClientServer: 10
   numLnodes: 1
   numNnodes: 1
 parameter:

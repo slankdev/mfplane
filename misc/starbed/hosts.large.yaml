@@ -81,7 +81,121 @@ all:
       - addrs:
         - addr: 142.1.0.4
         type: underlay
-    - host: node011
+    - benchmark:
+        dst: 142.1.0.5
+        role: client
+      host: node011
+      name: c5
+      ports:
+      - addrs:
+        - addr: 10.1.0.5
+        network: net1
+        type: overlay
+    - benchmark:
+        role: server
+      host: node011
+      httpApp: true
+      name: s5
+      ports:
+      - addrs:
+        - addr: 142.1.0.5
+        type: underlay
+    - benchmark:
+        dst: 142.1.0.6
+        role: client
+      host: node012
+      name: c6
+      ports:
+      - addrs:
+        - addr: 10.1.0.6
+        network: net1
+        type: overlay
+    - benchmark:
+        role: server
+      host: node012
+      httpApp: true
+      name: s6
+      ports:
+      - addrs:
+        - addr: 142.1.0.6
+        type: underlay
+    - benchmark:
+        dst: 142.1.0.7
+        role: client
+      host: node013
+      name: c7
+      ports:
+      - addrs:
+        - addr: 10.1.0.7
+        network: net1
+        type: overlay
+    - benchmark:
+        role: server
+      host: node013
+      httpApp: true
+      name: s7
+      ports:
+      - addrs:
+        - addr: 142.1.0.7
+        type: underlay
+    - benchmark:
+        dst: 142.1.0.8
+        role: client
+      host: node014
+      name: c8
+      ports:
+      - addrs:
+        - addr: 10.1.0.8
+        network: net1
+        type: overlay
+    - benchmark:
+        role: server
+      host: node014
+      httpApp: true
+      name: s8
+      ports:
+      - addrs:
+        - addr: 142.1.0.8
+        type: underlay
+    - benchmark:
+        dst: 142.1.0.9
+        role: client
+      host: node015
+      name: c9
+      ports:
+      - addrs:
+        - addr: 10.1.0.9
+        network: net1
+        type: overlay
+    - benchmark:
+        role: server
+      host: node015
+      httpApp: true
+      name: s9
+      ports:
+      - addrs:
+        - addr: 142.1.0.9
+        type: underlay
+    - benchmark:
+        dst: 142.1.0.10
+        role: client
+      host: node016
+      name: c10
+      ports:
+      - addrs:
+        - addr: 10.1.0.10
+        network: net1
+        type: overlay
+    - benchmark:
+        role: server
+      host: node016
+      httpApp: true
+      name: s10
+      ports:
+      - addrs:
+        - addr: 142.1.0.10
+        type: underlay
+    - host: node017
       mfpNodeIdx: 1
       name: l1
       nodeIdx: 1
@@ -90,7 +204,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node012
+    - host: node018
       mfpNodeIdx: 2
       name: n1
       nodeIdx: 1
