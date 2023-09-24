@@ -22,7 +22,7 @@ all:
         - addr: 10.1.0.1
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node006
       name: s1
       ports:
@@ -39,7 +39,7 @@ all:
         - addr: 10.1.0.2
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node007
       name: s2
       ports:
@@ -57,7 +57,7 @@ all:
         - addr: 10.1.0.3
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node008
       name: s3
       ports:
@@ -74,7 +74,7 @@ all:
         - addr: 10.1.0.4
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node009
       name: s4
       ports:
@@ -92,7 +92,7 @@ all:
         - addr: 10.1.0.5
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node010
       name: s5
       ports:
@@ -109,7 +109,7 @@ all:
         - addr: 10.1.0.6
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node011
       name: s6
       ports:
@@ -127,7 +127,7 @@ all:
         - addr: 10.1.0.7
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node012
       name: s7
       ports:
@@ -144,7 +144,7 @@ all:
         - addr: 10.1.0.8
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node013
       name: s8
       ports:
@@ -162,7 +162,7 @@ all:
         - addr: 10.1.0.9
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node014
       name: s9
       ports:
@@ -179,7 +179,7 @@ all:
         - addr: 10.1.0.10
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node015
       name: s10
       ports:
@@ -197,7 +197,7 @@ all:
         - addr: 10.1.0.11
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node016
       name: s11
       ports:
@@ -214,7 +214,7 @@ all:
         - addr: 10.1.0.12
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node017
       name: s12
       ports:
@@ -232,7 +232,7 @@ all:
         - addr: 10.1.0.13
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node018
       name: s13
       ports:
@@ -249,7 +249,7 @@ all:
         - addr: 10.1.0.14
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node019
       name: s14
       ports:
@@ -267,7 +267,7 @@ all:
         - addr: 10.1.0.15
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node020
       name: s15
       ports:
@@ -284,7 +284,7 @@ all:
         - addr: 10.1.0.16
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node021
       name: s16
       ports:
@@ -302,7 +302,7 @@ all:
         - addr: 10.1.0.17
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node022
       name: s17
       ports:
@@ -319,7 +319,7 @@ all:
         - addr: 10.1.0.18
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node023
       name: s18
       ports:
@@ -337,7 +337,7 @@ all:
         - addr: 10.1.0.19
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node024
       name: s19
       ports:
@@ -354,7 +354,7 @@ all:
         - addr: 10.1.0.20
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node025
       name: s20
       ports:
@@ -372,7 +372,7 @@ all:
         - addr: 10.1.0.21
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node026
       name: s21
       ports:
@@ -389,7 +389,7 @@ all:
         - addr: 10.1.0.22
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node027
       name: s22
       ports:
@@ -407,7 +407,7 @@ all:
         - addr: 10.1.0.23
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node028
       name: s23
       ports:
@@ -424,7 +424,7 @@ all:
         - addr: 10.1.0.24
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node029
       name: s24
       ports:
@@ -442,7 +442,7 @@ all:
         - addr: 10.1.0.25
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node030
       name: s25
       ports:
@@ -459,7 +459,7 @@ all:
         - addr: 10.1.0.26
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node031
       name: s26
       ports:
@@ -477,7 +477,7 @@ all:
         - addr: 10.1.0.27
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node032
       name: s27
       ports:
@@ -494,7 +494,7 @@ all:
         - addr: 10.1.0.28
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node033
       name: s28
       ports:
@@ -512,7 +512,7 @@ all:
         - addr: 10.1.0.29
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node034
       name: s29
       ports:
@@ -529,7 +529,7 @@ all:
         - addr: 10.1.0.30
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node036
       name: s30
       ports:
@@ -547,7 +547,7 @@ all:
         - addr: 10.1.0.31
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node037
       name: s31
       ports:
@@ -564,7 +564,7 @@ all:
         - addr: 10.1.0.32
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node038
       name: s32
       ports:
@@ -582,7 +582,7 @@ all:
         - addr: 10.1.0.33
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node039
       name: s33
       ports:
@@ -599,7 +599,7 @@ all:
         - addr: 10.1.0.34
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node040
       name: s34
       ports:
@@ -617,7 +617,7 @@ all:
         - addr: 10.1.0.35
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node041
       name: s35
       ports:
@@ -634,7 +634,7 @@ all:
         - addr: 10.1.0.36
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node042
       name: s36
       ports:
@@ -652,7 +652,7 @@ all:
         - addr: 10.1.0.37
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node043
       name: s37
       ports:
@@ -669,7 +669,7 @@ all:
         - addr: 10.1.0.38
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node044
       name: s38
       ports:
@@ -687,7 +687,7 @@ all:
         - addr: 10.1.0.39
         network: net1
         type: overlay
-      role: user
+      role: benchmarkClient
     - host: node045
       name: s39
       ports:
@@ -704,7 +704,7 @@ all:
         - addr: 10.1.0.40
         network: net1
         type: overlay
-      role: user
+      role: benchmarkServer
     - host: node046
       name: s40
       ports:
