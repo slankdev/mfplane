@@ -43,7 +43,10 @@ all:
       - addrs:
         - addr: 142.1.0.2
         type: underlay
-    - host: node008
+    - benchmark:
+        dst: 142.1.0.4
+        role: client
+      host: node008
       name: c3
       ports:
       - addrs:
@@ -63,7 +66,9 @@ all:
         - addr: 10.1.0.4
         network: net1
         type: overlay
-    - host: node009
+    - benchmark:
+        role: server
+      host: node009
       name: s4
       ports:
       - addrs:

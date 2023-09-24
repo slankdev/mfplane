@@ -57,11 +57,7 @@ parameter:
   interfaceInet6AddrNet: 2001:ff00::/64
 benchmarkPair:
 - {client: c1, server: s2}
-#- {client: s1, server: s2}
-# - {client: c3, server: c4}
-# - {client: c5, server: c6}
-# - {client: c7, server: c8}
-# - {client: c9, server: c10}
+- {client: c3, server: s4}
 hosts:
   routeServer:
     interfaces:
