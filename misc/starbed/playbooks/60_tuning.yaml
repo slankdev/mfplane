@@ -10,25 +10,24 @@
     changed_when: "'CHANGED' in tmp.stdout"
     shell: |
       set -xe
-      {% if parameter is defined %}
+      {% if rxRingEntries is defined %}
       {% for di in dataplaneInterfaces %}
       if [ $(ethtool --json -g {{ di.name }} \
-        | jq .[0].rx) != "{{ parameter.rxRingEntries }}" ]; then
-        ethtool -G {{ di.name }} rx {{ parameter.rxRingEntries }}
+        | jq .[0].rx) != "{{ rxRingEntries }}" ]; then
+        ethtool -G {{ di.name }} rx {{ rxRingEntries }}
         echo CHANGED
       fi
       {% endfor %}
       {% endif %}
-  - debug: var=tmp
 
   - name: netdev_max_backlog
     register: tmp
     changed_when: "'CHANGED' in tmp.stdout"
     shell: |
       set -xe
-      {% if parameter is defined %}
-      if [ $(sysctl -n net.core.netdev_max_backlog) != "{{ parameter.netdev_max_backlog }}" ]; then
-        sysctl -w net.core.netdev_max_backlog={{ parameter.netdev_max_backlog }}
+      {% if netdev_max_backlog is defined %}
+      if [ $(sysctl -n net.core.netdev_max_backlog) != "{{ netdev_max_backlog }}" ]; then
+        sysctl -w net.core.netdev_max_backlog={{ netdev_max_backlog }}
         echo CHANGED
       fi
       {% endif %}
@@ -38,9 +37,9 @@
     changed_when: "'CHANGED' in tmp.stdout"
     shell: |
       set -xe
-      {% if parameter is defined %}
-      if [ $(sysctl -n net.core.dev_weight) != "{{ parameter.dev_weight }}" ]; then
-        sysctl -w net.core.dev_weight={{ parameter.dev_weight }}
+      {% if dev_weight is defined %}
+      if [ $(sysctl -n net.core.dev_weight) != "{{ dev_weight }}" ]; then
+        sysctl -w net.core.dev_weight={{ dev_weight }}
         echo CHANGED
       fi
       {% endif %}
