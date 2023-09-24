@@ -45,9 +45,9 @@ base:
       rxRingEntries: 8160
 
 container:
-  numClientServer: 10
-  numLnodes: 2
-  numNnodes: 2
+  numClientServer: 4
+  numLnodes: 4
+  numNnodes: 4
 parameter:
   minRouterId: 10.255.0.0
   asNumber: 4200000000
@@ -97,19 +97,19 @@ hosts:
     - name: node019
     - name: node020
     - name: node021
-    - name: node022
-    - name: node023
-    - name: node024
-    - name: node025
-    - name: node026
-    - name: node027
-    - name: node028
-    - name: node029
-    - name: node030
-    - name: node031
-    - name: node032
-    - name: node033
-    - name: node034
+    # - name: node022
+    # - name: node023
+    # - name: node024
+    # - name: node025
+    # - name: node026
+    # - name: node027
+    # - name: node028
+    # - name: node029
+    # - name: node030
+    # - name: node031
+    # - name: node032
+    # - name: node033
+    # - name: node034
     # # - name: node035 hw-failure
     # - name: node036
     # - name: node037
