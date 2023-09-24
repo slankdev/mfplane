@@ -142,3 +142,23 @@
     ansible.builtin.systemd:
       name: frr
       state: restarted
+
+  - name: create node-exporter container
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      if [ $(docker ps --format {%raw%}"{{.Names}}"{%endraw%} \
+        | grep node-exporter | wc -l) = "0" ]; then
+        docker rm -f node-exporter || true
+        docker run -d --name node-exporter \
+          --pid=host \
+          --net=host \
+          -v "/:/host:ro,rslave" \
+          quay.io/prometheus/node-exporter:latest \
+          --path.rootfs=/host \
+          --no-collector.cpu \
+          --no-collector.cpufreq \
+          #END
+        echo CHANGED
+      fi

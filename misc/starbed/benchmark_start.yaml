@@ -1,0 +1,75 @@
+- hosts: dplaneNode
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tags: [benchmark,load]
+  vars:
+    # [DEFINED_BY_SEED_YAML]
+    # benchmark:
+    #   title: "test"
+    #   time_seconds: 100000
+    #   report_interval_seconds: 1
+    #   message_size_bytes: 1000
+    #   #bandwidth: 200M
+    #   #bandwidth: 100M
+    #   #bandwidth: 5M
+    #   bandwidth: 100G
+    #   num_concurrent_session: 100
+  tasks:
+  - name: delete docker container for iperf (when '-e force=true')
+    when: (force is defined)
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      for c in $(docker ps -a --format {%raw%}"{{.Names}}"{%endraw%} | grep iperf); do
+        docker rm -f $c
+        echo CHANGED
+      done
+
+  - name: create iperf server contaner
+    register: tmp
+    tags: server
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% if c.benchmark is defined and c.benchmark.role == "server" %}
+      CN={{ c.name }}-iperf
+      docker rm -f $CN || true
+      docker run -td --name $CN --privileged \
+        --net=container:{{ c.name }} \
+        nicolaka/netshoot iperf -su -yc --sum-only \
+        -i {{ benchmark.report_interval_seconds }}
+      echo CHANGED
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+
+  - name: create iperf client contaner
+    register: tmp
+    tags: client
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% if c.benchmark is defined and c.benchmark.role == "client" %}
+      CN={{ c.name }}-iperf
+      docker rm -f $CN || true
+      docker run -td --name $CN --privileged \
+        --net=container:{{ c.name }} \
+        nicolaka/netshoot \
+        iperf -c {{ c.benchmark.dst }} \
+        -u \
+        -i {{ benchmark.report_interval_seconds }} \
+        -t {{ benchmark.time_seconds }} \
+        -l {{ benchmark.message_size_bytes }} \
+        -b {{ benchmark.bandwidth }} \
+        -P {{ benchmark.num_concurrent_session }} \
+        --sum-only -yc
+      echo CHANGED
+      {% endif %}
+      {% endif %}
+      {% endfor %}

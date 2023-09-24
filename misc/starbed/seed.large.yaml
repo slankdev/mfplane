@@ -26,10 +26,28 @@ base:
         nexthop:
           segs:
           - fc00:ff00::0
+      benchmark:
+        title: "test"
+        time_seconds: 100000
+        report_interval_seconds: 1
+        message_size_bytes: 100
+        bandwidth: 100G
+        num_concurrent_session: 100
+
+      # ##[FACTORY_DEFAULT]
+      # netdev_max_backlog: 1000
+      # dev_weight: 64
+      # rxRingEntries: 2048
+      # ##---
+      ## [BEST_PERFORMANCE]
+      netdev_max_backlog: 1000
+      dev_weight: 1000
+      rxRingEntries: 8160
+
 container:
   numClientServer: 4
-  numLnodes: 2
-  numNnodes: 2
+  numLnodes: 4
+  numNnodes: 4
 parameter:
   minRouterId: 10.255.0.0
   asNumber: 4200000000
@@ -37,6 +55,9 @@ parameter:
   srv6LocatorPrefix: 2001:a000
   interfaceInet4AddrNet: 10.255.0.0/16
   interfaceInet6AddrNet: 2001:ff00::/64
+benchmarkPair:
+- {client: c1, server: s2}
+- {client: c3, server: s4}
 hosts:
   routeServer:
     interfaces:
@@ -49,6 +70,7 @@ hosts:
     # - name: node004
     # - name: node005
   dplaneNode:
+    vars: {}
     interfaces:
     - {name: eno12399, vrf: vrf-control1}
     - {name: eno12409, vrf: vrf-control2}
@@ -71,75 +93,75 @@ hosts:
     - name: node019
     - name: node020
     - name: node021
-    - name: node022
-    - name: node023
-    - name: node024
-    - name: node025
-    - name: node026
-    - name: node027
-    - name: node028
-    - name: node029
-    - name: node030
-    - name: node031
-    - name: node032
-    - name: node033
-    - name: node034
-    - name: node035
-    - name: node036
-    - name: node037
-    - name: node038
-    - name: node039
-    - name: node040
-    - name: node041
-    - name: node042
-    - name: node043
-    - name: node044
-    - name: node045
-    - name: node046
-    - name: node047
-    - name: node048
-    - name: node049
-    - name: node050
-    - name: node051
-    - name: node052
-    - name: node053
-    - name: node054
-    - name: node055
-    - name: node056
-    - name: node057
-    - name: node058
-    - name: node059
-    - name: node060
-    - name: node061
-    - name: node062
-    - name: node063
-    - name: node064
-    - name: node065
-    - name: node066
-    - name: node067
-    - name: node068
-    - name: node069
-    - name: node070
-    - name: node071
-    - name: node072
-    - name: node073
-    - name: node074
-    - name: node075
-    - name: node076
-    - name: node077
-    - name: node078
-    - name: node079
-    - name: node080
-    - name: node081
-    - name: node082
-    - name: node083
-    - name: node084
-    - name: node085
-    - name: node086
-    - name: node087
-    - name: node088
-    - name: node089
-    - name: node090
+    # - name: node022
+    # - name: node023
+    # - name: node024
+    # - name: node025
+    # - name: node026
+    # - name: node027
+    # - name: node028
+    # - name: node029
+    # - name: node030
+    # - name: node031
+    # - name: node032
+    # - name: node033
+    # - name: node034
+    # # - name: node035 hw-failure
+    # - name: node036
+    # - name: node037
+    # - name: node038
+    # - name: node039
+    # - name: node040
+    # - name: node041
+    # - name: node042
+    # - name: node043
+    # - name: node044
+    # - name: node045
+    # - name: node046
+    # - name: node047
+    # - name: node048
+    # - name: node049
+    # - name: node050
+    # - name: node051
+    # - name: node052
+    # - name: node053
+    # - name: node054
+    # - name: node055
+    # - name: node056
+    # - name: node057
+    # - name: node058
+    # - name: node059
+    # - name: node060
+    # - name: node061
+    # - name: node062
+    # - name: node063
+    # - name: node064
+    # - name: node065
+    # - name: node066
+    # - name: node067
+    # - name: node068
+    # - name: node069
+    # - name: node070
+    # - name: node071
+    # - name: node072
+    # - name: node073
+    # - name: node074
+    # - name: node075
+    # - name: node076
+    # - name: node077
+    # - name: node078
+    # - name: node079
+    # - name: node080
+    # - name: node081
+    # - name: node082
+    # - name: node083
+    # - name: node084
+    # - name: node085
+    # - name: node086
+    # - name: node087
+    # - name: node088
+    # - name: node089
+    # - name: node090
     # - name: node091
     # - name: node092
     # - name: node093

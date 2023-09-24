@@ -1,0 +1,50 @@
+- hosts: dplaneNode
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tags: [benchmark,load]
+  tasks:
+  - name: stop iperf client contaner
+    register: tmp
+    tags: client
+    changed_when: "'CHANGED' in tmp.stdout"
+    timeout: 20
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% if c.benchmark is defined and c.benchmark.role == "client" %}
+      CN={{ c.name }}-iperf
+      docker rm -f $CN || true
+      echo CHANGED
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+
+  - name: stop iperf server contaner
+    register: tmp
+    tags: server
+    changed_when: "'CHANGED' in tmp.stdout"
+    timeout: 20
+    shell: |
+      set -xe
+      {% for c in containers %}
+      {% if c.host == inventory_hostname %}
+      {% if c.benchmark is defined and c.benchmark.role == "server" %}
+      CN={{ c.name }}-iperf
+      docker rm -f $CN || true
+      echo CHANGED
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+
+  - name: delete docker container for iperf (when '-e force=true')
+    when: (force is defined)
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      for c in $(docker ps -a --format {%raw%}"{{.Names}}"{%endraw%} | grep iperf); do
+        docker rm -f $c
+        echo CHANGED
+      done

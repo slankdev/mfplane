@@ -16,6 +16,17 @@
           UserKnownHostsFile /dev/null
         {% endfor %}
 
+  - name: craft hosts
+    tags: hoge
+    become: true
+    ansible.builtin.blockinfile:
+      path: /etc/hosts
+      create: true
+      block: |
+        {% for name in groups['starbedNode'] %}
+        {{ hostvars[name]["mgmt_addr"]}} {{ name }}
+        {% endfor %}
+
 - hosts: starbedNode
   become: true
   become_method: sudo
@@ -198,6 +209,44 @@
     shell: |
       set -xe
       iptables -P FORWARD ACCEPT
+
+  - name: install ethtool
+    vars:
+      ethtool_version: 6.3
+    block:
+    - name: check current ethtool version
+      register: out
+      changed_when: false
+      shell: |
+        if [ $(ethtool --version \
+          | grep "ethtool version {{ ethtool_version }}" \
+          | wc -l) = "0" ]; then
+          echo NEEDUPDATE
+        fi
+    - when: '"NEEDUPDATE" in out.stdout'
+      block:
+      - name: install ethtool (get_url)
+        ansible.builtin.get_url:
+          url: "\
+            https://mirrors.edge.kernel.org/pub/software/network/ethtool/\
+            ethtool-{{ ethtool_version }}.tar.gz"
+          dest: /tmp/
+          mode: 0755
+        environment:
+          http_proxy: "{{ http_proxy }}"
+          https_proxy: "{{ https_proxy }}"
+        register: ethtool_dl
+      - name: install ethtool (build and install)
+        register: tmp
+        changed_when: "'CHANGED' in tmp.stdout"
+        shell: |
+          set -xe
+          cd /tmp
+          tar xpf ethtool-{{ ethtool_version }}.tar.gz
+          cd ethtool-{{ ethtool_version }}
+          ./configure --prefix /usr
+          make clean && make && make install
+          echo CHANGE
 
   - name: install iproute2-6.3
     vars:

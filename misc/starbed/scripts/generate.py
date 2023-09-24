@@ -2,6 +2,7 @@
 import sys
 import yaml
 import pprint
+import socket
 import hashlib
 import argparse
 import subprocess
@@ -37,9 +38,9 @@ def getRouterId(name):
 
 # Arg parse
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--input", required=True)
-parser.add_argument("-o", "--output", required=True)
-parser.add_argument("-O", "--output-manifest", required=True)
+parser.add_argument("-i", "--input", default="seed.large.yaml")
+parser.add_argument("-o", "--output", default="hosts.large.yaml")
+parser.add_argument("-O", "--output-manifest", default="nodes.large.yaml")
 args = parser.parse_args()
 
 # Open file
@@ -83,6 +84,7 @@ for node in inputObj["hosts"]["routeServer"]["nodes"]:
         "asNumber": inputObj["parameter"]["asNumber"],
         "routerId": getRouterId(name),
         "ansible_host": infraData[name]["node"]["nodeName"],
+        "mgmt_addr": socket.gethostbyname(infraData[name]["node"]["nodeName"]),
         "vrfs": vrfs,
     }
 
@@ -109,12 +111,15 @@ for node in inputObj["hosts"]["dplaneNode"]["nodes"]:
         "asNumber": inputObj["parameter"]["asNumber"],
         "routerId": getRouterId(name),
         "ansible_host": infraData[name]["node"]["nodeName"],
+        "mgmt_addr": socket.gethostbyname(infraData[name]["node"]["nodeName"]),
         "dataplaneInterfaces": dataplaneInterfaces,
         "srv6_locators": [{
             "prefix": "2001:a:{}::/48".format(nodeIdx),
             "token": "2001:a:{}".format(nodeIdx),
         }],
     }
+    for k in inputObj["hosts"]["dplaneNode"]["vars"]:
+        output["dplaneNode"]["hosts"][name][k] = inputObj["hosts"]["dplaneNode"]["vars"][k]
 
 # Craft Data (3): Containers
 containers = []
@@ -130,10 +135,7 @@ for i in range(inputObj["container"]["numClientServer"]):
             "type": "overlay",
             "addrs": [{"addr": "10.1.0.{}".format(i+1)}],
         }],
-        "benchmark": {
-            "role": "client",
-            "dst": "142.1.0.{}".format(i+1),
-        },
+        "role": "user",
     })
     containers.append({
         "name": "s{}".format(i+1),
@@ -142,10 +144,7 @@ for i in range(inputObj["container"]["numClientServer"]):
             "type": "underlay",
             "addrs": [{"addr": "142.1.0.{}".format(i+1)}],
         }],
-        "httpApp": True,
-        "benchmark": {
-            "role": "server",
-        },
+        "role": "user",
     })
 mfpNodeIdx = 0
 for i in range(inputObj["container"]["numLnodes"]):
@@ -172,6 +171,22 @@ for i in range(inputObj["container"]["numNnodes"]):
         "nodeIdx": i+1,
         "mfpNodeIdx": mfpNodeIdx,
     })
+for i, c in enumerate(containers):
+    for p in inputObj["benchmarkPair"]:
+        dst = ""
+        for c0 in containers:
+            if c0["name"] == p["server"]:
+                dst = c0["ports"][0]["addrs"][0]["addr"]
+        if dst == "":
+            print("ERROR dst resolve")
+            sys.exit(0)
+        if p["client"] == c["name"]:
+            containers[i]["benchmark"] = {
+                "role": "client",
+                "dst": dst,
+            }
+        elif p["server"] == c["name"]:
+            containers[i]["benchmark"] = {"role": "server"}
 output["all"]["vars"]["containers"] = containers
 
 # Write back to output file

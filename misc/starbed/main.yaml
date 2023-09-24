@@ -4,3 +4,4 @@
 - import_playbook: playbooks/35_container.yaml
 - import_playbook: playbooks/40_dplane.yaml
 - import_playbook: playbooks/50_mfplane.yaml
+- import_playbook: playbooks/60_tuning.yaml

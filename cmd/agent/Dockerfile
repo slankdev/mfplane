@@ -43,6 +43,14 @@ RUN CGO_ENABLED=0 go build -o ./bin/mikanectl -ldflags "\
 
 # ROOTFS
 FROM ghcr.io/wide-vsix/linux-flow-exporter:branch-main as rootfs
+ARG APT_HTTP_PROXY
+ARG APT_HTTPS_PROXY
+RUN apt update \
+      -o Acquire::http::Proxy=${APT_HTTP_PROXY} \
+      -o Acquire::https::Proxy=${APT_HTTPS_PROXY} \
+ && apt install -y vim \
+      -o Acquire::http::Proxy=${APT_HTTP_PROXY} \
+      -o Acquire::https::Proxy=${APT_HTTPS_PROXY}
 COPY --from=dist1 /workspace/bin/agent /usr/bin/agent
 COPY --from=dist2 /workspace/bin/mikanectl /usr/bin/mikanectl
 ENTRYPOINT ["/usr/bin/agent"]

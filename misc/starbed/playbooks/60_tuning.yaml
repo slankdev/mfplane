@@ -1,0 +1,45 @@
+- hosts: dplaneNode
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tags: [tuning]
+  tasks:
+
+  - name: rxRing
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% if rxRingEntries is defined %}
+      {% for di in dataplaneInterfaces %}
+      if [ $(ethtool --json -g {{ di.name }} \
+        | jq .[0].rx) != "{{ rxRingEntries }}" ]; then
+        ethtool -G {{ di.name }} rx {{ rxRingEntries }}
+        echo CHANGED
+      fi
+      {% endfor %}
+      {% endif %}
+
+  - name: netdev_max_backlog
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% if netdev_max_backlog is defined %}
+      if [ $(sysctl -n net.core.netdev_max_backlog) != "{{ netdev_max_backlog }}" ]; then
+        sysctl -w net.core.netdev_max_backlog={{ netdev_max_backlog }}
+        echo CHANGED
+      fi
+      {% endif %}
+
+  - name: dev_weight
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      {% if dev_weight is defined %}
+      if [ $(sysctl -n net.core.dev_weight) != "{{ dev_weight }}" ]; then
+        sysctl -w net.core.dev_weight={{ dev_weight }}
+        echo CHANGED
+      fi
+      {% endif %}
