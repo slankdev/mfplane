@@ -185,10 +185,18 @@
         ansible.builtin.reboot:
           reboot_timeout: 600 #seconds
 
-  - name: modprove vrf
-    changed_when: false
-    shell: |
-      modprobe vrf
+  - name: modprobe vrf
+    tags: modprobe
+    community.general.modprobe:
+      name: vrf
+      state: present
+      persistent: present
+
+  - name: eliminate "A start job is running for Wait for Network to be Configured"
+    ansible.builtin.systemd:
+      name: systemd-networkd-wait-online
+      enabled: false
+      masked: true
 
   - name: sysctl
     tags: sysctl
@@ -196,6 +204,7 @@
       name: "{{ item.name }}"
       value: "{{ item.value }}"
       sysctl_set: true
+      sysctl_file: /etc/sysctl.conf
     with_items:
     - {name: net.ipv4.ip_forward, value: 1}
     - {name: net.ipv6.conf.all.forwarding, value: 1}
@@ -377,12 +386,22 @@
           make install
           echo CHANGED
 
-  - name: disable Hyper Threading (HT)
-    register: tmp
-    changed_when: "'CHANGED' in tmp.stdout"
-    shell: |
-      set -xe
-      if [ $(cat /sys/devices/system/cpu/smt/active) = "1" ]; then
-        echo off | tee /sys/devices/system/cpu/smt/control
-        echo CHANGED
-      fi
+  - name: prepare /etc/rc.local
+    ansible.builtin.copy:
+      dest: /etc//rc.local
+      owner: root
+      group: root
+      mode: '0755'
+      content: |
+        #!/bin/sh
+        set -xe
+        if [ $(cat /sys/devices/system/cpu/smt/active) = "1" ]; then
+          echo off | tee /sys/devices/system/cpu/smt/control
+          echo CHANGED
+        fi
+
+  - name: enable start rc-local.service
+    ansible.builtin.systemd:
+      name: rc-local
+      state: started
+      enabled: true
