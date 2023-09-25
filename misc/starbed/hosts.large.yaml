@@ -704,6 +704,44 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:21::/48
         token: 2001:a:21
+    node022:
+      ansible_host: w022
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::22
+          plen: 64
+        - addr: 10.255.1.22
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::22
+          plen: 64
+        - addr: 10.255.2.22
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::22
+          plen: 64
+        - addr: 10.255.3.22
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::22
+          plen: 64
+        - addr: 10.255.4.22
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.22
+      routerId: 10.255.0.22
+      srv6_locators:
+      - prefix: 2001:a:22::/48
+        token: 2001:a:22
     node023:
       ansible_host: w023
       asNumber: 4200000000
@@ -894,6 +932,44 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:27::/48
         token: 2001:a:27
+    node028:
+      ansible_host: w028
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::28
+          plen: 64
+        - addr: 10.255.1.28
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::28
+          plen: 64
+        - addr: 10.255.2.28
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::28
+          plen: 64
+        - addr: 10.255.3.28
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::28
+          plen: 64
+        - addr: 10.255.4.28
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.28
+      routerId: 10.255.0.28
+      srv6_locators:
+      - prefix: 2001:a:28::/48
+        token: 2001:a:28
     node029:
       ansible_host: w029
       asNumber: 4200000000
@@ -932,6 +1008,44 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:29::/48
         token: 2001:a:29
+    node030:
+      ansible_host: w030
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::30
+          plen: 64
+        - addr: 10.255.1.30
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::30
+          plen: 64
+        - addr: 10.255.2.30
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::30
+          plen: 64
+        - addr: 10.255.3.30
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::30
+          plen: 64
+        - addr: 10.255.4.30
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.30
+      routerId: 10.255.0.30
+      srv6_locators:
+      - prefix: 2001:a:30::/48
+        token: 2001:a:30
     node031:
       ansible_host: w031
       asNumber: 4200000000
@@ -1084,6 +1198,44 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:34::/48
         token: 2001:a:34
+    node035:
+      ansible_host: w035
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::35
+          plen: 64
+        - addr: 10.255.1.35
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::35
+          plen: 64
+        - addr: 10.255.2.35
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::35
+          plen: 64
+        - addr: 10.255.3.35
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::35
+          plen: 64
+        - addr: 10.255.4.35
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.35
+      routerId: 10.255.0.35
+      srv6_locators:
+      - prefix: 2001:a:35::/48
+        token: 2001:a:35
     node036:
       ansible_host: w036
       asNumber: 4200000000
@@ -1122,6 +1274,44 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:36::/48
         token: 2001:a:36
+    node037:
+      ansible_host: w037
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::37
+          plen: 64
+        - addr: 10.255.1.37
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::37
+          plen: 64
+        - addr: 10.255.2.37
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::37
+          plen: 64
+        - addr: 10.255.3.37
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::37
+          plen: 64
+        - addr: 10.255.4.37
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.37
+      routerId: 10.255.0.37
+      srv6_locators:
+      - prefix: 2001:a:37::/48
+        token: 2001:a:37
     node038:
       ansible_host: w038
       asNumber: 4200000000
@@ -1312,6 +1502,44 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:42::/48
         token: 2001:a:42
+    node043:
+      ansible_host: w043
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::43
+          plen: 64
+        - addr: 10.255.1.43
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::43
+          plen: 64
+        - addr: 10.255.2.43
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::43
+          plen: 64
+        - addr: 10.255.3.43
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::43
+          plen: 64
+        - addr: 10.255.4.43
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.43
+      routerId: 10.255.0.43
+      srv6_locators:
+      - prefix: 2001:a:43::/48
+        token: 2001:a:43
     node044:
       ansible_host: w044
       asNumber: 4200000000
@@ -1350,6 +1578,44 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:44::/48
         token: 2001:a:44
+    node045:
+      ansible_host: w045
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::45
+          plen: 64
+        - addr: 10.255.1.45
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::45
+          plen: 64
+        - addr: 10.255.2.45
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::45
+          plen: 64
+        - addr: 10.255.3.45
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::45
+          plen: 64
+        - addr: 10.255.4.45
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.45
+      routerId: 10.255.0.45
+      srv6_locators:
+      - prefix: 2001:a:45::/48
+        token: 2001:a:45
     node046:
       ansible_host: w046
       asNumber: 4200000000
@@ -1502,6 +1768,44 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:50::/48
         token: 2001:a:50
+    node051:
+      ansible_host: w103
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::51
+          plen: 64
+        - addr: 10.255.1.51
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::51
+          plen: 64
+        - addr: 10.255.2.51
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::51
+          plen: 64
+        - addr: 10.255.3.51
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::51
+          plen: 64
+        - addr: 10.255.4.51
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.103
+      routerId: 10.255.0.51
+      srv6_locators:
+      - prefix: 2001:a:51::/48
+        token: 2001:a:51
     node052:
       ansible_host: w104
       asNumber: 4200000000
@@ -1578,6 +1882,44 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:53::/48
         token: 2001:a:53
+    node054:
+      ansible_host: w106
+      asNumber: 4200000000
+      dataplaneInterfaces:
+      - addrs:
+        - addr: 2001:ff00:1::54
+          plen: 64
+        - addr: 10.255.1.54
+          plen: 24
+        name: eno12399
+        vrf: vrf-control1
+      - addrs:
+        - addr: 2001:ff00:2::54
+          plen: 64
+        - addr: 10.255.2.54
+          plen: 24
+        name: eno12409
+        vrf: vrf-control2
+      - addrs:
+        - addr: 2001:ff00:3::54
+          plen: 64
+        - addr: 10.255.3.54
+          plen: 24
+        name: ens2f0
+        vrf: vrf-control3
+      - addrs:
+        - addr: 2001:ff00:4::54
+          plen: 64
+        - addr: 10.255.4.54
+          plen: 24
+        name: ens2f1
+        vrf: vrf-control4
+      kernelVersion: 5.15.0-82
+      mgmt_addr: 172.16.3.106
+      routerId: 10.255.0.54
+      srv6_locators:
+      - prefix: 2001:a:54::/48
+        token: 2001:a:54
     node055:
       ansible_host: w107
       asNumber: 4200000000

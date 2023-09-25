@@ -112,40 +112,39 @@ hosts:
     - name: node019
     - name: node020
     - name: node021
-
-    # - name: node022
+    - name: node022
     - name: node023
     - name: node024
     - name: node025
     - name: node026
     - name: node027
-    # - name: node028
+    - name: node028
     - name: node029
-    # - name: node030
+    - name: node030
     - name: node031
     - name: node032
     - name: node033
     - name: node034
-    # - name: node035 #past-failure
+    - name: node035
     - name: node036
-    # - name: node037
+    - name: node037
     - name: node038
     - name: node039
     - name: node040
     - name: node041
     - name: node042
-    # - name: node043
+    - name: node043
     - name: node044
-    # - name: node045 #w045
+    - name: node045
     - name: node046
     - name: node047
     - name: node048
     # - name: node049
     - name: node050
-    # - name: node051 #w103,rebooted
+    - name: node051
     - name: node052
     - name: node053
-    # - name: node054 #w106,rebooted
+    - name: node054
     - name: node055
     - name: node056
     - name: node057
