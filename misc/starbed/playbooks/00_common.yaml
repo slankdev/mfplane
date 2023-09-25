@@ -30,6 +30,7 @@
 - hosts: starbedNode
   become: true
   become_method: sudo
+  gather_facts: no
   tags: [common]
   tasks:
   - name: ssh key distribution
