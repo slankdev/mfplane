@@ -1,0 +1,10 @@
+- hosts: dplaneNode
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tags: [check]
+  tasks:
+  - name: check docker status
+    timeout: 30
+    shell: |
+      docker pull busybox

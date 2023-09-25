@@ -181,11 +181,13 @@ for i, c in enumerate(containers):
             print("ERROR dst resolve")
             sys.exit(0)
         if p["client"] == c["name"]:
+            containers[i]["role"] = "benchmarkClient"
             containers[i]["benchmark"] = {
                 "role": "client",
                 "dst": dst,
             }
         elif p["server"] == c["name"]:
+            containers[i]["role"] = "benchmarkServer"
             containers[i]["benchmark"] = {"role": "server"}
 output["all"]["vars"]["containers"] = containers
 

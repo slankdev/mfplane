@@ -3,7 +3,7 @@ items:
 - apiVersion: mfplane.mfplane.io/v1alpha1
   kind: Node
   metadata:
-    name: node010
+    name: node008
     namespace: default
   spec:
     functions:
@@ -26,11 +26,11 @@ items:
           name: anycast
           prefix: fc00:ff00::/24
       type: clb
-    hostname: node010
+    hostname: node008
 - apiVersion: mfplane.mfplane.io/v1alpha1
   kind: Node
   metadata:
-    name: node011
+    name: node009
     namespace: default
   spec:
     functions:
@@ -53,74 +53,17 @@ items:
           name: anycast
           prefix: fc00:ff00::/24
       type: clb
-    hostname: node011
+    hostname: node009
 - apiVersion: mfplane.mfplane.io/v1alpha1
   kind: Node
   metadata:
-    name: node012
-    namespace: default
-  spec:
-    functions:
-    - device: eth0
-      labels:
-        lbGroup: lbGroup1
-        lbMaxBackends: '7'
-        lbMaxRules: '2'
-      mode: xdpgeneric
-      name: l3
-      netns: l3
-      segmentRoutingSrv6:
-        encapSource: fc00:0300::0
-        locators:
-        - block: fc00::0
-          name: default
-          prefix: fc00:0300::/24
-        - anycast: true
-          block: fc00::0
-          name: anycast
-          prefix: fc00:ff00::/24
-      type: clb
-    hostname: node012
-- apiVersion: mfplane.mfplane.io/v1alpha1
-  kind: Node
-  metadata:
-    name: node013
-    namespace: default
-  spec:
-    functions:
-    - device: eth0
-      labels:
-        lbGroup: lbGroup1
-        lbMaxBackends: '7'
-        lbMaxRules: '2'
-      mode: xdpgeneric
-      name: l4
-      netns: l4
-      segmentRoutingSrv6:
-        encapSource: fc00:0400::0
-        locators:
-        - block: fc00::0
-          name: default
-          prefix: fc00:0400::/24
-        - anycast: true
-          block: fc00::0
-          name: anycast
-          prefix: fc00:ff00::/24
-      type: clb
-    hostname: node013
-- apiVersion: mfplane.mfplane.io/v1alpha1
-  kind: Node
-  metadata:
-    name: node014
+    name: node010
     namespace: default
   spec:
     functions:
     - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
         \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
-        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
-        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
-        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
-        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n"
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n"
       device: eth0
       labels:
         natGroup: natGroup1
@@ -128,26 +71,23 @@ items:
       name: n1
       netns: n1
       segmentRoutingSrv6:
-        encapSource: fc00:0500::0
+        encapSource: fc00:0300::0
         locators:
         - block: fc00::0
           name: default
-          prefix: fc00:0500::/24
+          prefix: fc00:0300::/24
       type: nat
-    hostname: node014
+    hostname: node010
 - apiVersion: mfplane.mfplane.io/v1alpha1
   kind: Node
   metadata:
-    name: node015
+    name: node011
     namespace: default
   spec:
     functions:
     - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
         \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
-        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
-        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
-        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
-        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n"
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n"
       device: eth0
       labels:
         natGroup: natGroup1
@@ -155,67 +95,13 @@ items:
       name: n2
       netns: n2
       segmentRoutingSrv6:
-        encapSource: fc00:0600::0
+        encapSource: fc00:0400::0
         locators:
         - block: fc00::0
           name: default
-          prefix: fc00:0600::/24
+          prefix: fc00:0400::/24
       type: nat
-    hostname: node015
-- apiVersion: mfplane.mfplane.io/v1alpha1
-  kind: Node
-  metadata:
-    name: node016
-    namespace: default
-  spec:
-    functions:
-    - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
-        \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
-        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
-        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
-        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
-        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n"
-      device: eth0
-      labels:
-        natGroup: natGroup1
-      mode: xdpgeneric
-      name: n3
-      netns: n3
-      segmentRoutingSrv6:
-        encapSource: fc00:0700::0
-        locators:
-        - block: fc00::0
-          name: default
-          prefix: fc00:0700::/24
-      type: nat
-    hostname: node016
-- apiVersion: mfplane.mfplane.io/v1alpha1
-  kind: Node
-  metadata:
-    name: node017
-    namespace: default
-  spec:
-    functions:
-    - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
-        \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
-        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
-        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
-        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
-        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n"
-      device: eth0
-      labels:
-        natGroup: natGroup1
-      mode: xdpgeneric
-      name: n4
-      netns: n4
-      segmentRoutingSrv6:
-        encapSource: fc00:0800::0
-        locators:
-        - block: fc00::0
-          name: default
-          prefix: fc00:0800::/24
-      type: nat
-    hostname: node017
+    hostname: node011
 kind: List
 metadata:
   resourceVersion: ''

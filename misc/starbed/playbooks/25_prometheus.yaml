@@ -1,0 +1,52 @@
+- hosts: routeServer
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tags: [prometheus]
+  tasks:
+
+  - name: prepare /etc/prometheus/prometheus.yml (dir)
+    ansible.builtin.file:
+      path: /etc/prometheus
+      state: directory
+  - name: prepare /etc/prometheus/prometheus.yml
+    ansible.builtin.copy:
+      dest: /etc/prometheus/prometheus.yml
+      content: |
+        global:
+          scrape_interval: 5s
+          evaluation_interval: 15s
+          external_labels:
+            monitor: 'codelab-monitor'
+        scrape_configs:
+        - job_name: node
+          static_configs:
+        {% for c in containers %}
+          - labels:
+              containerName: {{ c.name }}
+              containerRole: {{ c.role }}
+              hostName: {{ c.host }}
+        {% for name in groups['dplaneNode'] %}
+        {% if name == c.host %}
+            targets: [{{ hostvars[name]["mgmt_addr"]}}:9100]
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+
+  - name: prometheus
+    register: tmp
+    changed_when: "'CHANGED' in tmp.stdout"
+    shell: |
+      set -xe
+      if [ $(docker ps --format {%raw%}"{{.Names}}"{%endraw%} \
+        | grep prometheus | wc -l) = "0" ]; then
+        docker rm -f prometheus || true
+        docker run -d --name prometheus \
+          -p 9090:9090 \
+          -v /etc/prometheus:/etc/prometheus \
+          prom/prometheus
+        echo CHANGED
+      fi
+  - name: prometheus reload
+    shell: |
+      docker exec prometheus kill -HUP 1
