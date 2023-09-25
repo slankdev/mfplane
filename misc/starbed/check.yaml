@@ -4,5 +4,7 @@
   gather_facts: no
   tags: [check]
   tasks:
-  - debug:
-      msg: hoge
+  - name: check docker status
+    timeout: 30
+    shell: |
+      docker pull busybox
