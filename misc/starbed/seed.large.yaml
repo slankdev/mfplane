@@ -139,7 +139,7 @@ hosts:
     - name: node046
     - name: node047
     - name: node048
-    # - name: node049
+    # - name: node049 okashii.... login dekinai
     - name: node050
     - name: node051
     - name: node052
@@ -173,14 +173,14 @@ hosts:
     - name: node080
     - name: node081
     - name: node082
-    # # - name: node083 #failure?
-    # # - name: node084
-    # # - name: node085
-    # # - name: node086
-    # # - name: node087
-    # # - name: node088
-    # # - name: node089
-    # # - name: node090
+    - name: node083
+    - name: node084
+    - name: node085
+    - name: node086
+    - name: node087
+    - name: node088
+    - name: node089
+    - name: node090
     # # - name: node091
     # # - name: node092
     # # - name: node093
