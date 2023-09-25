@@ -1,0 +1,3 @@
+- import_playbook: playbooks/00_common.yaml
+- import_playbook: playbooks/10_routing.yaml
+- import_playbook: playbooks/20_cplane.yaml
