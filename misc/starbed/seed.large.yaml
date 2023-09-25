@@ -45,9 +45,9 @@ base:
       rxRingEntries: 8160
 
 container:
-  numClientServer: 2
-  numLnodes: 2
-  numNnodes: 2
+  numClientServer: 40
+  numLnodes: 16
+  numNnodes: 16
 parameter:
   minRouterId: 10.255.0.0
   asNumber: 4200000000
