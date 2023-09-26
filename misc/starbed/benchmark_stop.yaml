@@ -47,7 +47,7 @@
     shell: |
       set -xe
       for c in $(docker ps -a --format {%raw%}"{{.Names}}"{%endraw%} | grep iperf); do
-        docker stop $c
-        docker rm $c
+        docker stop $c || true
+        docker rm $c || true
         echo CHANGED
       done
