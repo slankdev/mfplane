@@ -1,3 +1,31 @@
+- hosts: localhost
+  become: false
+  gather_facts: no
+  tags: [common]
+  tasks:
+  - name: craft ssh-config
+    ansible.builtin.blockinfile:
+      path: ~/.ssh/config
+      create: true
+      block: |
+        {% for name in groups['starbedNode'] %}
+        Host {{ name }}
+          User root
+          Hostname {{ hostvars[name]["ansible_host"] }}
+          StrictHostKeyChecking no
+          UserKnownHostsFile /dev/null
+        {% endfor %}
+
+  - name: craft hosts
+    become: true
+    ansible.builtin.blockinfile:
+      path: /etc/hosts
+      create: true
+      block: |
+        {% for name in groups['starbedNode'] %}
+        {{ hostvars[name]["mgmt_addr"]}} {{ name }}
+        {% endfor %}
+
 - import_playbook: playbooks/25_prometheus.yaml
 - import_playbook: playbooks/35_container.yaml
 - import_playbook: playbooks/40_dplane.yaml

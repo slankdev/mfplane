@@ -96,8 +96,8 @@ hosts:
     - {name: ens2f0  , vrf: vrf-control3}
     - {name: ens2f1  , vrf: vrf-control4}
     nodes:
-    # - name: node006
-    # - name: node007
+    - name: node006
+    - name: node007
     - name: node008
     - name: node009
     - name: node010

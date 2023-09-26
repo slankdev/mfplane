@@ -4,21 +4,6 @@
   tags: [container]
   gather_facts: no
   tasks:
-  - name: delete docker container
-    register: tmp
-    changed_when: "'CHANGED' in tmp.stdout"
-    shell: |
-      set -xe
-      {% for c in containers %}
-      {% if c.host == inventory_hostname %}
-      if [ $(docker inspect {{ c.name }} | jq '. | length') != "0" ]; then
-        docker stop {{ c.name }}
-        docker rm {{ c.name }}
-        echo CHANGED
-      fi
-      {% endif %}
-      {% endfor %}
-
   - name: delete docker container (when '-e force=true')
     when: (force is defined)
     register: tmp
@@ -26,8 +11,8 @@
     shell: |
       set -xe
       for c in $(docker ps -a --format {%raw%}"{{.Names}}"{%endraw%}); do
-        docker stop $c
-        docker rm $c
+        docker stop $c || true
+        docker rm $c || true
         echo CHANGED
       done
 
