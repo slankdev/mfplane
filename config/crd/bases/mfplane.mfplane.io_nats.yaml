@@ -15,7 +15,19 @@ spec:
     singular: nat
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.loadBalancer.replicas
+      name: LB
+      priority: 1
+      type: string
+    - jsonPath: .spec.networkFunction.replicas
+      name: NF
+      priority: 1
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Nat is the Schema for the nats API

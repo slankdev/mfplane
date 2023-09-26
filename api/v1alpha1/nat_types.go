@@ -49,6 +49,9 @@ type NatStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name=LB,type=string,priority=1,JSONPath=.spec.loadBalancer.replicas
+//+kubebuilder:printcolumn:name=NF,type=string,priority=1,JSONPath=.spec.networkFunction.replicas
+//+kubebuilder:printcolumn:name=AGE,type=date,JSONPath=.metadata.creationTimestamp
 
 // Nat is the Schema for the nats API
 type Nat struct {
