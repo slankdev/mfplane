@@ -10,6 +10,7 @@ import ipaddress
 import threading
 
 
+debug = False
 tsdata = {}
 
 def f(host, container, lock, index):
@@ -22,6 +23,8 @@ def f(host, container, lock, index):
         if str(words[0]) not in tsdata:
             tsdata[str(words[0])] = {}
         tsdata[str(words[0])][container] = words
+        if debug:
+            print(f"update data from {container}")
         lock.release()
 
 
@@ -68,6 +71,8 @@ while True:
     total_err = 0
     total_rod = 0
     data_cnt = len(data.keys())
+    if debug:
+        pprint.pprint(data.keys())
     for container in data:
         val = data[container]
         total_bps += int(val[8])
