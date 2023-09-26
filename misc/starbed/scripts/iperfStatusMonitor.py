@@ -10,8 +10,16 @@ import ipaddress
 import threading
 
 
-debug = False
 tsdata = {}
+
+
+# Arg parse
+parser = argparse.ArgumentParser()
+parser.add_argument("-i", "--inventory", default="hosts.large.yaml")
+parser.add_argument("--debug-data-collection", action='store_true')
+parser.add_argument("--debug-summarization", action='store_true')
+args = parser.parse_args()
+
 
 def f(host, container, lock, index):
     proc = subprocess.Popen(["docker", "-H", f"ssh://{host}", "logs", "-f",
@@ -23,15 +31,10 @@ def f(host, container, lock, index):
         if str(words[0]) not in tsdata:
             tsdata[str(words[0])] = {}
         tsdata[str(words[0])][container] = words
-        if debug:
+        if args.debug_data_collection:
             print(f"update data from {container}")
         lock.release()
 
-
-# Arg parse
-parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--inventory", default="hosts.large.yaml")
-args = parser.parse_args()
 
 # Launch child thread
 containers = []
@@ -65,14 +68,26 @@ while True:
     data = tsdata.pop(key)
     lock.release()
 
+    # Debug Print
+    if args.debug_summarization:
+        serverCandidates = {}
+        for c in containers:
+            if "benchmark" in c and \
+            "role" in c["benchmark"] and \
+            c["benchmark"]["role"] == "server":
+                serverCandidates[c["name"]] = True
+        for key in data.keys():
+            serverCandidates.pop(key)
+        for key in serverCandidates:
+            print(f"NotSummarized: {key}")
+        #pprint.pprint(serverCandidates)
+
     # Summarization
     total_bps = 0
     total_msg = 0
     total_err = 0
     total_rod = 0
     data_cnt = len(data.keys())
-    if debug:
-        pprint.pprint(data.keys())
     for container in data:
         val = data[container]
         total_bps += int(val[8])
