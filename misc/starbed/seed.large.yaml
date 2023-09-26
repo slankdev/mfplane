@@ -57,25 +57,25 @@ parameter:
   interfaceInet6AddrNet: 2001:ff00::/64
 benchmarkPair:
 - {client: c1 , server: s2 }
-# - {client: c3 , server: s4 }
-# - {client: c5 , server: s6 }
-# - {client: c7 , server: s8 }
-# - {client: c9 , server: s10}
-# - {client: c11, server: s12}
-# - {client: c13, server: s14}
-# - {client: c15, server: s16}
-# - {client: c17, server: s18}
-# - {client: c19, server: s20}
-# - {client: c21, server: s22}
-# - {client: c23, server: s24}
-# - {client: c25, server: s26}
-# - {client: c27, server: s28}
-# - {client: c29, server: s30}
-# - {client: c31, server: s32}
-# - {client: c33, server: s34}
-# - {client: c35, server: s36}
-# - {client: c37, server: s38}
-# - {client: c39, server: s40}
+- {client: c3 , server: s4 }
+- {client: c5 , server: s6 }
+- {client: c7 , server: s8 }
+- {client: c9 , server: s10}
+- {client: c11, server: s12}
+- {client: c13, server: s14}
+- {client: c15, server: s16}
+- {client: c17, server: s18}
+- {client: c19, server: s20}
+- {client: c21, server: s22}
+- {client: c23, server: s24}
+- {client: c25, server: s26}
+- {client: c27, server: s28}
+- {client: c29, server: s30}
+- {client: c31, server: s32}
+- {client: c33, server: s34}
+- {client: c35, server: s36}
+- {client: c37, server: s38}
+- {client: c39, server: s40}
 
 hosts:
   routeServer:
@@ -104,7 +104,7 @@ hosts:
     - name: node011
     - name: node012
     - name: node013
-    - name: node014
+    # - name: node014, hw-failure, akirame
     - name: node015
     - name: node016
     - name: node017
@@ -181,13 +181,13 @@ hosts:
     - name: node088
     - name: node089
     - name: node090
-    # # - name: node091
-    # # - name: node092
-    # # - name: node093
-    # # - name: node094
-    # # - name: node095
-    # # - name: node096
-    # # - name: node097
-    # # - name: node098
-    # # - name: node099
-    # # - name: node100
+    - name: node091
+    - name: node092
+    - name: node093
+    - name: node094
+    - name: node095
+    - name: node096
+    - name: node097
+    # - name: node098, hw-failure? infra-mgmt-failure-node
+    - name: node099
+    - name: node100
