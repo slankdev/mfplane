@@ -23,7 +23,8 @@
     shell: |
       set -xe
       for c in $(docker ps -a --format {%raw%}"{{.Names}}"{%endraw%} | grep iperf); do
-        docker rm -f $c
+        docker stop $c
+        docker rm $c
         echo CHANGED
       done
 
@@ -37,7 +38,8 @@
       {% if c.host == inventory_hostname %}
       {% if c.benchmark is defined and c.benchmark.role == "server" %}
       CN={{ c.name }}-iperf
-      docker rm -f $CN || true
+      docker stop $CN || true
+      docker rm $CN || true
       docker run -td --name $CN --privileged \
         --net=container:{{ c.name }} \
         nicolaka/netshoot iperf -su -yc --sum-only \
@@ -57,7 +59,8 @@
       {% if c.host == inventory_hostname %}
       {% if c.benchmark is defined and c.benchmark.role == "client" %}
       CN={{ c.name }}-iperf
-      docker rm -f $CN || true
+      docker stop $CN || true
+      docker rm $CN || true
       docker run -td --name $CN --privileged \
         --net=container:{{ c.name }} \
         nicolaka/netshoot \
