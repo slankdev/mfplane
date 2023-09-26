@@ -12,7 +12,8 @@
       {% for c in containers %}
       {% if c.host == inventory_hostname %}
       if [ $(docker inspect {{ c.name }} | jq '. | length') != "0" ]; then
-        docker rm -f {{ c.name }}
+        docker stop {{ c.name }}
+        docker rm {{ c.name }}
         echo CHANGED
       fi
       {% endif %}
@@ -25,7 +26,8 @@
     shell: |
       set -xe
       for c in $(docker ps -a --format {%raw%}"{{.Names}}"{%endraw%}); do
-        docker rm -f $c
+        docker stop $c
+        docker rm $c
         echo CHANGED
       done
 
@@ -109,6 +111,7 @@
       kubectl -n default delete nat --all
 
   - name: cleanup all segments.mfplane.io
+    tags: deleteSeg
     shell: |
       set -xe
       for name in $(kubectl -n default get seg -o name); do
