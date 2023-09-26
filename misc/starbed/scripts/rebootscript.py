@@ -46,3 +46,8 @@ for host in hosts:
 for host in hosts:
     nn = infraData[host]["node"]["nodeName"]
     print(f"starbedctl resource power on -n {nn}")
+args = ""
+for host in hosts:
+    nn = infraData[host]["node"]["nodeName"]
+    args = f"{args} -n {nn}"
+print(f"starbedctl resource power check {args}")

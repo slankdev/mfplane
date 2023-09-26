@@ -5,6 +5,6 @@
   tags: [check]
   tasks:
   - name: check docker status
-    timeout: 30
+    timeout: 10
     shell: |
-      docker pull busybox
+      docker run --rm hello-world
