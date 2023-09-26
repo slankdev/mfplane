@@ -41,6 +41,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", default="seed.large.yaml")
 parser.add_argument("-o", "--output", default="hosts.large.yaml")
 parser.add_argument("-O", "--output-manifest", default="nodes.large.yaml")
+parser.add_argument("-d", "--output-deadman", default="deadman.large.conf")
 args = parser.parse_args()
 
 # Open file
@@ -48,6 +49,13 @@ inputObj = {}
 with open(args.input, "r") as f:
     inputObj = yaml.safe_load(f)
 infraData = readInfraFiles(inputObj["infraManifests"])
+
+# Craft Data (0): deadman
+with open(args.output_deadman, "w") as f:
+    for node in inputObj["hosts"]["dplaneNode"]["nodes"]:
+        idata = infraData[node["name"]]["node"]
+        addr = socket.gethostbyname(idata["nodeName"])
+        f.write("{}({}) {}\n".format(node["name"], idata["nodeName"], addr))
 
 # Craft Data (0): Common
 output = {}
