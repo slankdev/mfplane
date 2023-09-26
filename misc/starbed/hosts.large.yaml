@@ -15,7 +15,7 @@ all:
     - benchmark:
         dst: 142.1.0.2
         role: client
-      host: node006
+      host: node008
       name: c1
       ports:
       - addrs:
@@ -23,14 +23,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node006
+    - host: node008
       name: s1
       ports:
       - addrs:
         - addr: 142.1.0.1
         type: underlay
       role: user
-    - host: node007
+    - host: node009
       name: c2
       ports:
       - addrs:
@@ -40,7 +40,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node007
+      host: node009
       name: s2
       ports:
       - addrs:
@@ -50,7 +50,7 @@ all:
     - benchmark:
         dst: 142.1.0.4
         role: client
-      host: node008
+      host: node010
       name: c3
       ports:
       - addrs:
@@ -58,14 +58,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node008
+    - host: node010
       name: s3
       ports:
       - addrs:
         - addr: 142.1.0.3
         type: underlay
       role: user
-    - host: node009
+    - host: node011
       name: c4
       ports:
       - addrs:
@@ -75,7 +75,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node009
+      host: node011
       name: s4
       ports:
       - addrs:
@@ -85,7 +85,7 @@ all:
     - benchmark:
         dst: 142.1.0.6
         role: client
-      host: node010
+      host: node012
       name: c5
       ports:
       - addrs:
@@ -93,14 +93,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node010
+    - host: node012
       name: s5
       ports:
       - addrs:
         - addr: 142.1.0.5
         type: underlay
       role: user
-    - host: node011
+    - host: node013
       name: c6
       ports:
       - addrs:
@@ -110,7 +110,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node011
+      host: node013
       name: s6
       ports:
       - addrs:
@@ -120,7 +120,7 @@ all:
     - benchmark:
         dst: 142.1.0.8
         role: client
-      host: node012
+      host: node015
       name: c7
       ports:
       - addrs:
@@ -128,14 +128,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node012
+    - host: node015
       name: s7
       ports:
       - addrs:
         - addr: 142.1.0.7
         type: underlay
       role: user
-    - host: node013
+    - host: node016
       name: c8
       ports:
       - addrs:
@@ -145,7 +145,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node013
+      host: node016
       name: s8
       ports:
       - addrs:
@@ -155,7 +155,7 @@ all:
     - benchmark:
         dst: 142.1.0.10
         role: client
-      host: node015
+      host: node017
       name: c9
       ports:
       - addrs:
@@ -163,14 +163,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node015
+    - host: node017
       name: s9
       ports:
       - addrs:
         - addr: 142.1.0.9
         type: underlay
       role: user
-    - host: node016
+    - host: node018
       name: c10
       ports:
       - addrs:
@@ -180,7 +180,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node016
+      host: node018
       name: s10
       ports:
       - addrs:
@@ -190,7 +190,7 @@ all:
     - benchmark:
         dst: 142.1.0.12
         role: client
-      host: node017
+      host: node019
       name: c11
       ports:
       - addrs:
@@ -198,14 +198,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node017
+    - host: node019
       name: s11
       ports:
       - addrs:
         - addr: 142.1.0.11
         type: underlay
       role: user
-    - host: node018
+    - host: node020
       name: c12
       ports:
       - addrs:
@@ -215,7 +215,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node018
+      host: node020
       name: s12
       ports:
       - addrs:
@@ -225,7 +225,7 @@ all:
     - benchmark:
         dst: 142.1.0.14
         role: client
-      host: node019
+      host: node021
       name: c13
       ports:
       - addrs:
@@ -233,14 +233,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node019
+    - host: node021
       name: s13
       ports:
       - addrs:
         - addr: 142.1.0.13
         type: underlay
       role: user
-    - host: node020
+    - host: node022
       name: c14
       ports:
       - addrs:
@@ -250,7 +250,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node020
+      host: node022
       name: s14
       ports:
       - addrs:
@@ -260,7 +260,7 @@ all:
     - benchmark:
         dst: 142.1.0.16
         role: client
-      host: node021
+      host: node023
       name: c15
       ports:
       - addrs:
@@ -268,14 +268,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node021
+    - host: node023
       name: s15
       ports:
       - addrs:
         - addr: 142.1.0.15
         type: underlay
       role: user
-    - host: node022
+    - host: node024
       name: c16
       ports:
       - addrs:
@@ -285,7 +285,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node022
+      host: node024
       name: s16
       ports:
       - addrs:
@@ -295,7 +295,7 @@ all:
     - benchmark:
         dst: 142.1.0.18
         role: client
-      host: node023
+      host: node025
       name: c17
       ports:
       - addrs:
@@ -303,14 +303,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node023
+    - host: node025
       name: s17
       ports:
       - addrs:
         - addr: 142.1.0.17
         type: underlay
       role: user
-    - host: node024
+    - host: node026
       name: c18
       ports:
       - addrs:
@@ -320,7 +320,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node024
+      host: node026
       name: s18
       ports:
       - addrs:
@@ -330,7 +330,7 @@ all:
     - benchmark:
         dst: 142.1.0.20
         role: client
-      host: node025
+      host: node027
       name: c19
       ports:
       - addrs:
@@ -338,14 +338,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node025
+    - host: node027
       name: s19
       ports:
       - addrs:
         - addr: 142.1.0.19
         type: underlay
       role: user
-    - host: node026
+    - host: node028
       name: c20
       ports:
       - addrs:
@@ -355,7 +355,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node026
+      host: node028
       name: s20
       ports:
       - addrs:
@@ -365,7 +365,7 @@ all:
     - benchmark:
         dst: 142.1.0.22
         role: client
-      host: node027
+      host: node029
       name: c21
       ports:
       - addrs:
@@ -373,14 +373,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node027
+    - host: node029
       name: s21
       ports:
       - addrs:
         - addr: 142.1.0.21
         type: underlay
       role: user
-    - host: node028
+    - host: node030
       name: c22
       ports:
       - addrs:
@@ -390,7 +390,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node028
+      host: node030
       name: s22
       ports:
       - addrs:
@@ -400,7 +400,7 @@ all:
     - benchmark:
         dst: 142.1.0.24
         role: client
-      host: node029
+      host: node031
       name: c23
       ports:
       - addrs:
@@ -408,14 +408,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node029
+    - host: node031
       name: s23
       ports:
       - addrs:
         - addr: 142.1.0.23
         type: underlay
       role: user
-    - host: node030
+    - host: node032
       name: c24
       ports:
       - addrs:
@@ -425,7 +425,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node030
+      host: node032
       name: s24
       ports:
       - addrs:
@@ -435,7 +435,7 @@ all:
     - benchmark:
         dst: 142.1.0.26
         role: client
-      host: node031
+      host: node033
       name: c25
       ports:
       - addrs:
@@ -443,14 +443,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node031
+    - host: node033
       name: s25
       ports:
       - addrs:
         - addr: 142.1.0.25
         type: underlay
       role: user
-    - host: node032
+    - host: node034
       name: c26
       ports:
       - addrs:
@@ -460,7 +460,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node032
+      host: node034
       name: s26
       ports:
       - addrs:
@@ -470,7 +470,7 @@ all:
     - benchmark:
         dst: 142.1.0.28
         role: client
-      host: node033
+      host: node035
       name: c27
       ports:
       - addrs:
@@ -478,14 +478,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node033
+    - host: node035
       name: s27
       ports:
       - addrs:
         - addr: 142.1.0.27
         type: underlay
       role: user
-    - host: node034
+    - host: node036
       name: c28
       ports:
       - addrs:
@@ -495,7 +495,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node034
+      host: node036
       name: s28
       ports:
       - addrs:
@@ -505,7 +505,7 @@ all:
     - benchmark:
         dst: 142.1.0.30
         role: client
-      host: node035
+      host: node037
       name: c29
       ports:
       - addrs:
@@ -513,14 +513,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node035
+    - host: node037
       name: s29
       ports:
       - addrs:
         - addr: 142.1.0.29
         type: underlay
       role: user
-    - host: node036
+    - host: node038
       name: c30
       ports:
       - addrs:
@@ -530,7 +530,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node036
+      host: node038
       name: s30
       ports:
       - addrs:
@@ -540,7 +540,7 @@ all:
     - benchmark:
         dst: 142.1.0.32
         role: client
-      host: node037
+      host: node039
       name: c31
       ports:
       - addrs:
@@ -548,14 +548,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node037
+    - host: node039
       name: s31
       ports:
       - addrs:
         - addr: 142.1.0.31
         type: underlay
       role: user
-    - host: node038
+    - host: node040
       name: c32
       ports:
       - addrs:
@@ -565,7 +565,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node038
+      host: node040
       name: s32
       ports:
       - addrs:
@@ -575,7 +575,7 @@ all:
     - benchmark:
         dst: 142.1.0.34
         role: client
-      host: node039
+      host: node041
       name: c33
       ports:
       - addrs:
@@ -583,14 +583,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node039
+    - host: node041
       name: s33
       ports:
       - addrs:
         - addr: 142.1.0.33
         type: underlay
       role: user
-    - host: node040
+    - host: node042
       name: c34
       ports:
       - addrs:
@@ -600,7 +600,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node040
+      host: node042
       name: s34
       ports:
       - addrs:
@@ -610,7 +610,7 @@ all:
     - benchmark:
         dst: 142.1.0.36
         role: client
-      host: node041
+      host: node043
       name: c35
       ports:
       - addrs:
@@ -618,14 +618,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node041
+    - host: node043
       name: s35
       ports:
       - addrs:
         - addr: 142.1.0.35
         type: underlay
       role: user
-    - host: node042
+    - host: node044
       name: c36
       ports:
       - addrs:
@@ -635,7 +635,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node042
+      host: node044
       name: s36
       ports:
       - addrs:
@@ -645,7 +645,7 @@ all:
     - benchmark:
         dst: 142.1.0.38
         role: client
-      host: node043
+      host: node045
       name: c37
       ports:
       - addrs:
@@ -653,14 +653,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node043
+    - host: node045
       name: s37
       ports:
       - addrs:
         - addr: 142.1.0.37
         type: underlay
       role: user
-    - host: node044
+    - host: node046
       name: c38
       ports:
       - addrs:
@@ -670,7 +670,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node044
+      host: node046
       name: s38
       ports:
       - addrs:
@@ -680,7 +680,7 @@ all:
     - benchmark:
         dst: 142.1.0.40
         role: client
-      host: node045
+      host: node047
       name: c39
       ports:
       - addrs:
@@ -688,14 +688,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node045
+    - host: node047
       name: s39
       ports:
       - addrs:
         - addr: 142.1.0.39
         type: underlay
       role: user
-    - host: node046
+    - host: node048
       name: c40
       ports:
       - addrs:
@@ -705,14 +705,14 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node046
+      host: node048
       name: s40
       ports:
       - addrs:
         - addr: 142.1.0.40
         type: underlay
       role: benchmarkServer
-    - host: node047
+    - host: node050
       mfpNodeIdx: 1
       name: l1
       nodeIdx: 1
@@ -721,7 +721,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node048
+    - host: node051
       mfpNodeIdx: 2
       name: l2
       nodeIdx: 2
@@ -730,7 +730,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node050
+    - host: node052
       mfpNodeIdx: 3
       name: l3
       nodeIdx: 3
@@ -739,7 +739,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node051
+    - host: node053
       mfpNodeIdx: 4
       name: l4
       nodeIdx: 4
@@ -748,7 +748,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node052
+    - host: node054
       mfpNodeIdx: 5
       name: l5
       nodeIdx: 5
@@ -757,7 +757,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node053
+    - host: node055
       mfpNodeIdx: 6
       name: l6
       nodeIdx: 6
@@ -766,7 +766,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node054
+    - host: node056
       mfpNodeIdx: 7
       name: l7
       nodeIdx: 7
@@ -775,7 +775,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node055
+    - host: node057
       mfpNodeIdx: 8
       name: l8
       nodeIdx: 8
@@ -784,7 +784,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node056
+    - host: node058
       mfpNodeIdx: 9
       name: l9
       nodeIdx: 9
@@ -793,71 +793,8 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node057
-      mfpNodeIdx: 10
-      name: l10
-      nodeIdx: 10
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: lnode
-    - host: node058
-      mfpNodeIdx: 11
-      name: l11
-      nodeIdx: 11
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: lnode
     - host: node059
-      mfpNodeIdx: 12
-      name: l12
-      nodeIdx: 12
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: lnode
-    - host: node060
-      mfpNodeIdx: 13
-      name: l13
-      nodeIdx: 13
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: lnode
-    - host: node061
-      mfpNodeIdx: 14
-      name: l14
-      nodeIdx: 14
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: lnode
-    - host: node062
-      mfpNodeIdx: 15
-      name: l15
-      nodeIdx: 15
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: lnode
-    - host: node063
-      mfpNodeIdx: 16
-      name: l16
-      nodeIdx: 16
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: lnode
-    - host: node064
-      mfpNodeIdx: 17
+      mfpNodeIdx: 10
       name: n1
       nodeIdx: 1
       ports:
@@ -865,8 +802,8 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node065
-      mfpNodeIdx: 18
+    - host: node060
+      mfpNodeIdx: 11
       name: n2
       nodeIdx: 2
       ports:
@@ -874,8 +811,8 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node066
-      mfpNodeIdx: 19
+    - host: node061
+      mfpNodeIdx: 12
       name: n3
       nodeIdx: 3
       ports:
@@ -883,8 +820,8 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node067
-      mfpNodeIdx: 20
+    - host: node062
+      mfpNodeIdx: 13
       name: n4
       nodeIdx: 4
       ports:
@@ -892,8 +829,8 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node068
-      mfpNodeIdx: 21
+    - host: node063
+      mfpNodeIdx: 14
       name: n5
       nodeIdx: 5
       ports:
@@ -901,8 +838,8 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node069
-      mfpNodeIdx: 22
+    - host: node064
+      mfpNodeIdx: 15
       name: n6
       nodeIdx: 6
       ports:
@@ -910,8 +847,8 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node070
-      mfpNodeIdx: 23
+    - host: node065
+      mfpNodeIdx: 16
       name: n7
       nodeIdx: 7
       ports:
@@ -919,8 +856,8 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node071
-      mfpNodeIdx: 24
+    - host: node066
+      mfpNodeIdx: 17
       name: n8
       nodeIdx: 8
       ports:
@@ -928,73 +865,10 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node072
-      mfpNodeIdx: 25
+    - host: node067
+      mfpNodeIdx: 18
       name: n9
       nodeIdx: 9
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: nnode
-    - host: node073
-      mfpNodeIdx: 26
-      name: n10
-      nodeIdx: 10
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: nnode
-    - host: node074
-      mfpNodeIdx: 27
-      name: n11
-      nodeIdx: 11
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: nnode
-    - host: node075
-      mfpNodeIdx: 28
-      name: n12
-      nodeIdx: 12
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: nnode
-    - host: node076
-      mfpNodeIdx: 29
-      name: n13
-      nodeIdx: 13
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: nnode
-    - host: node077
-      mfpNodeIdx: 30
-      name: n14
-      nodeIdx: 14
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: nnode
-    - host: node078
-      mfpNodeIdx: 31
-      name: n15
-      nodeIdx: 15
-      ports:
-      - addrs: []
-        bgp: {}
-        type: underlay
-      role: nnode
-    - host: node079
-      mfpNodeIdx: 32
-      name: n16
-      nodeIdx: 16
       ports:
       - addrs: []
         bgp: {}
@@ -1013,82 +887,6 @@ all:
     rxRingEntries: 8160
 dplaneNode:
   hosts:
-    node006:
-      ansible_host: w006
-      asNumber: 4200000000
-      dataplaneInterfaces:
-      - addrs:
-        - addr: 2001:ff00:1::6
-          plen: 64
-        - addr: 10.255.1.6
-          plen: 24
-        name: eno12399
-        vrf: vrf-control1
-      - addrs:
-        - addr: 2001:ff00:2::6
-          plen: 64
-        - addr: 10.255.2.6
-          plen: 24
-        name: eno12409
-        vrf: vrf-control2
-      - addrs:
-        - addr: 2001:ff00:3::6
-          plen: 64
-        - addr: 10.255.3.6
-          plen: 24
-        name: ens2f0
-        vrf: vrf-control3
-      - addrs:
-        - addr: 2001:ff00:4::6
-          plen: 64
-        - addr: 10.255.4.6
-          plen: 24
-        name: ens2f1
-        vrf: vrf-control4
-      kernelVersion: 5.15.0-82
-      mgmt_addr: 172.16.3.6
-      routerId: 10.255.0.6
-      srv6_locators:
-      - prefix: 2001:a:6::/48
-        token: 2001:a:6
-    node007:
-      ansible_host: w007
-      asNumber: 4200000000
-      dataplaneInterfaces:
-      - addrs:
-        - addr: 2001:ff00:1::7
-          plen: 64
-        - addr: 10.255.1.7
-          plen: 24
-        name: eno12399
-        vrf: vrf-control1
-      - addrs:
-        - addr: 2001:ff00:2::7
-          plen: 64
-        - addr: 10.255.2.7
-          plen: 24
-        name: eno12409
-        vrf: vrf-control2
-      - addrs:
-        - addr: 2001:ff00:3::7
-          plen: 64
-        - addr: 10.255.3.7
-          plen: 24
-        name: ens2f0
-        vrf: vrf-control3
-      - addrs:
-        - addr: 2001:ff00:4::7
-          plen: 64
-        - addr: 10.255.4.7
-          plen: 24
-        name: ens2f1
-        vrf: vrf-control4
-      kernelVersion: 5.15.0-82
-      mgmt_addr: 172.16.3.7
-      routerId: 10.255.0.7
-      srv6_locators:
-      - prefix: 2001:a:7::/48
-        token: 2001:a:7
     node008:
       ansible_host: w008
       asNumber: 4200000000
