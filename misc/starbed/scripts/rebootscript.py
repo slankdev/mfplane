@@ -40,6 +40,7 @@ hosts = []
 for item in ansibeResult["results"][0]["items"]:
     if item["type"] != "ok":
         hosts.append(item["host_name"])
+hosts.sort()
 for host in hosts:
     nn = infraData[host]["node"]["nodeName"]
     print(f"starbedctl resource power off -n {nn}")
