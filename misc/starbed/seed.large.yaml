@@ -113,7 +113,7 @@ hosts:
     - name: node020
     - name: node021
     - name: node022
-    - name: node023
+    # - name: node023
     - name: node024
     - name: node025
     - name: node026
@@ -123,24 +123,24 @@ hosts:
     - name: node030
     - name: node031
     - name: node032
-    - name: node033
+    # - name: node033
     - name: node034
     - name: node035
     - name: node036
-    - name: node037
+    # - name: node037
     - name: node038
     - name: node039
     - name: node040
     - name: node041
     - name: node042
-    - name: node043
+    # - name: node043
     - name: node044
     - name: node045
     - name: node046
     - name: node047
     - name: node048
     # - name: node049 okashii.... login dekinai
-    - name: node050
+    # - name: node050
     - name: node051
     - name: node052
     - name: node053

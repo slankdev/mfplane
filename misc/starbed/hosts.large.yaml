@@ -295,7 +295,7 @@ all:
     - benchmark:
         dst: 142.1.0.18
         role: client
-      host: node023
+      host: node024
       name: c17
       ports:
       - addrs:
@@ -303,14 +303,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node023
+    - host: node024
       name: s17
       ports:
       - addrs:
         - addr: 142.1.0.17
         type: underlay
       role: user
-    - host: node024
+    - host: node025
       name: c18
       ports:
       - addrs:
@@ -320,7 +320,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node024
+      host: node025
       name: s18
       ports:
       - addrs:
@@ -330,7 +330,7 @@ all:
     - benchmark:
         dst: 142.1.0.20
         role: client
-      host: node025
+      host: node026
       name: c19
       ports:
       - addrs:
@@ -338,14 +338,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node025
+    - host: node026
       name: s19
       ports:
       - addrs:
         - addr: 142.1.0.19
         type: underlay
       role: user
-    - host: node026
+    - host: node027
       name: c20
       ports:
       - addrs:
@@ -355,7 +355,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node026
+      host: node027
       name: s20
       ports:
       - addrs:
@@ -365,7 +365,7 @@ all:
     - benchmark:
         dst: 142.1.0.22
         role: client
-      host: node027
+      host: node028
       name: c21
       ports:
       - addrs:
@@ -373,14 +373,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node027
+    - host: node028
       name: s21
       ports:
       - addrs:
         - addr: 142.1.0.21
         type: underlay
       role: user
-    - host: node028
+    - host: node029
       name: c22
       ports:
       - addrs:
@@ -390,7 +390,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node028
+      host: node029
       name: s22
       ports:
       - addrs:
@@ -400,7 +400,7 @@ all:
     - benchmark:
         dst: 142.1.0.24
         role: client
-      host: node029
+      host: node030
       name: c23
       ports:
       - addrs:
@@ -408,14 +408,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node029
+    - host: node030
       name: s23
       ports:
       - addrs:
         - addr: 142.1.0.23
         type: underlay
       role: user
-    - host: node030
+    - host: node031
       name: c24
       ports:
       - addrs:
@@ -425,7 +425,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node030
+      host: node031
       name: s24
       ports:
       - addrs:
@@ -435,7 +435,7 @@ all:
     - benchmark:
         dst: 142.1.0.26
         role: client
-      host: node031
+      host: node032
       name: c25
       ports:
       - addrs:
@@ -443,14 +443,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node031
+    - host: node032
       name: s25
       ports:
       - addrs:
         - addr: 142.1.0.25
         type: underlay
       role: user
-    - host: node032
+    - host: node034
       name: c26
       ports:
       - addrs:
@@ -460,7 +460,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node032
+      host: node034
       name: s26
       ports:
       - addrs:
@@ -470,7 +470,7 @@ all:
     - benchmark:
         dst: 142.1.0.28
         role: client
-      host: node033
+      host: node035
       name: c27
       ports:
       - addrs:
@@ -478,14 +478,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node033
+    - host: node035
       name: s27
       ports:
       - addrs:
         - addr: 142.1.0.27
         type: underlay
       role: user
-    - host: node034
+    - host: node036
       name: c28
       ports:
       - addrs:
@@ -495,7 +495,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node034
+      host: node036
       name: s28
       ports:
       - addrs:
@@ -505,7 +505,7 @@ all:
     - benchmark:
         dst: 142.1.0.30
         role: client
-      host: node035
+      host: node038
       name: c29
       ports:
       - addrs:
@@ -513,14 +513,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node035
+    - host: node038
       name: s29
       ports:
       - addrs:
         - addr: 142.1.0.29
         type: underlay
       role: user
-    - host: node036
+    - host: node039
       name: c30
       ports:
       - addrs:
@@ -530,7 +530,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node036
+      host: node039
       name: s30
       ports:
       - addrs:
@@ -540,7 +540,7 @@ all:
     - benchmark:
         dst: 142.1.0.32
         role: client
-      host: node037
+      host: node040
       name: c31
       ports:
       - addrs:
@@ -548,14 +548,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node037
+    - host: node040
       name: s31
       ports:
       - addrs:
         - addr: 142.1.0.31
         type: underlay
       role: user
-    - host: node038
+    - host: node041
       name: c32
       ports:
       - addrs:
@@ -565,7 +565,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node038
+      host: node041
       name: s32
       ports:
       - addrs:
@@ -575,7 +575,7 @@ all:
     - benchmark:
         dst: 142.1.0.34
         role: client
-      host: node039
+      host: node042
       name: c33
       ports:
       - addrs:
@@ -583,14 +583,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node039
+    - host: node042
       name: s33
       ports:
       - addrs:
         - addr: 142.1.0.33
         type: underlay
       role: user
-    - host: node040
+    - host: node044
       name: c34
       ports:
       - addrs:
@@ -600,7 +600,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node040
+      host: node044
       name: s34
       ports:
       - addrs:
@@ -610,7 +610,7 @@ all:
     - benchmark:
         dst: 142.1.0.36
         role: client
-      host: node041
+      host: node045
       name: c35
       ports:
       - addrs:
@@ -618,14 +618,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node041
+    - host: node045
       name: s35
       ports:
       - addrs:
         - addr: 142.1.0.35
         type: underlay
       role: user
-    - host: node042
+    - host: node046
       name: c36
       ports:
       - addrs:
@@ -635,7 +635,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node042
+      host: node046
       name: s36
       ports:
       - addrs:
@@ -645,7 +645,7 @@ all:
     - benchmark:
         dst: 142.1.0.38
         role: client
-      host: node043
+      host: node047
       name: c37
       ports:
       - addrs:
@@ -653,14 +653,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node043
+    - host: node047
       name: s37
       ports:
       - addrs:
         - addr: 142.1.0.37
         type: underlay
       role: user
-    - host: node044
+    - host: node048
       name: c38
       ports:
       - addrs:
@@ -670,7 +670,7 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node044
+      host: node048
       name: s38
       ports:
       - addrs:
@@ -680,7 +680,7 @@ all:
     - benchmark:
         dst: 142.1.0.40
         role: client
-      host: node045
+      host: node051
       name: c39
       ports:
       - addrs:
@@ -688,14 +688,14 @@ all:
         network: net1
         type: overlay
       role: benchmarkClient
-    - host: node045
+    - host: node051
       name: s39
       ports:
       - addrs:
         - addr: 142.1.0.39
         type: underlay
       role: user
-    - host: node046
+    - host: node052
       name: c40
       ports:
       - addrs:
@@ -705,14 +705,14 @@ all:
       role: user
     - benchmark:
         role: server
-      host: node046
+      host: node052
       name: s40
       ports:
       - addrs:
         - addr: 142.1.0.40
         type: underlay
       role: benchmarkServer
-    - host: node047
+    - host: node053
       mfpNodeIdx: 1
       name: l1
       nodeIdx: 1
@@ -721,7 +721,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node048
+    - host: node054
       mfpNodeIdx: 2
       name: l2
       nodeIdx: 2
@@ -730,7 +730,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node050
+    - host: node055
       mfpNodeIdx: 3
       name: l3
       nodeIdx: 3
@@ -739,7 +739,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node051
+    - host: node056
       mfpNodeIdx: 4
       name: l4
       nodeIdx: 4
@@ -748,7 +748,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node052
+    - host: node057
       mfpNodeIdx: 5
       name: l5
       nodeIdx: 5
@@ -757,7 +757,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node053
+    - host: node058
       mfpNodeIdx: 6
       name: l6
       nodeIdx: 6
@@ -766,7 +766,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node054
+    - host: node059
       mfpNodeIdx: 7
       name: l7
       nodeIdx: 7
@@ -775,7 +775,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node055
+    - host: node060
       mfpNodeIdx: 8
       name: l8
       nodeIdx: 8
@@ -784,7 +784,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node056
+    - host: node061
       mfpNodeIdx: 9
       name: l9
       nodeIdx: 9
@@ -793,7 +793,7 @@ all:
         bgp: {}
         type: underlay
       role: lnode
-    - host: node057
+    - host: node062
       mfpNodeIdx: 10
       name: n1
       nodeIdx: 1
@@ -802,7 +802,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node058
+    - host: node063
       mfpNodeIdx: 11
       name: n2
       nodeIdx: 2
@@ -811,7 +811,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node059
+    - host: node064
       mfpNodeIdx: 12
       name: n3
       nodeIdx: 3
@@ -820,7 +820,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node060
+    - host: node065
       mfpNodeIdx: 13
       name: n4
       nodeIdx: 4
@@ -829,7 +829,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node061
+    - host: node066
       mfpNodeIdx: 14
       name: n5
       nodeIdx: 5
@@ -838,7 +838,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node062
+    - host: node067
       mfpNodeIdx: 15
       name: n6
       nodeIdx: 6
@@ -847,7 +847,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node063
+    - host: node068
       mfpNodeIdx: 16
       name: n7
       nodeIdx: 7
@@ -856,7 +856,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node064
+    - host: node069
       mfpNodeIdx: 17
       name: n8
       nodeIdx: 8
@@ -865,7 +865,7 @@ all:
         bgp: {}
         type: underlay
       role: nnode
-    - host: node065
+    - host: node070
       mfpNodeIdx: 18
       name: n9
       nodeIdx: 9
@@ -1495,44 +1495,6 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:22::/48
         token: 2001:a:22
-    node023:
-      ansible_host: w023
-      asNumber: 4200000000
-      dataplaneInterfaces:
-      - addrs:
-        - addr: 2001:ff00:1::23
-          plen: 64
-        - addr: 10.255.1.23
-          plen: 24
-        name: eno12399
-        vrf: vrf-control1
-      - addrs:
-        - addr: 2001:ff00:2::23
-          plen: 64
-        - addr: 10.255.2.23
-          plen: 24
-        name: eno12409
-        vrf: vrf-control2
-      - addrs:
-        - addr: 2001:ff00:3::23
-          plen: 64
-        - addr: 10.255.3.23
-          plen: 24
-        name: ens2f0
-        vrf: vrf-control3
-      - addrs:
-        - addr: 2001:ff00:4::23
-          plen: 64
-        - addr: 10.255.4.23
-          plen: 24
-        name: ens2f1
-        vrf: vrf-control4
-      kernelVersion: 5.15.0-82
-      mgmt_addr: 172.16.3.23
-      routerId: 10.255.0.23
-      srv6_locators:
-      - prefix: 2001:a:23::/48
-        token: 2001:a:23
     node024:
       ansible_host: w024
       asNumber: 4200000000
@@ -1875,44 +1837,6 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:32::/48
         token: 2001:a:32
-    node033:
-      ansible_host: w033
-      asNumber: 4200000000
-      dataplaneInterfaces:
-      - addrs:
-        - addr: 2001:ff00:1::33
-          plen: 64
-        - addr: 10.255.1.33
-          plen: 24
-        name: eno12399
-        vrf: vrf-control1
-      - addrs:
-        - addr: 2001:ff00:2::33
-          plen: 64
-        - addr: 10.255.2.33
-          plen: 24
-        name: eno12409
-        vrf: vrf-control2
-      - addrs:
-        - addr: 2001:ff00:3::33
-          plen: 64
-        - addr: 10.255.3.33
-          plen: 24
-        name: ens2f0
-        vrf: vrf-control3
-      - addrs:
-        - addr: 2001:ff00:4::33
-          plen: 64
-        - addr: 10.255.4.33
-          plen: 24
-        name: ens2f1
-        vrf: vrf-control4
-      kernelVersion: 5.15.0-82
-      mgmt_addr: 172.16.3.33
-      routerId: 10.255.0.33
-      srv6_locators:
-      - prefix: 2001:a:33::/48
-        token: 2001:a:33
     node034:
       ansible_host: w034
       asNumber: 4200000000
@@ -2027,44 +1951,6 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:36::/48
         token: 2001:a:36
-    node037:
-      ansible_host: w037
-      asNumber: 4200000000
-      dataplaneInterfaces:
-      - addrs:
-        - addr: 2001:ff00:1::37
-          plen: 64
-        - addr: 10.255.1.37
-          plen: 24
-        name: eno12399
-        vrf: vrf-control1
-      - addrs:
-        - addr: 2001:ff00:2::37
-          plen: 64
-        - addr: 10.255.2.37
-          plen: 24
-        name: eno12409
-        vrf: vrf-control2
-      - addrs:
-        - addr: 2001:ff00:3::37
-          plen: 64
-        - addr: 10.255.3.37
-          plen: 24
-        name: ens2f0
-        vrf: vrf-control3
-      - addrs:
-        - addr: 2001:ff00:4::37
-          plen: 64
-        - addr: 10.255.4.37
-          plen: 24
-        name: ens2f1
-        vrf: vrf-control4
-      kernelVersion: 5.15.0-82
-      mgmt_addr: 172.16.3.37
-      routerId: 10.255.0.37
-      srv6_locators:
-      - prefix: 2001:a:37::/48
-        token: 2001:a:37
     node038:
       ansible_host: w038
       asNumber: 4200000000
@@ -2255,44 +2141,6 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:42::/48
         token: 2001:a:42
-    node043:
-      ansible_host: w043
-      asNumber: 4200000000
-      dataplaneInterfaces:
-      - addrs:
-        - addr: 2001:ff00:1::43
-          plen: 64
-        - addr: 10.255.1.43
-          plen: 24
-        name: eno12399
-        vrf: vrf-control1
-      - addrs:
-        - addr: 2001:ff00:2::43
-          plen: 64
-        - addr: 10.255.2.43
-          plen: 24
-        name: eno12409
-        vrf: vrf-control2
-      - addrs:
-        - addr: 2001:ff00:3::43
-          plen: 64
-        - addr: 10.255.3.43
-          plen: 24
-        name: ens2f0
-        vrf: vrf-control3
-      - addrs:
-        - addr: 2001:ff00:4::43
-          plen: 64
-        - addr: 10.255.4.43
-          plen: 24
-        name: ens2f1
-        vrf: vrf-control4
-      kernelVersion: 5.15.0-82
-      mgmt_addr: 172.16.3.43
-      routerId: 10.255.0.43
-      srv6_locators:
-      - prefix: 2001:a:43::/48
-        token: 2001:a:43
     node044:
       ansible_host: w044
       asNumber: 4200000000
@@ -2483,44 +2331,6 @@ dplaneNode:
       srv6_locators:
       - prefix: 2001:a:48::/48
         token: 2001:a:48
-    node050:
-      ansible_host: w102
-      asNumber: 4200000000
-      dataplaneInterfaces:
-      - addrs:
-        - addr: 2001:ff00:1::50
-          plen: 64
-        - addr: 10.255.1.50
-          plen: 24
-        name: eno12399
-        vrf: vrf-control1
-      - addrs:
-        - addr: 2001:ff00:2::50
-          plen: 64
-        - addr: 10.255.2.50
-          plen: 24
-        name: eno12409
-        vrf: vrf-control2
-      - addrs:
-        - addr: 2001:ff00:3::50
-          plen: 64
-        - addr: 10.255.3.50
-          plen: 24
-        name: ens2f0
-        vrf: vrf-control3
-      - addrs:
-        - addr: 2001:ff00:4::50
-          plen: 64
-        - addr: 10.255.4.50
-          plen: 24
-        name: ens2f1
-        vrf: vrf-control4
-      kernelVersion: 5.15.0-82
-      mgmt_addr: 172.16.3.102
-      routerId: 10.255.0.50
-      srv6_locators:
-      - prefix: 2001:a:50::/48
-        token: 2001:a:50
     node051:
       ansible_host: w103
       asNumber: 4200000000
