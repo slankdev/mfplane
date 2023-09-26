@@ -9,7 +9,7 @@ all:
       message_size_bytes: 100
       num_concurrent_session: 100
       report_interval_seconds: 1
-      time_seconds: 100000
+      time_seconds: 100
       title: test
     containers:
     - benchmark:
