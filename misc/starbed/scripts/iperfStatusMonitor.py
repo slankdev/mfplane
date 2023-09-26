@@ -75,11 +75,11 @@ while True:
             if "benchmark" in c and \
             "role" in c["benchmark"] and \
             c["benchmark"]["role"] == "server":
-                serverCandidates[c["name"]] = True
-        for key in data.keys():
-            serverCandidates.pop(key)
-        for key in serverCandidates:
-            print(f"NotSummarized: {key}")
+                serverCandidates[c["name"]] = c
+        for k in data.keys():
+            serverCandidates.pop(k)
+        for k in serverCandidates:
+            print(f"NotSummarized: {k} {serverCandidates[k]['host']}")
         #pprint.pprint(serverCandidates)
 
     # Summarization
