@@ -4,20 +4,6 @@
   tags: [container]
   gather_facts: no
   tasks:
-  - name: delete docker container
-    register: tmp
-    changed_when: "'CHANGED' in tmp.stdout"
-    shell: |
-      set -xe
-      {% for c in containers %}
-      {% if c.host == inventory_hostname %}
-      if [ $(docker inspect {{ c.name }} | jq '. | length') != "0" ]; then
-        docker rm -f {{ c.name }}
-        echo CHANGED
-      fi
-      {% endif %}
-      {% endfor %}
-
   - name: delete docker container (when '-e force=true')
     when: (force is defined)
     register: tmp
@@ -25,7 +11,8 @@
     shell: |
       set -xe
       for c in $(docker ps -a --format {%raw%}"{{.Names}}"{%endraw%}); do
-        docker rm -f $c
+        docker stop $c || true
+        docker rm $c || true
         echo CHANGED
       done
 
@@ -109,6 +96,7 @@
       kubectl -n default delete nat --all
 
   - name: cleanup all segments.mfplane.io
+    tags: deleteSeg
     shell: |
       set -xe
       for name in $(kubectl -n default get seg -o name); do

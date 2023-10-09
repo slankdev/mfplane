@@ -17,7 +17,6 @@
         {% endfor %}
 
   - name: craft hosts
-    tags: hoge
     become: true
     ansible.builtin.blockinfile:
       path: /etc/hosts
@@ -215,6 +214,7 @@
     - {name: net.ipv6.seg6_flowlabel, value: 1}
 
   - name: iptables default policy
+    tags: iptables
     changed_when: false
     shell: |
       set -xe

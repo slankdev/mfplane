@@ -3,7 +3,7 @@ items:
 - apiVersion: mfplane.mfplane.io/v1alpha1
   kind: Node
   metadata:
-    name: node008
+    name: node053
     namespace: default
   spec:
     functions:
@@ -26,11 +26,11 @@ items:
           name: anycast
           prefix: fc00:ff00::/24
       type: clb
-    hostname: node008
+    hostname: node053
 - apiVersion: mfplane.mfplane.io/v1alpha1
   kind: Node
   metadata:
-    name: node009
+    name: node054
     namespace: default
   spec:
     functions:
@@ -53,17 +53,263 @@ items:
           name: anycast
           prefix: fc00:ff00::/24
       type: clb
-    hostname: node009
+    hostname: node054
 - apiVersion: mfplane.mfplane.io/v1alpha1
   kind: Node
   metadata:
-    name: node010
+    name: node055
+    namespace: default
+  spec:
+    functions:
+    - device: eth0
+      labels:
+        lbGroup: lbGroup1
+        lbMaxBackends: '7'
+        lbMaxRules: '2'
+      mode: xdpgeneric
+      name: l3
+      netns: l3
+      segmentRoutingSrv6:
+        encapSource: fc00:0300::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0300::/24
+        - anycast: true
+          block: fc00::0
+          name: anycast
+          prefix: fc00:ff00::/24
+      type: clb
+    hostname: node055
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node056
+    namespace: default
+  spec:
+    functions:
+    - device: eth0
+      labels:
+        lbGroup: lbGroup1
+        lbMaxBackends: '7'
+        lbMaxRules: '2'
+      mode: xdpgeneric
+      name: l4
+      netns: l4
+      segmentRoutingSrv6:
+        encapSource: fc00:0400::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0400::/24
+        - anycast: true
+          block: fc00::0
+          name: anycast
+          prefix: fc00:ff00::/24
+      type: clb
+    hostname: node056
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node057
+    namespace: default
+  spec:
+    functions:
+    - device: eth0
+      labels:
+        lbGroup: lbGroup1
+        lbMaxBackends: '7'
+        lbMaxRules: '2'
+      mode: xdpgeneric
+      name: l5
+      netns: l5
+      segmentRoutingSrv6:
+        encapSource: fc00:0500::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0500::/24
+        - anycast: true
+          block: fc00::0
+          name: anycast
+          prefix: fc00:ff00::/24
+      type: clb
+    hostname: node057
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node058
+    namespace: default
+  spec:
+    functions:
+    - device: eth0
+      labels:
+        lbGroup: lbGroup1
+        lbMaxBackends: '7'
+        lbMaxRules: '2'
+      mode: xdpgeneric
+      name: l6
+      netns: l6
+      segmentRoutingSrv6:
+        encapSource: fc00:0600::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0600::/24
+        - anycast: true
+          block: fc00::0
+          name: anycast
+          prefix: fc00:ff00::/24
+      type: clb
+    hostname: node058
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node059
+    namespace: default
+  spec:
+    functions:
+    - device: eth0
+      labels:
+        lbGroup: lbGroup1
+        lbMaxBackends: '7'
+        lbMaxRules: '2'
+      mode: xdpgeneric
+      name: l7
+      netns: l7
+      segmentRoutingSrv6:
+        encapSource: fc00:0700::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0700::/24
+        - anycast: true
+          block: fc00::0
+          name: anycast
+          prefix: fc00:ff00::/24
+      type: clb
+    hostname: node059
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node060
+    namespace: default
+  spec:
+    functions:
+    - device: eth0
+      labels:
+        lbGroup: lbGroup1
+        lbMaxBackends: '7'
+        lbMaxRules: '2'
+      mode: xdpgeneric
+      name: l8
+      netns: l8
+      segmentRoutingSrv6:
+        encapSource: fc00:0800::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0800::/24
+        - anycast: true
+          block: fc00::0
+          name: anycast
+          prefix: fc00:ff00::/24
+      type: clb
+    hostname: node060
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node061
+    namespace: default
+  spec:
+    functions:
+    - device: eth0
+      labels:
+        lbGroup: lbGroup1
+        lbMaxBackends: '7'
+        lbMaxRules: '2'
+      mode: xdpgeneric
+      name: l9
+      netns: l9
+      segmentRoutingSrv6:
+        encapSource: fc00:0900::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0900::/24
+        - anycast: true
+          block: fc00::0
+          name: anycast
+          prefix: fc00:ff00::/24
+      type: clb
+    hostname: node061
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node062
     namespace: default
   spec:
     functions:
     - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
         \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
-        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n"
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
+        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
+        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n- action:\n  \
+        \  encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:10:2782::0\n\
+        \  prefix: 10.1.0.5/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:11:2782::0\n  prefix: 10.1.0.6/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:12:2782::0\n\
+        \  prefix: 10.1.0.7/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:13:2782::0\n  prefix: 10.1.0.8/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:15:2782::0\n\
+        \  prefix: 10.1.0.9/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:16:2782::0\n  prefix: 10.1.0.10/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:17:2782::0\n\
+        \  prefix: 10.1.0.11/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:18:2782::0\n  prefix: 10.1.0.12/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:19:2782::0\n\
+        \  prefix: 10.1.0.13/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:20:2782::0\n  prefix: 10.1.0.14/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:21:2782::0\n\
+        \  prefix: 10.1.0.15/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:22:2782::0\n  prefix: 10.1.0.16/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:24:2782::0\n\
+        \  prefix: 10.1.0.17/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:25:2782::0\n  prefix: 10.1.0.18/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:26:2782::0\n\
+        \  prefix: 10.1.0.19/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:27:2782::0\n  prefix: 10.1.0.20/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:28:2782::0\n\
+        \  prefix: 10.1.0.21/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:29:2782::0\n  prefix: 10.1.0.22/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:30:2782::0\n\
+        \  prefix: 10.1.0.23/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:31:2782::0\n  prefix: 10.1.0.24/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:32:2782::0\n\
+        \  prefix: 10.1.0.25/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:34:2782::0\n  prefix: 10.1.0.26/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:35:2782::0\n\
+        \  prefix: 10.1.0.27/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:36:2782::0\n  prefix: 10.1.0.28/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:38:2782::0\n\
+        \  prefix: 10.1.0.29/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:39:2782::0\n  prefix: 10.1.0.30/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:40:2782::0\n\
+        \  prefix: 10.1.0.31/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:41:2782::0\n  prefix: 10.1.0.32/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:42:2782::0\n\
+        \  prefix: 10.1.0.33/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:44:2782::0\n  prefix: 10.1.0.34/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:45:2782::0\n\
+        \  prefix: 10.1.0.35/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:46:2782::0\n  prefix: 10.1.0.36/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:47:2782::0\n\
+        \  prefix: 10.1.0.37/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:48:2782::0\n  prefix: 10.1.0.38/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:51:2782::0\n\
+        \  prefix: 10.1.0.39/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:52:2782::0\n  prefix: 10.1.0.40/32\n"
       device: eth0
       labels:
         natGroup: natGroup1
@@ -71,23 +317,80 @@ items:
       name: n1
       netns: n1
       segmentRoutingSrv6:
-        encapSource: fc00:0300::0
+        encapSource: fc00:0a00::0
         locators:
         - block: fc00::0
           name: default
-          prefix: fc00:0300::/24
+          prefix: fc00:0a00::/24
       type: nat
-    hostname: node010
+    hostname: node062
 - apiVersion: mfplane.mfplane.io/v1alpha1
   kind: Node
   metadata:
-    name: node011
+    name: node063
     namespace: default
   spec:
     functions:
     - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
         \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
-        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n"
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
+        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
+        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n- action:\n  \
+        \  encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:10:2782::0\n\
+        \  prefix: 10.1.0.5/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:11:2782::0\n  prefix: 10.1.0.6/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:12:2782::0\n\
+        \  prefix: 10.1.0.7/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:13:2782::0\n  prefix: 10.1.0.8/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:15:2782::0\n\
+        \  prefix: 10.1.0.9/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:16:2782::0\n  prefix: 10.1.0.10/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:17:2782::0\n\
+        \  prefix: 10.1.0.11/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:18:2782::0\n  prefix: 10.1.0.12/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:19:2782::0\n\
+        \  prefix: 10.1.0.13/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:20:2782::0\n  prefix: 10.1.0.14/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:21:2782::0\n\
+        \  prefix: 10.1.0.15/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:22:2782::0\n  prefix: 10.1.0.16/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:24:2782::0\n\
+        \  prefix: 10.1.0.17/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:25:2782::0\n  prefix: 10.1.0.18/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:26:2782::0\n\
+        \  prefix: 10.1.0.19/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:27:2782::0\n  prefix: 10.1.0.20/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:28:2782::0\n\
+        \  prefix: 10.1.0.21/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:29:2782::0\n  prefix: 10.1.0.22/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:30:2782::0\n\
+        \  prefix: 10.1.0.23/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:31:2782::0\n  prefix: 10.1.0.24/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:32:2782::0\n\
+        \  prefix: 10.1.0.25/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:34:2782::0\n  prefix: 10.1.0.26/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:35:2782::0\n\
+        \  prefix: 10.1.0.27/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:36:2782::0\n  prefix: 10.1.0.28/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:38:2782::0\n\
+        \  prefix: 10.1.0.29/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:39:2782::0\n  prefix: 10.1.0.30/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:40:2782::0\n\
+        \  prefix: 10.1.0.31/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:41:2782::0\n  prefix: 10.1.0.32/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:42:2782::0\n\
+        \  prefix: 10.1.0.33/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:44:2782::0\n  prefix: 10.1.0.34/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:45:2782::0\n\
+        \  prefix: 10.1.0.35/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:46:2782::0\n  prefix: 10.1.0.36/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:47:2782::0\n\
+        \  prefix: 10.1.0.37/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:48:2782::0\n  prefix: 10.1.0.38/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:51:2782::0\n\
+        \  prefix: 10.1.0.39/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:52:2782::0\n  prefix: 10.1.0.40/32\n"
       device: eth0
       labels:
         natGroup: natGroup1
@@ -95,13 +398,580 @@ items:
       name: n2
       netns: n2
       segmentRoutingSrv6:
-        encapSource: fc00:0400::0
+        encapSource: fc00:0b00::0
         locators:
         - block: fc00::0
           name: default
-          prefix: fc00:0400::/24
+          prefix: fc00:0b00::/24
       type: nat
-    hostname: node011
+    hostname: node063
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node064
+    namespace: default
+  spec:
+    functions:
+    - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
+        \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
+        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
+        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n- action:\n  \
+        \  encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:10:2782::0\n\
+        \  prefix: 10.1.0.5/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:11:2782::0\n  prefix: 10.1.0.6/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:12:2782::0\n\
+        \  prefix: 10.1.0.7/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:13:2782::0\n  prefix: 10.1.0.8/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:15:2782::0\n\
+        \  prefix: 10.1.0.9/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:16:2782::0\n  prefix: 10.1.0.10/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:17:2782::0\n\
+        \  prefix: 10.1.0.11/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:18:2782::0\n  prefix: 10.1.0.12/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:19:2782::0\n\
+        \  prefix: 10.1.0.13/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:20:2782::0\n  prefix: 10.1.0.14/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:21:2782::0\n\
+        \  prefix: 10.1.0.15/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:22:2782::0\n  prefix: 10.1.0.16/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:24:2782::0\n\
+        \  prefix: 10.1.0.17/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:25:2782::0\n  prefix: 10.1.0.18/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:26:2782::0\n\
+        \  prefix: 10.1.0.19/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:27:2782::0\n  prefix: 10.1.0.20/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:28:2782::0\n\
+        \  prefix: 10.1.0.21/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:29:2782::0\n  prefix: 10.1.0.22/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:30:2782::0\n\
+        \  prefix: 10.1.0.23/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:31:2782::0\n  prefix: 10.1.0.24/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:32:2782::0\n\
+        \  prefix: 10.1.0.25/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:34:2782::0\n  prefix: 10.1.0.26/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:35:2782::0\n\
+        \  prefix: 10.1.0.27/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:36:2782::0\n  prefix: 10.1.0.28/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:38:2782::0\n\
+        \  prefix: 10.1.0.29/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:39:2782::0\n  prefix: 10.1.0.30/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:40:2782::0\n\
+        \  prefix: 10.1.0.31/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:41:2782::0\n  prefix: 10.1.0.32/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:42:2782::0\n\
+        \  prefix: 10.1.0.33/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:44:2782::0\n  prefix: 10.1.0.34/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:45:2782::0\n\
+        \  prefix: 10.1.0.35/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:46:2782::0\n  prefix: 10.1.0.36/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:47:2782::0\n\
+        \  prefix: 10.1.0.37/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:48:2782::0\n  prefix: 10.1.0.38/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:51:2782::0\n\
+        \  prefix: 10.1.0.39/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:52:2782::0\n  prefix: 10.1.0.40/32\n"
+      device: eth0
+      labels:
+        natGroup: natGroup1
+      mode: xdpgeneric
+      name: n3
+      netns: n3
+      segmentRoutingSrv6:
+        encapSource: fc00:0c00::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0c00::/24
+      type: nat
+    hostname: node064
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node065
+    namespace: default
+  spec:
+    functions:
+    - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
+        \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
+        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
+        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n- action:\n  \
+        \  encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:10:2782::0\n\
+        \  prefix: 10.1.0.5/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:11:2782::0\n  prefix: 10.1.0.6/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:12:2782::0\n\
+        \  prefix: 10.1.0.7/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:13:2782::0\n  prefix: 10.1.0.8/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:15:2782::0\n\
+        \  prefix: 10.1.0.9/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:16:2782::0\n  prefix: 10.1.0.10/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:17:2782::0\n\
+        \  prefix: 10.1.0.11/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:18:2782::0\n  prefix: 10.1.0.12/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:19:2782::0\n\
+        \  prefix: 10.1.0.13/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:20:2782::0\n  prefix: 10.1.0.14/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:21:2782::0\n\
+        \  prefix: 10.1.0.15/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:22:2782::0\n  prefix: 10.1.0.16/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:24:2782::0\n\
+        \  prefix: 10.1.0.17/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:25:2782::0\n  prefix: 10.1.0.18/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:26:2782::0\n\
+        \  prefix: 10.1.0.19/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:27:2782::0\n  prefix: 10.1.0.20/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:28:2782::0\n\
+        \  prefix: 10.1.0.21/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:29:2782::0\n  prefix: 10.1.0.22/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:30:2782::0\n\
+        \  prefix: 10.1.0.23/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:31:2782::0\n  prefix: 10.1.0.24/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:32:2782::0\n\
+        \  prefix: 10.1.0.25/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:34:2782::0\n  prefix: 10.1.0.26/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:35:2782::0\n\
+        \  prefix: 10.1.0.27/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:36:2782::0\n  prefix: 10.1.0.28/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:38:2782::0\n\
+        \  prefix: 10.1.0.29/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:39:2782::0\n  prefix: 10.1.0.30/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:40:2782::0\n\
+        \  prefix: 10.1.0.31/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:41:2782::0\n  prefix: 10.1.0.32/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:42:2782::0\n\
+        \  prefix: 10.1.0.33/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:44:2782::0\n  prefix: 10.1.0.34/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:45:2782::0\n\
+        \  prefix: 10.1.0.35/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:46:2782::0\n  prefix: 10.1.0.36/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:47:2782::0\n\
+        \  prefix: 10.1.0.37/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:48:2782::0\n  prefix: 10.1.0.38/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:51:2782::0\n\
+        \  prefix: 10.1.0.39/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:52:2782::0\n  prefix: 10.1.0.40/32\n"
+      device: eth0
+      labels:
+        natGroup: natGroup1
+      mode: xdpgeneric
+      name: n4
+      netns: n4
+      segmentRoutingSrv6:
+        encapSource: fc00:0d00::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0d00::/24
+      type: nat
+    hostname: node065
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node066
+    namespace: default
+  spec:
+    functions:
+    - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
+        \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
+        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
+        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n- action:\n  \
+        \  encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:10:2782::0\n\
+        \  prefix: 10.1.0.5/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:11:2782::0\n  prefix: 10.1.0.6/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:12:2782::0\n\
+        \  prefix: 10.1.0.7/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:13:2782::0\n  prefix: 10.1.0.8/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:15:2782::0\n\
+        \  prefix: 10.1.0.9/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:16:2782::0\n  prefix: 10.1.0.10/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:17:2782::0\n\
+        \  prefix: 10.1.0.11/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:18:2782::0\n  prefix: 10.1.0.12/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:19:2782::0\n\
+        \  prefix: 10.1.0.13/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:20:2782::0\n  prefix: 10.1.0.14/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:21:2782::0\n\
+        \  prefix: 10.1.0.15/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:22:2782::0\n  prefix: 10.1.0.16/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:24:2782::0\n\
+        \  prefix: 10.1.0.17/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:25:2782::0\n  prefix: 10.1.0.18/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:26:2782::0\n\
+        \  prefix: 10.1.0.19/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:27:2782::0\n  prefix: 10.1.0.20/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:28:2782::0\n\
+        \  prefix: 10.1.0.21/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:29:2782::0\n  prefix: 10.1.0.22/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:30:2782::0\n\
+        \  prefix: 10.1.0.23/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:31:2782::0\n  prefix: 10.1.0.24/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:32:2782::0\n\
+        \  prefix: 10.1.0.25/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:34:2782::0\n  prefix: 10.1.0.26/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:35:2782::0\n\
+        \  prefix: 10.1.0.27/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:36:2782::0\n  prefix: 10.1.0.28/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:38:2782::0\n\
+        \  prefix: 10.1.0.29/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:39:2782::0\n  prefix: 10.1.0.30/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:40:2782::0\n\
+        \  prefix: 10.1.0.31/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:41:2782::0\n  prefix: 10.1.0.32/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:42:2782::0\n\
+        \  prefix: 10.1.0.33/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:44:2782::0\n  prefix: 10.1.0.34/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:45:2782::0\n\
+        \  prefix: 10.1.0.35/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:46:2782::0\n  prefix: 10.1.0.36/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:47:2782::0\n\
+        \  prefix: 10.1.0.37/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:48:2782::0\n  prefix: 10.1.0.38/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:51:2782::0\n\
+        \  prefix: 10.1.0.39/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:52:2782::0\n  prefix: 10.1.0.40/32\n"
+      device: eth0
+      labels:
+        natGroup: natGroup1
+      mode: xdpgeneric
+      name: n5
+      netns: n5
+      segmentRoutingSrv6:
+        encapSource: fc00:0e00::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0e00::/24
+      type: nat
+    hostname: node066
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node067
+    namespace: default
+  spec:
+    functions:
+    - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
+        \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
+        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
+        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n- action:\n  \
+        \  encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:10:2782::0\n\
+        \  prefix: 10.1.0.5/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:11:2782::0\n  prefix: 10.1.0.6/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:12:2782::0\n\
+        \  prefix: 10.1.0.7/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:13:2782::0\n  prefix: 10.1.0.8/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:15:2782::0\n\
+        \  prefix: 10.1.0.9/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:16:2782::0\n  prefix: 10.1.0.10/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:17:2782::0\n\
+        \  prefix: 10.1.0.11/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:18:2782::0\n  prefix: 10.1.0.12/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:19:2782::0\n\
+        \  prefix: 10.1.0.13/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:20:2782::0\n  prefix: 10.1.0.14/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:21:2782::0\n\
+        \  prefix: 10.1.0.15/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:22:2782::0\n  prefix: 10.1.0.16/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:24:2782::0\n\
+        \  prefix: 10.1.0.17/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:25:2782::0\n  prefix: 10.1.0.18/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:26:2782::0\n\
+        \  prefix: 10.1.0.19/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:27:2782::0\n  prefix: 10.1.0.20/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:28:2782::0\n\
+        \  prefix: 10.1.0.21/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:29:2782::0\n  prefix: 10.1.0.22/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:30:2782::0\n\
+        \  prefix: 10.1.0.23/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:31:2782::0\n  prefix: 10.1.0.24/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:32:2782::0\n\
+        \  prefix: 10.1.0.25/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:34:2782::0\n  prefix: 10.1.0.26/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:35:2782::0\n\
+        \  prefix: 10.1.0.27/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:36:2782::0\n  prefix: 10.1.0.28/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:38:2782::0\n\
+        \  prefix: 10.1.0.29/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:39:2782::0\n  prefix: 10.1.0.30/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:40:2782::0\n\
+        \  prefix: 10.1.0.31/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:41:2782::0\n  prefix: 10.1.0.32/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:42:2782::0\n\
+        \  prefix: 10.1.0.33/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:44:2782::0\n  prefix: 10.1.0.34/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:45:2782::0\n\
+        \  prefix: 10.1.0.35/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:46:2782::0\n  prefix: 10.1.0.36/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:47:2782::0\n\
+        \  prefix: 10.1.0.37/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:48:2782::0\n  prefix: 10.1.0.38/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:51:2782::0\n\
+        \  prefix: 10.1.0.39/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:52:2782::0\n  prefix: 10.1.0.40/32\n"
+      device: eth0
+      labels:
+        natGroup: natGroup1
+      mode: xdpgeneric
+      name: n6
+      netns: n6
+      segmentRoutingSrv6:
+        encapSource: fc00:0f00::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:0f00::/24
+      type: nat
+    hostname: node067
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node068
+    namespace: default
+  spec:
+    functions:
+    - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
+        \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
+        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
+        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n- action:\n  \
+        \  encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:10:2782::0\n\
+        \  prefix: 10.1.0.5/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:11:2782::0\n  prefix: 10.1.0.6/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:12:2782::0\n\
+        \  prefix: 10.1.0.7/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:13:2782::0\n  prefix: 10.1.0.8/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:15:2782::0\n\
+        \  prefix: 10.1.0.9/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:16:2782::0\n  prefix: 10.1.0.10/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:17:2782::0\n\
+        \  prefix: 10.1.0.11/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:18:2782::0\n  prefix: 10.1.0.12/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:19:2782::0\n\
+        \  prefix: 10.1.0.13/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:20:2782::0\n  prefix: 10.1.0.14/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:21:2782::0\n\
+        \  prefix: 10.1.0.15/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:22:2782::0\n  prefix: 10.1.0.16/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:24:2782::0\n\
+        \  prefix: 10.1.0.17/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:25:2782::0\n  prefix: 10.1.0.18/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:26:2782::0\n\
+        \  prefix: 10.1.0.19/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:27:2782::0\n  prefix: 10.1.0.20/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:28:2782::0\n\
+        \  prefix: 10.1.0.21/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:29:2782::0\n  prefix: 10.1.0.22/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:30:2782::0\n\
+        \  prefix: 10.1.0.23/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:31:2782::0\n  prefix: 10.1.0.24/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:32:2782::0\n\
+        \  prefix: 10.1.0.25/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:34:2782::0\n  prefix: 10.1.0.26/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:35:2782::0\n\
+        \  prefix: 10.1.0.27/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:36:2782::0\n  prefix: 10.1.0.28/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:38:2782::0\n\
+        \  prefix: 10.1.0.29/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:39:2782::0\n  prefix: 10.1.0.30/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:40:2782::0\n\
+        \  prefix: 10.1.0.31/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:41:2782::0\n  prefix: 10.1.0.32/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:42:2782::0\n\
+        \  prefix: 10.1.0.33/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:44:2782::0\n  prefix: 10.1.0.34/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:45:2782::0\n\
+        \  prefix: 10.1.0.35/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:46:2782::0\n  prefix: 10.1.0.36/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:47:2782::0\n\
+        \  prefix: 10.1.0.37/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:48:2782::0\n  prefix: 10.1.0.38/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:51:2782::0\n\
+        \  prefix: 10.1.0.39/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:52:2782::0\n  prefix: 10.1.0.40/32\n"
+      device: eth0
+      labels:
+        natGroup: natGroup1
+      mode: xdpgeneric
+      name: n7
+      netns: n7
+      segmentRoutingSrv6:
+        encapSource: fc00:1000::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:1000::/24
+      type: nat
+    hostname: node068
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node069
+    namespace: default
+  spec:
+    functions:
+    - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
+        \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
+        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
+        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n- action:\n  \
+        \  encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:10:2782::0\n\
+        \  prefix: 10.1.0.5/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:11:2782::0\n  prefix: 10.1.0.6/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:12:2782::0\n\
+        \  prefix: 10.1.0.7/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:13:2782::0\n  prefix: 10.1.0.8/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:15:2782::0\n\
+        \  prefix: 10.1.0.9/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:16:2782::0\n  prefix: 10.1.0.10/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:17:2782::0\n\
+        \  prefix: 10.1.0.11/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:18:2782::0\n  prefix: 10.1.0.12/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:19:2782::0\n\
+        \  prefix: 10.1.0.13/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:20:2782::0\n  prefix: 10.1.0.14/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:21:2782::0\n\
+        \  prefix: 10.1.0.15/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:22:2782::0\n  prefix: 10.1.0.16/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:24:2782::0\n\
+        \  prefix: 10.1.0.17/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:25:2782::0\n  prefix: 10.1.0.18/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:26:2782::0\n\
+        \  prefix: 10.1.0.19/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:27:2782::0\n  prefix: 10.1.0.20/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:28:2782::0\n\
+        \  prefix: 10.1.0.21/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:29:2782::0\n  prefix: 10.1.0.22/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:30:2782::0\n\
+        \  prefix: 10.1.0.23/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:31:2782::0\n  prefix: 10.1.0.24/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:32:2782::0\n\
+        \  prefix: 10.1.0.25/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:34:2782::0\n  prefix: 10.1.0.26/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:35:2782::0\n\
+        \  prefix: 10.1.0.27/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:36:2782::0\n  prefix: 10.1.0.28/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:38:2782::0\n\
+        \  prefix: 10.1.0.29/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:39:2782::0\n  prefix: 10.1.0.30/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:40:2782::0\n\
+        \  prefix: 10.1.0.31/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:41:2782::0\n  prefix: 10.1.0.32/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:42:2782::0\n\
+        \  prefix: 10.1.0.33/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:44:2782::0\n  prefix: 10.1.0.34/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:45:2782::0\n\
+        \  prefix: 10.1.0.35/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:46:2782::0\n  prefix: 10.1.0.36/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:47:2782::0\n\
+        \  prefix: 10.1.0.37/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:48:2782::0\n  prefix: 10.1.0.38/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:51:2782::0\n\
+        \  prefix: 10.1.0.39/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:52:2782::0\n  prefix: 10.1.0.40/32\n"
+      device: eth0
+      labels:
+        natGroup: natGroup1
+      mode: xdpgeneric
+      name: n8
+      netns: n8
+      segmentRoutingSrv6:
+        encapSource: fc00:1100::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:1100::/24
+      type: nat
+    hostname: node069
+- apiVersion: mfplane.mfplane.io/v1alpha1
+  kind: Node
+  metadata:
+    name: node070
+    namespace: default
+  spec:
+    functions:
+    - configFile: "fib4:\n- action:\n    encapSeg6:\n      mode: encap\n      segs:\n\
+        \      - 2001:a:6:2782::0\n  prefix: 10.1.0.1/32\n- action:\n    encapSeg6:\n\
+        \      mode: encap\n      segs:\n      - 2001:a:7:2782::0\n  prefix: 10.1.0.2/32\n\
+        - action:\n    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:8:2782::0\n\
+        \  prefix: 10.1.0.3/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:9:2782::0\n  prefix: 10.1.0.4/32\n- action:\n  \
+        \  encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:10:2782::0\n\
+        \  prefix: 10.1.0.5/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:11:2782::0\n  prefix: 10.1.0.6/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:12:2782::0\n\
+        \  prefix: 10.1.0.7/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:13:2782::0\n  prefix: 10.1.0.8/32\n- action:\n \
+        \   encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:15:2782::0\n\
+        \  prefix: 10.1.0.9/32\n- action:\n    encapSeg6:\n      mode: encap\n   \
+        \   segs:\n      - 2001:a:16:2782::0\n  prefix: 10.1.0.10/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:17:2782::0\n\
+        \  prefix: 10.1.0.11/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:18:2782::0\n  prefix: 10.1.0.12/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:19:2782::0\n\
+        \  prefix: 10.1.0.13/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:20:2782::0\n  prefix: 10.1.0.14/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:21:2782::0\n\
+        \  prefix: 10.1.0.15/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:22:2782::0\n  prefix: 10.1.0.16/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:24:2782::0\n\
+        \  prefix: 10.1.0.17/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:25:2782::0\n  prefix: 10.1.0.18/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:26:2782::0\n\
+        \  prefix: 10.1.0.19/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:27:2782::0\n  prefix: 10.1.0.20/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:28:2782::0\n\
+        \  prefix: 10.1.0.21/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:29:2782::0\n  prefix: 10.1.0.22/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:30:2782::0\n\
+        \  prefix: 10.1.0.23/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:31:2782::0\n  prefix: 10.1.0.24/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:32:2782::0\n\
+        \  prefix: 10.1.0.25/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:34:2782::0\n  prefix: 10.1.0.26/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:35:2782::0\n\
+        \  prefix: 10.1.0.27/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:36:2782::0\n  prefix: 10.1.0.28/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:38:2782::0\n\
+        \  prefix: 10.1.0.29/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:39:2782::0\n  prefix: 10.1.0.30/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:40:2782::0\n\
+        \  prefix: 10.1.0.31/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:41:2782::0\n  prefix: 10.1.0.32/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:42:2782::0\n\
+        \  prefix: 10.1.0.33/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:44:2782::0\n  prefix: 10.1.0.34/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:45:2782::0\n\
+        \  prefix: 10.1.0.35/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:46:2782::0\n  prefix: 10.1.0.36/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:47:2782::0\n\
+        \  prefix: 10.1.0.37/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:48:2782::0\n  prefix: 10.1.0.38/32\n- action:\n\
+        \    encapSeg6:\n      mode: encap\n      segs:\n      - 2001:a:51:2782::0\n\
+        \  prefix: 10.1.0.39/32\n- action:\n    encapSeg6:\n      mode: encap\n  \
+        \    segs:\n      - 2001:a:52:2782::0\n  prefix: 10.1.0.40/32\n"
+      device: eth0
+      labels:
+        natGroup: natGroup1
+      mode: xdpgeneric
+      name: n9
+      netns: n9
+      segmentRoutingSrv6:
+        encapSource: fc00:1200::0
+        locators:
+        - block: fc00::0
+          name: default
+          prefix: fc00:1200::/24
+      type: nat
+    hostname: node070
 kind: List
 metadata:
   resourceVersion: ''

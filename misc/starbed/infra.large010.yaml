@@ -9,7 +9,7 @@ nodes:
 - {name: node095, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x089}
 - {name: node096, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x090}
 - {name: node097, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x091}
-- {name: node098, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x092}
+# - {name: node098, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x092}
 - {name: node099, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x093}
 - {name: node100, type: Physical, os: ubuntu-server-20.04-std, facilities: [], nodeName: x094}
 networks:
@@ -23,7 +23,7 @@ networks:
   - {name: node095, interface: bus31.0, ipAddress: 10.255.1.95/24}
   - {name: node096, interface: bus31.0, ipAddress: 10.255.1.96/24}
   - {name: node097, interface: bus31.0, ipAddress: 10.255.1.97/24}
-  - {name: node098, interface: bus31.0, ipAddress: 10.255.1.98/24}
+  # - {name: node098, interface: bus31.0, ipAddress: 10.255.1.98/24}
   - {name: node099, interface: bus31.0, ipAddress: 10.255.1.99/24}
   - {name: node100, interface: bus31.0, ipAddress: 10.255.1.100/24}
 - name: Control2
@@ -36,7 +36,7 @@ networks:
   - {name: node095, interface: bus31.1, ipAddress: 10.255.2.95/24}
   - {name: node096, interface: bus31.1, ipAddress: 10.255.2.96/24}
   - {name: node097, interface: bus31.1, ipAddress: 10.255.2.97/24}
-  - {name: node098, interface: bus31.1, ipAddress: 10.255.2.98/24}
+  # - {name: node098, interface: bus31.1, ipAddress: 10.255.2.98/24}
   - {name: node099, interface: bus31.1, ipAddress: 10.255.2.99/24}
   - {name: node100, interface: bus31.1, ipAddress: 10.255.2.100/24}
 - name: Control3
@@ -49,7 +49,7 @@ networks:
   - {name: node095, interface: bus98.0, ipAddress: 10.255.3.95/24}
   - {name: node096, interface: bus98.0, ipAddress: 10.255.3.96/24}
   - {name: node097, interface: bus98.0, ipAddress: 10.255.3.97/24}
-  - {name: node098, interface: bus98.0, ipAddress: 10.255.3.98/24}
+  # - {name: node098, interface: bus98.0, ipAddress: 10.255.3.98/24}
   - {name: node099, interface: bus98.0, ipAddress: 10.255.3.99/24}
   - {name: node100, interface: bus98.0, ipAddress: 10.255.3.100/24}
 - name: Control4
@@ -62,6 +62,6 @@ networks:
   - {name: node095, interface: bus98.1, ipAddress: 10.255.4.95/24}
   - {name: node096, interface: bus98.1, ipAddress: 10.255.4.96/24}
   - {name: node097, interface: bus98.1, ipAddress: 10.255.4.97/24}
-  - {name: node098, interface: bus98.1, ipAddress: 10.255.4.98/24}
+  # - {name: node098, interface: bus98.1, ipAddress: 10.255.4.98/24}
   - {name: node099, interface: bus98.1, ipAddress: 10.255.4.99/24}
   - {name: node100, interface: bus98.1, ipAddress: 10.255.4.100/24}
