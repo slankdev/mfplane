@@ -1,0 +1,16 @@
+title: scalabiloity of L-node
+fixed:
+  num_client: 20
+  pkt_size_bytes: 100
+  concurrent_session_per_client: 100
+  bandwidth_per_session_bps: 100000000000
+datas:
+- {num_lnode: 1, num_nnode: 9, bps:  2487062400, loss: 0.95 }
+- {num_lnode: 2, num_nnode: 9, bps:  4887083200, loss: 0.89 }
+- {num_lnode: 3, num_nnode: 9, bps:  7904343200, loss: 0.83 }
+- {num_lnode: 4, num_nnode: 9, bps: 10556011200, loss: 0.84 }
+- {num_lnode: 5, num_nnode: 9, bps: 10771200000, loss: 0.76 }
+- {num_lnode: 6, num_nnode: 9, bps: 12923787200, loss: 0.74 }
+- {num_lnode: 7, num_nnode: 9, bps: 15901608800, loss: 0.68 }
+- {num_lnode: 8, num_nnode: 9, bps: 19411928000, loss: 0.59 }
+- {num_lnode: 9, num_nnode: 9, bps: 23214066400, loss: 0.55 }

@@ -1,0 +1,17 @@
+title: through overlay network
+fixed:
+  num_client: 20
+  pkt_size_bytes: 100
+  concurrent_session_per_client: 100
+  bandwidth_per_session_bps: 100000000000
+datas:
+- {num_lnode: 1, num_nnode: 1, bps:  2610420000, pps:  3263025, loss:  0.94}
+- {num_lnode: 2, num_nnode: 1, bps:  3215288800, pps:  4019111, loss:  0.93}
+- {num_lnode: 2, num_nnode: 2, bps:  4931470400, pps:  6164338, loss:  0.94}
+- {num_lnode: 3, num_nnode: 3, bps:  9499180800, pps: 11873976, loss:  0.82}
+- {num_lnode: 4, num_nnode: 4, bps: 11712624800, pps: 14640781, loss:  0.76}
+- {num_lnode: 5, num_nnode: 5, bps: 14185814400, pps: 17732268, loss:  0.69}
+- {num_lnode: 6, num_nnode: 6, bps: 17820460800, pps: 22275576, loss:  0.64}
+- {num_lnode: 7, num_nnode: 7, bps: 24327450400, pps: 30409313, loss:  0.66}
+- {num_lnode: 8, num_nnode: 8, bps: 23531663200, pps: 29414579, loss:  0.47}
+- {num_lnode: 9, num_nnode: 9, bps: 23214066400, pps: 29017583, loss:  0.55}
