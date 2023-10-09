@@ -29,3 +29,4 @@ Dockerfile.cross
 *.swp
 *.swo
 *~
+.ipynb_checkpoints
