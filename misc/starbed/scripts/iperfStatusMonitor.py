@@ -63,6 +63,8 @@ print("done")
 
 # Data summarization
 while True:
+    time.sleep(1)
+
     lock.acquire()
     key = sorted(tsdata.keys())[0]
     data = tsdata.pop(key)
@@ -103,4 +105,3 @@ while True:
     # Output
     # FORMAT: timestamp,bps,error-cnt,total-msg,accuracy,reordering
     print(f"{key},{total_bps:.2f},{total_err:.2f},{total_msg:.2f},{err_rate:.2f},{total_rod:.2f},{data_cnt:.2f}")
-    time.sleep(1)
