@@ -31,7 +31,7 @@ base:
         time_seconds: 100
         report_interval_seconds: 1
         message_size_bytes: 100
-        bandwidth: 100G
+        bandwidth: 1M
         num_concurrent_session: 100
 
       # ##[FACTORY_DEFAULT]

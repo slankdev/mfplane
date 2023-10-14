@@ -5,9 +5,9 @@ all:
     ansible_ssh_user: '{{ lookup("env", "ANSIBLE_SSH_USER") }}'
     ansible_sudo_pass: '{{ lookup("env", "ANSIBLE_SUDO_PASS") }}'
     benchmark:
-      bandwidth: 100G
+      bandwidth: 100K
       message_size_bytes: 100
-      num_concurrent_session: 100
+      num_concurrent_session: 10000
       report_interval_seconds: 1
       time_seconds: 100
       title: test
