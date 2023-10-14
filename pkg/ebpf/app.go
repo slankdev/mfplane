@@ -1,5 +1,6 @@
 /*
-Copyright 2022 Hiroki Shirokura.
+Copyright 2023 Hiroki Shirokura.
+Copyright 2023 Kyoto University.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,8 +20,9 @@ package ebpf
 import (
 	"embed"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"path/filepath"
+	"regexp"
 	"runtime"
 
 	"github.com/cilium/ebpf"
@@ -36,15 +38,6 @@ import (
 var codeFS embed.FS
 
 var files []string
-
-func NewCommandXdp(name, file, section string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use: name,
-	}
-	cmd.AddCommand(newCommandXdpAttach("attach", file, section))
-	cmd.AddCommand(NewCommandXdpDetach("detach"))
-	return cmd
-}
 
 func init() {
 	// XXX: no support for depth>2
@@ -72,7 +65,20 @@ func init() {
 	}
 }
 
-func newCommandXdpAttach(name, file, section string) *cobra.Command {
+func NewCommandXdpAttach(name string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use: name,
+	}
+	s := "xdp_ingress"
+	cmd.AddCommand(NewCommandXdpAttachOne("common", "common_main.c", s))
+	cmd.AddCommand(NewCommandXdpAttachOne("dummy", "dummy_main.c", s))
+	cmd.AddCommand(NewCommandXdpAttachOne("test", "test_main.c", s))
+	cmd.AddCommand(NewCommandXdpAttachOne("nat", "nat_main.c", s))
+	cmd.AddCommand(NewCommandXdpAttachOne("clb", "clb_main.c", s))
+	return cmd
+}
+
+func NewCommandXdpAttachOne(name, file, section string) *cobra.Command {
 	var clioptInterface string
 	var clioptDebug bool
 	var clioptDebugIgnorePacket bool
@@ -81,6 +87,7 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 	var clioptVerbose bool
 	var clioptMode string
 	var clioptName string
+	var clioptNetns string
 	var clioptDefine []string
 	cmd := &cobra.Command{
 		Use: name,
@@ -89,74 +96,26 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 			logger, _ := zap.NewProduction()
 			defer logger.Sync()
 			log := logger.Sugar()
-
-			// create temp dir
-			if err := os.MkdirAll("/var/run/mfplane", 0777); err != nil {
-				return err
+			if clioptVerbose {
+				util.SetLocalExecuteSilence(false)
 			}
-			tmppath, err := ioutil.TempDir("/var/run/mfplane", "")
+
+			// Build ebpf program
+			tmppath, err := Build(log, file,
+				clioptVerbose,
+				clioptDebug,
+				clioptName,
+				clioptDebugIgnorePacket,
+				clioptDebugErrorPacket,
+				clioptDefine,
+			)
 			if err != nil {
 				return err
-			}
-			if err := os.MkdirAll(fmt.Sprintf("%s/bin", tmppath), 0777); err != nil {
-				return err
-			}
-			if clioptVerbose {
-				log.Info("create tmp dir", "path", tmppath)
-			}
-
-			// copy bpf c code
-			for _, file := range files {
-				f, err := codeFS.ReadFile(file)
-				if err != nil {
-					return err
-				}
-				if err := util.WriteFile(fmt.Sprintf("%s/%s", tmppath, file),
-					f); err != nil {
-					return err
-				}
-			}
-			if clioptVerbose {
-				log.Info("write c files", "path", tmppath)
-			}
-
-			// build with some special parameter
-			// TODO(slankdev): cflags += " -nostdinc" for less dependency
-			cflags := "-target bpf -O2 -g -I /usr/include/x86_64-linux-gnu"
-			cflags += fmt.Sprintf(" -I %s/code", tmppath)
-			cflags += " -D NAME=" + clioptName
-			if clioptDebug {
-				cflags += " -DDEBUG"
-			}
-			if clioptDebugIgnorePacket {
-				cflags += " -DDEBUG_IGNORE_PACKET"
-			}
-			if clioptDebugErrorPacket {
-				cflags += " -DDEBUG_ERROR_PACKET"
-			}
-			for _, def := range clioptDefine {
-				cflags += " -D " + def
-			}
-			cmdstr := fmt.Sprintf(
-				"clang %s -c %s/code/%s -o %s/bin/out.o",
-				cflags, tmppath, file, tmppath)
-			if _, err := util.LocalExecutef(
-				"clang %s -c %s/code/%s -o %s/bin/out.o",
-				cflags, tmppath, file, tmppath); err != nil {
-				return err
-			}
-			if clioptVerbose {
-				log.Info(cmdstr)
-				log.Info("build c files",
-					"main", fmt.Sprintf("%s/code/%s", tmppath, file),
-					"out", fmt.Sprintf("%s/bin/out.o", tmppath),
-					"cflags", cflags)
 			}
 
 			// detach once if force-mode
 			if clioptForce {
-				if _, err := util.LocalExecutef("ip link set %s %s off",
-					clioptInterface, clioptMode); err != nil {
+				if err := XdpDetach(clioptNetns, clioptInterface); err != nil {
 					return err
 				}
 				if clioptVerbose {
@@ -165,9 +124,9 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 			}
 
 			// attach on specified network interface
-			if _, err := util.LocalExecutef(
-				"ip link set %s %s obj %s/bin/out.o sec %s",
-				clioptInterface, clioptMode, tmppath, section); err != nil {
+			if err := XdpAttach(clioptNetns, clioptInterface,
+				fmt.Sprintf("%s/bin/out.o", tmppath), section,
+				clioptMode); err != nil {
 				return err
 			}
 			if clioptVerbose {
@@ -176,23 +135,135 @@ func newCommandXdpAttach(name, file, section string) *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&clioptName, "name", "n", "updateme000", "")
-	cmd.Flags().StringVarP(&clioptInterface, "interface", "i", "", "")
-	cmd.Flags().StringVarP(&clioptMode, "mode", "m", "xdpgeneric",
-		"xdp  or xdpgeneric")
+	f := cmd.Flags()
+	f.StringVarP(&clioptName, "name", "n", "updateme000", "")
+	f.StringVarP(&clioptInterface, "interface", "i", "", "")
+	f.StringVarP(&clioptNetns, "netns", "N", "", "")
+	f.StringVarP(&clioptMode, "mode", "m", "xdpgeneric", "xdp  or xdpgeneric")
+	f.BoolVarP(&clioptVerbose, "verbose", "v", false, "")
+	f.BoolVarP(&clioptDebug, "debug", "d", false, "")
+	f.BoolVarP(&clioptForce, "force", "f", false,
+		"if attached, once detach and try force attach the bpf code")
+	f.BoolVar(&clioptDebugIgnorePacket, "debug-ignore-packet", false, "")
+	f.BoolVar(&clioptDebugErrorPacket, "debug-error-packet", false, "")
+	f.StringArrayVar(&clioptDefine, "define", []string{},
+		"i.e. --define DEBUG_FUNCTION_CALL")
+	return cmd
+}
+
+func NewCommandBpfMap() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "map",
+	}
+	cmd.AddCommand(NewCommandMapList())
+	cmd.AddCommand(NewCommandMapUnlink())
+	cmd.AddCommand(NewCommandMapSet())
+	cmd.AddCommand(NewCommandMapSetAuto())
+	cmd.AddCommand(NewCommandMapInspect())
+	cmd.AddCommand(NewCommandMapInspectAuto())
+	cmd.AddCommand(NewCommandMapFlush())
+	return cmd
+}
+
+func NewCommandMapList() *cobra.Command {
+	var clioptDebug bool
+	var clioptVerbose bool
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "list",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			mapFiles := []string{}
+			files, err := os.ReadDir(clioptPinDir)
+			if err != nil {
+				return err
+			}
+			for _, file := range files {
+				if !file.IsDir() {
+					mapFiles = append(mapFiles, filepath.Join(clioptPinDir, file.Name()))
+				}
+			}
+			table := util.NewTableWriter(os.Stdout)
+			table.SetHeader([]string{"name", "id", "type", "file"})
+			for _, f := range mapFiles {
+				m, err := ebpf.LoadPinnedMap(f, nil)
+				if err != nil {
+					return err
+				}
+				info, err := m.Info()
+				if err != nil {
+					return err
+				}
+				id, _ := info.ID()
+				table.Append([]string{
+					info.Name,
+					fmt.Sprintf("%d", id),
+					info.Type.String(),
+					f,
+				})
+			}
+			table.Render()
+			return nil
+		},
+	}
 	cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
 	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
-	cmd.Flags().BoolVarP(&clioptForce, "force", "f", false,
-		"if attached, once detach and try force attach the bpf code")
-	cmd.Flags().BoolVar(&clioptDebugIgnorePacket, "debug-ignore-packet", false, "")
-	cmd.Flags().BoolVar(&clioptDebugErrorPacket, "debug-error-packet", false, "")
-	cmd.Flags().StringArrayVar(&clioptDefine, "define", []string{}, "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
+func NewCommandMapUnlink() *cobra.Command {
+	var clioptDryRun bool
+	var clioptMatch string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "unlink",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			files, err := os.ReadDir(clioptPinDir)
+			if err != nil {
+				return err
+			}
+
+			// Compile match regex
+			r, err := regexp.Compile(clioptMatch)
+			if err != nil {
+				return err
+			}
+
+			// Filter map files
+			toBeDeleted := []string{}
+			for _, file := range files {
+				if !file.IsDir() {
+					if r.MatchString(file.Name()) {
+						toBeDeleted = append(toBeDeleted, file.Name())
+					}
+				}
+			}
+
+			// Delete files
+			for _, name := range toBeDeleted {
+				fullpath := filepath.Join(clioptPinDir, name)
+				fmt.Printf("Deleting %s\n", fullpath)
+				if !clioptDryRun {
+					if err := os.Remove(fullpath); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&clioptDryRun, "dry", "d", false, "dry-run mode")
+	cmd.Flags().StringVarP(&clioptMatch, "match", "m", "", "regex for map name")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
 	return cmd
 }
 
 func NewCommandXdpDetach(name string) *cobra.Command {
 	var clioptInterface string
 	var clioptMode string
+	var clioptNetns string
 	var clioptDebug bool
 	var clioptVerbose bool
 	cmd := &cobra.Command{
@@ -203,14 +274,12 @@ func NewCommandXdpDetach(name string) *cobra.Command {
 			defer logger.Sync()
 			log := logger.Sugar()
 
-			link, err := goroute2.GetLinkDetail("", clioptInterface)
+			link, err := goroute2.GetLinkDetail(clioptNetns, clioptInterface)
 			if err != nil {
 				return err
 			}
 			if link.Xdp != nil {
-				if _, err := util.LocalExecutef(
-					"ip link set %s %s off", clioptInterface,
-					link.Xdp.Mode.ModeString()); err != nil {
+				if err := XdpDetach(clioptNetns, clioptInterface); err != nil {
 					return err
 				}
 				if clioptVerbose {
@@ -223,25 +292,20 @@ func NewCommandXdpDetach(name string) *cobra.Command {
 	cmd.Flags().StringVarP(&clioptInterface, "interface", "i", "", "")
 	cmd.Flags().StringVarP(&clioptMode, "mode", "m", "xdpgeneric",
 		"xdp  or xdpgeneric")
+	cmd.Flags().StringVarP(&clioptNetns, "netns", "N", "", "")
 	cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
 	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	return cmd
 }
 
-func BatchMapOperation(mapname string, maptype ebpf.MapType,
+func BatchPinnedMapOperation(mapfile string,
 	f func(m *ebpf.Map) error) error {
-	ids, err := GetMapIDsByNameType(mapname, maptype)
+	m, err := ebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
 		return err
 	}
-	for _, id := range ids {
-		m, err := ebpf.NewMapFromID(id)
-		if err != nil {
-			return err
-		}
-		if err := f(m); err != nil {
-			return err
-		}
+	if err := f(m); err != nil {
+		return err
 	}
 	return nil
 }
@@ -332,4 +396,51 @@ func StartReader(name string) (chan PerfObject, error) {
 	}
 
 	return poCh, nil
+}
+
+func NewCommandMapSetAuto() *cobra.Command {
+	var clioptFile string
+	cmd := &cobra.Command{
+		Use: "set-auto",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Read input file
+			fileContent, err := os.ReadFile(clioptFile)
+			if err != nil {
+				return err
+			}
+
+			// Parse input file
+			entries := MapGeneric{}
+			if err := util.YamlUnmarshalViaJson(fileContent, &entries); err != nil {
+				return err
+			}
+
+			// Set maps
+			if err := WriteAll(&entries); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptFile, "file", "f", "", "")
+	return cmd
+}
+
+func NewCommandMapInspectAuto() *cobra.Command {
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "inspect-auto",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			all, err := ReadAll(clioptPinDir)
+			if err != nil {
+				return err
+			}
+			util.Jprintln(all)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
 }

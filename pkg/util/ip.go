@@ -79,3 +79,11 @@ func GetSubnet(cidrStr string, prefixlen uint) ([]string, error) {
 	}
 	return sids, nil
 }
+
+func MustParseMAC(s string) net.HardwareAddr {
+	m, err := net.ParseMAC(s)
+	if err != nil {
+		panic(err)
+	}
+	return m
+}

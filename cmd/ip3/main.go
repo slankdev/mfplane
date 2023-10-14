@@ -1,5 +1,5 @@
 /*
-Copyright 2022 Hiroki Shirokura.
+Copyright 2023 Hiroki Shirokura.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,16 +17,54 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"time"
 
-	"github.com/slankdev/mfplane/pkg/ip3"
+	"github.com/spf13/cobra"
+
+	"github.com/slankdev/mfplane/pkg/goroute2"
+	"github.com/slankdev/mfplane/pkg/util"
 )
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	if err := ip3.NewCommand().Execute(); err != nil {
+	if err := NewCommand().Execute(); err != nil {
 		os.Exit(1)
 	}
+}
+
+func NewCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "ip3",
+	}
+	cmd.AddCommand(NewCommandStat())
+	cmd.AddCommand(util.NewCommandVersion())
+	cmd.AddCommand(util.NewCmdCompletion(cmd))
+	return cmd
+}
+
+func NewCommandStat() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "stat",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			tab := util.NewTableWriter(os.Stdout)
+			tab.SetHeader([]string{"name", "rx", "tx"})
+			statList, err := goroute2.GetLinkStatsList("")
+			if err != nil {
+				return err
+			}
+			for _, stat := range statList {
+				tab.Append([]string{
+					stat.Ifname,
+					fmt.Sprintf("%d", stat.Stats64.Rx.Packets),
+					fmt.Sprintf("%d", stat.Stats64.Tx.Packets),
+				})
+			}
+			tab.Render()
+			return nil
+		},
+	}
+	return cmd
 }

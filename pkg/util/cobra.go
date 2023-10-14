@@ -25,6 +25,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func NewCmdNetTools(name string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use: name,
+	}
+	cmd.AddCommand(NewCmdIfconfigHTTPServer())
+	cmd.AddCommand(NewCmdNc())
+	return cmd
+}
+
 func NewCmdCompletion(rootCmd *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "completion [sub operation]",

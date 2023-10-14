@@ -1,0 +1,244 @@
+- hosts: localhost
+  become: true
+  gather_facts: no
+  vars:
+    kernelVersion: 5.15.0-82
+    http_proxy: '{{ lookup("env", "HTTP_PROXY") }}'
+    https_proxy: '{{ lookup("env", "HTTPS_PROXY") }}'
+  tasks:
+
+  - name: set apt proxy
+    ansible.builtin.copy:
+      dest: /etc/apt/apt.conf.d/99curtin-aptproxy
+      mode: '0644'
+      content: |
+        Acquire::http::Proxy "{{ http_proxy }}";
+        Acquire::https::Proxy "{{ https_proxy }}";
+
+  # - name: install required packages with apt
+  #   register: apt_result
+  #   ansible.builtin.apt:
+  #     name:
+  #     - jq
+  #     - tig
+  #     - curl
+  #     - gnupg
+  #     - iperf3
+  #     - python-apt
+  #     - ca-certificates
+  #     - bash-completion
+  #     - sshpass
+  #     - silversearcher-ag
+  #     - bash-completion
+  - name: install required packages with apt (1)
+    # when: apt_result.failed
+    shell: |
+      set -xe
+      apt update && apt install -y \
+        jq tig curl gnupg iperf3 python-apt ca-certificates bash-completion \
+        sshpass silversearcher-ag bash-completion
+
+  - name: install golang
+    block:
+    - ansible.builtin.stat:
+        path: /usr/local/go
+      register: tmp
+    - when: tmp.stat.exists == false
+      block:
+      - name: install golang (download binary)
+        ansible.builtin.get_url:
+          url: https://go.dev/dl/go1.19.12.linux-amd64.tar.gz
+          dest: /tmp/go.tgz
+        environment:
+          http_proxy: "{{ http_proxy }}"
+          https_proxy: "{{ https_proxy }}"
+      - name: install golang (extract)
+        shell: |
+          set -xe
+          rm -rf /usr/local/go
+          tar -C /usr/local -xzf /tmp/go.tgz
+      - name: install golang (symlink)
+        ansible.builtin.file:
+          src: /usr/local/go/bin/go
+          dest: /usr/bin/go
+          state: link
+
+  - name: install docker
+    block:
+    - ansible.builtin.package_facts:
+        manager: auto
+    - when: "'docker-ce' not in ansible_facts.packages"
+      shell: |
+        set -xe
+        export HTTP_PROXY="{{ http_proxy }}"
+        export HTTPS_PROXY="{{ https_proxy }}"
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+
+        echo \
+          "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+          tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+        apt update
+        apt install -y docker-ce docker-ce-cli containerd.io \
+          docker-buildx-plugin docker-compose-plugin
+
+  - name: configure docker daemon's proxy
+    block:
+    - ansible.builtin.file:
+        path: /etc/systemd/system/docker.service.d
+        state: directory
+    - ansible.builtin.copy:
+        dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+        content: |
+          [Service]
+          Environment="HTTP_PROXY={{ http_proxy }}"
+          Environment="HTTPS_PROXY={{ https_proxy }}"
+      register: docker_service_file
+    - ansible.builtin.systemd:
+        name: docker
+        state: restarted
+        daemon_reload: true
+      when: docker_service_file.changed
+
+  - name: configure docker keybinding
+    become: false
+    block:
+    - ansible.builtin.file:
+        path: ~/.docker
+        state: directory
+    - ansible.builtin.copy:
+        dest: ~/.docker/config.json
+        content: |
+          {
+            "detachKeys": "ctrl-\\"
+          }
+
+  - name: ssh keygen
+    become: false
+    openssh_keypair:
+      path: ~/.ssh/id_rsa
+
+  - name: install kubectl
+    environment:
+      http_proxy: "{{ http_proxy }}"
+      https_proxy: "{{ https_proxy }}"
+    vars:
+      kubectl_version: v1.28.1
+    ansible.builtin.get_url:
+      url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+      dest: /usr/bin/kubectl
+      mode: 0755
+
+  - name: install stern
+    block:
+    - ansible.builtin.get_url:
+        url: https://github.com/stern/stern/releases/download/v1.26.0/stern_1.26.0_linux_amd64.tar.gz
+        dest: /tmp/stern.tgz
+        mode: 0755
+      environment:
+        http_proxy: "{{ http_proxy }}"
+        https_proxy: "{{ https_proxy }}"
+      register: stern_dl
+    - unarchive:
+        src: /tmp/stern.tgz
+        dest: /usr/bin
+        remote_src: yes
+
+  - name: install tinet
+    tags: tinet
+    environment:
+      http_proxy: "{{ http_proxy }}"
+      https_proxy: "{{ https_proxy }}"
+    vars:
+      tinet_version: v0.0.3
+    ansible.builtin.get_url:
+      url: "https://github.com/tinynetwork/tinet/releases/download/{{ tinet_version }}/tinet.linux_amd64"
+      dest: /usr/bin/tinet
+      mode: 0755
+
+  - name: install krew
+    become: false
+    shell: |
+      (
+        set -x; cd "$(mktemp -d)" &&
+        OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+        ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+        KREW="krew-${OS}_${ARCH}" &&
+        curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
+        tar zxvf "${KREW}.tar.gz" &&
+        ./"${KREW}" install krew
+      )
+
+  - name: prepare bash-completion
+    ansible.builtin.copy:
+      dest: /etc/bash_completion.d/mfplane
+      content: |
+        . <(kubectl completion bash)
+        . <(stern --completion bash)
+        export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
+  - name: upgrade linux-kernel if needed
+    block:
+    - name: check current version
+      register: out
+      changed_when: false
+      shell: |
+        if [ $(uname -r | grep {{ kernelVersion }} | wc -l) = "0" ]; then
+          echo NEEDUPDATE
+        fi
+    - name: upgrade linux-kernel if needed
+      when: '"NEEDUPDATE" in out.stdout'
+      block:
+      - name: apt install linux-*
+        shell: |
+          apt install -y \
+            linux-image-{{ kernelVersion }}-generic \
+            linux-headers-{{ kernelVersion }}-generic \
+            linux-modules-extra-{{ kernelVersion }}-generic
+          grub-set-default $(cat /boot/grub/grub.cfg \
+            | grep 'menuentry ' \
+            | cut -f 2 -d "'" \
+            | nl -v 0 \
+            | grep "Ubuntu, with Linux {{ kernelVersion }}-generic" \
+            | grep -v "recovery mode" \
+            | awk '{print $1}')
+
+  - name: iproute2 install
+    tags: iproute2
+    vars:
+      iproute2_version: 5.15.0
+    environment:
+      http_proxy: "{{ http_proxy }}"
+      https_proxy: "{{ https_proxy }}"
+    block:
+    - name: iproute2 / download
+      ansible.builtin.get_url:
+        url: https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/snapshot/iproute2-{{ iproute2_version }}.tar.gz
+        dest: /tmp/iproute2-{{ iproute2_version }}.tar.gz
+    - name: iproute2 / build and install
+      shell: |
+        set -xe
+        cd /tmp
+        apt install -y libbpf-dev
+        rm -rf iproute2-{{ iproute2_version }}
+        tar xpf iproute2-{{ iproute2_version }}.tar.gz
+        cd iproute2-{{ iproute2_version }}
+        ./configure --libbpf_force=on
+        make install
+
+  - name: yq install
+    tags: yq
+    environment:
+      http_proxy: "{{ http_proxy }}"
+      https_proxy: "{{ https_proxy }}"
+    vars:
+      yq_version: v4.35.2
+    block:
+    - name: yq / download & install
+      ansible.builtin.get_url:
+        url: https://github.com/mikefarah/yq/releases/download/{{yq_version}}/yq_linux_amd64
+        dest: /usr/bin/yq
+        mode: 0755

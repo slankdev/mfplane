@@ -25,7 +25,13 @@ struct addr_port_stats {
   __u64 bytes;
   __u64 created_at;
   __u64 update_at;
+  __u64 flags;
 }  __attribute__ ((packed));
+
+enum tcp_state_t {
+  TCP_STATE_CLOSING   = (1<<0),
+  TCP_STATE_ESTABLISH = (1<<1),
+};
 
 struct trie4_key {
   __u32 prefixlen;
@@ -33,8 +39,8 @@ struct trie4_key {
 }  __attribute__ ((packed));
 
 struct trie4_val {
-  __u16 action;
-  struct in6_addr segs[6];
+  __u16 backend_block_index;
+  __u16 nat_port_hash_bit;
 }  __attribute__ ((packed));
 
 struct trie6_key {
@@ -61,6 +67,16 @@ struct trie6_val {
   __u8 nat_mapping;
   __u8 nat_filterring;
   struct snat_source sources[256];
+} __attribute__ ((packed));
+
+struct overlay_fib4_key {
+  __u32 vrf_id;
+  __u32 addr;
+} __attribute__ ((packed));
+
+struct overlay_fib4_val {
+  __u32 flags;
+  struct in6_addr segs[6];
 } __attribute__ ((packed));
 
 enum nat_mapping_t {
