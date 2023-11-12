@@ -24,6 +24,15 @@
 
 ## Setup
 
+pyenv
+
+```
+sudo apt update && sudo apt install -y \
+  build-essential libffi-dev libssl-dev zlib1g-dev liblzma-dev libbz2-dev \
+  libreadline-dev libsqlite3-dev libopencv-dev tk-dev git
+git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+```
+
 ```
 wget https://go.dev/dl/go1.19.8.linux-amd64.tar.gz #https://go.dev/doc/install
 rm -rf /usr/local/go && tar -C /usr/local -xzf go1.19.8.linux-amd64.tar.gz

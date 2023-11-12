@@ -19,6 +19,7 @@ limitations under the License.
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -26,6 +27,8 @@ import (
 	"github.com/hairyhenderson/go-which"
 	"github.com/zcalusic/sysinfo"
 	"golang.org/x/mod/semver"
+
+	"sigs.k8s.io/yaml"
 )
 
 // GetClangVersion returns the version string of clang as semver-formant This
@@ -180,4 +183,19 @@ func MergeLabelsDiff(base map[string]string,
 		base[k] = v
 	}
 	return base, updated
+}
+
+func YamlUnmarshalViaJson(fileContent []byte, i interface{}) error {
+	var tmp1 interface{}
+	if err := yaml.Unmarshal(fileContent, &tmp1); err != nil {
+		return err
+	}
+	tmp2, err := json.Marshal(tmp1)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(tmp2, i); err != nil {
+		return err
+	}
+	return nil
 }
