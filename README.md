@@ -1,5 +1,14 @@
 # MF-plane
 
+main-branch:
+![example workflow](https://github.com/slankdev/mfplane/actions/workflows/binary_branch.yaml/badge.svg)
+![example workflow](https://github.com/slankdev/mfplane/actions/workflows/image_branch.yaml/badge.svg)<br/>
+release-tag:
+![example workflow](https://github.com/slankdev/mfplane/actions/workflows/binary_release.yaml/badge.svg)
+![example workflow](https://github.com/slankdev/mfplane/actions/workflows/image_release.yaml/badge.svg)<br/>
+
+
+
 ## Requirements
 
 - **network function agnostic**: Supports multiple types of network functions.
