@@ -1,4 +1,4 @@
-name: branch binary
+name: main-branch binary
 
 on:
   push:
@@ -7,19 +7,25 @@ on:
 
 jobs:
   build:
-    name: Publish for ${{ matrix.os }}
+    name: ${{ matrix.os }}.go${{ matrix.go_version }}.${{ matrix.asset_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
-        - os: ubuntu-latest
-          artifact_name: mikanectl
-          asset_name: mikanectl.linux-amd64
+        - os: ubuntu-22.04
+          artifact_name: mfpctl
+          asset_name: mfpctl.linux-amd64
+          go_version: 1.19
+        - os: ubuntu-22.04
+          artifact_name: starbedctl
+          asset_name: starbedctl.linux-amd64
+          go_version: 1.19
+
     steps:
     - name: set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.19
+        go-version: ${{ matrix.go_version }}
       id: go
     - name: checkout
       uses: actions/checkout@v2
@@ -38,12 +44,22 @@ jobs:
           -X github.com/slankdev/mfplane/pkg/util.gitBranch=$(git symbolic-ref HEAD | sed -e 's#refs/heads/##g') \
           -X github.com/slankdev/mfplane/pkg/util.gitTag=none \
           -X github.com/slankdev/mfplane/pkg/util.buildDate=$(date '+%Y/%m/%d-%H:%M:%S-%Z') \
-          " cmd/mikanectl/main.go
-    - name: upload
+          " cmd/${{ matrix.artifact_name }}/main.go
+
+    - name: upload HEAD
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: ${{ matrix.artifact_name }}
-        asset_name: ${{ matrix.asset_name }}
+        asset_name: branch-main.${{ matrix.os }}.go${{ matrix.go_version }}.${{ matrix.asset_name }}
+        tag: branch-main
+        overwrite: true
+
+    - name: upload commit-SHA
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ${{ matrix.artifact_name }}
+        asset_name: commit-${{ github.sha }}.${{ matrix.os }}.go${{ matrix.go_version }}.${{ matrix.asset_name }}
         tag: branch-main
         overwrite: true

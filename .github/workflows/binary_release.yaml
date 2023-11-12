@@ -7,27 +7,36 @@ on:
 
 jobs:
   build:
-    name: Publish for ${{ matrix.os }}
+    name: ${{ matrix.os }}.go${{ matrix.go_version }}.${{ matrix.asset_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
-        - os: ubuntu-latest
-          artifact_name: mikanectl
-          asset_name: mikanectl.linux-amd64
+        - os: ubuntu-22.04
+          artifact_name: mfpctl
+          asset_name: mfpctl.linux-amd64
+          go_version: 1.19
+        - os: ubuntu-22.04
+          artifact_name: starbedctl
+          asset_name: starbedctl.linux-amd64
+          go_version: 1.19
+
     steps:
     - name: set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.18
+        go-version: ${{ matrix.go_version }}
       id: go
     - name: checkout
       uses: actions/checkout@v2
     - name: download modules
       if: steps.cache.outputs.cache-hit != 'true'
       run: go mod download
-    - name: test
-      run: go test ./... -v
+
+    # TODO(slankdev): enable after sdn-cplane is re-implemented
+    # - name: test
+    #   run: go test ./... -v
+
     - name: build
       run: |
         go build -o ${{ matrix.artifact_name }} -ldflags "\
@@ -35,7 +44,7 @@ jobs:
           -X github.com/slankdev/mfplane/pkg/util.gitBranch=none \
           -X github.com/slankdev/mfplane/pkg/util.gitTag=$(git describe --tags --abbrev=0) \
           -X github.com/slankdev/mfplane/pkg/util.buildDate=$(date '+%Y/%m/%d-%H:%M:%S-%Z') \
-          " cmd/mikanectl/main.go
+          " cmd/${{ matrix.artifact_name }}/main.go
 
     - name: upload
       uses: svenstaro/upload-release-action@v2

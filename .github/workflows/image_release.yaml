@@ -6,18 +6,24 @@ on:
 
 jobs:
   docker-build:
+    name: ${{ matrix.artifact_name }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+        - artifact_name: mfpctl
+        - artifact_name: starbedctl
+
     steps:
     - name: clone repo
       uses: actions/checkout@v2
-
     - name: login ghcr
       id: login_docker
       uses: docker/login-action@v1
       with:
         registry: ghcr.io
-        username: slankdev
-        password: ${{ secrets.GH_SECRET }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: push with branch name
       id: run_docker_push_with_branch_name
@@ -28,7 +34,8 @@ jobs:
           --build-arg GIT_BRANCH=nona \
           --build-arg GIT_TAG=$VERSION \
           --build-arg BUILD_DATE=$(date '+%Y/%m/%d-%H:%M:%S-%Z') \
-          --tag ghcr.io/slankdev/mfplane:$VERSION .
-        docker push ghcr.io/slankdev/mfplane:$VERSION
+          --tag ghcr.io/slankdev/mfplane-${{ matrix.artifact_name }}:$VERSION \
+          --file cmd/${{ matrix.artifact_name }}/Dockerfile .
+        docker push ghcr.io/slankdev/mfplane-${{ matrix.artifact_name }}:$VERSION
       env:
         BUILDKIT: 1

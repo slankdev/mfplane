@@ -7,10 +7,10 @@ ARG BUILD_DATE=unknown
 WORKDIR /opt
 COPY ./ ./
 RUN CGO_ENABLED=0 go build -o ./bin/mfpctl -ldflags "\
-  -X github.com/wide-vsix/linux-flow-exporter/pkg/util.gitSHA=$GIT_SHA \
-  -X github.com/wide-vsix/linux-flow-exporter/pkg/util.gitBranch=$GIT_BRANCH \
-  -X github.com/wide-vsix/linux-flow-exporter/pkg/util.gitTag=$GIT_TAG \
-  -X github.com/wide-vsix/linux-flow-exporter/pkg/util.buildDate=$BUILD_DATE \
+  -X github.com/slankdev/mfplane/pkg/util.gitSHA=$GIT_SHA \
+  -X github.com/slankdev/mfplane/pkg/util.gitBranch=$GIT_BRANCH \
+  -X github.com/slankdev/mfplane/pkg/util.gitTag=$GIT_TAG \
+  -X github.com/slankdev/mfplane/pkg/util.buildDate=$BUILD_DATE \
   " ./cmd/mfpctl/main.go
 
 # NETPERF

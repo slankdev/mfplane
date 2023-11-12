@@ -102,6 +102,11 @@ kubectl apply -f nats.yaml
 kubectl edit ...
 ```
 
+## Releases
+
+- https://github.com/slankdev?tab=packages&repo_name=mfplane
+- https://github.com/slankdev/mfplane/releases/tag/branch-main
+
 ## License
 
 Copyright 2023.
