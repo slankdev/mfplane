@@ -38,9 +38,28 @@ struct trie4_key {
   __u32 addr;
 }  __attribute__ ((packed));
 
+#define TRIE4_VAL_ACTION_END_MFNN    0
+#define TRIE4_VAL_ACTION_L2_XCONNECT 1
+#define TRIE4_VAL_ACTION_L3_XCONNECT 2
+#define TRIE6_VAL_ACTION_UNSPEC      0
+#define TRIE6_VAL_ACTION_L3_XCONNECT 1
+#define TRIE6_VAL_ACTION_END_MFNL    123
+#define TRIE6_VAL_ACTION_END_MFNN    456
+
+struct trie4_val_nexthop {
+  __u16 nh_family;
+  __u32 nh_addr4;
+  struct in6_addr nh_addr6;
+}  __attribute__ ((packed));
+
 struct trie4_val {
+  __u16 action;
   __u16 backend_block_index;
   __u16 nat_port_hash_bit;
+
+  // L3 Cross-Connect
+  __u16 l3_xconn_nh_count;
+  struct trie4_val_nexthop l3_xconn_nh[16];
 }  __attribute__ ((packed));
 
 struct trie6_key {
@@ -67,6 +86,10 @@ struct trie6_val {
   __u8 nat_mapping;
   __u8 nat_filterring;
   struct snat_source sources[256];
+
+  // L3 Cross-Connect
+  __u16 l3_xconn_nh_count;
+  struct trie4_val_nexthop l3_xconn_nh[16];
 } __attribute__ ((packed));
 
 struct overlay_fib4_key {
@@ -118,6 +141,17 @@ struct mf_redir_rate_stat_val {
   __u64 last_reset;
   __u64 pkts;
   __u64 bytes;
+}  __attribute__ ((packed));
+
+struct neigh_key {
+  __u32 family;
+  __u32 addr4;
+  struct in6_addr addr6;
+}  __attribute__ ((packed));
+
+struct neigh_val {
+  __u32 flags;
+  __u8 mac[6];
 }  __attribute__ ((packed));
 
 #endif /* _EBPFMAP_H_ */
