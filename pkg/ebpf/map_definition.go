@@ -118,3 +118,20 @@ type OverlayFib4RenderItem struct {
 type OverlayFib4Render struct {
 	Items []OverlayFib4RenderItem `json:"items"`
 }
+
+// +ebpf:map:name=neigh
+// +ebpf:map:render=NeighRender
+// +ebpf:map:render:key=StructNeighKeyRender
+// +ebpf:map:render:val=StructNeighValRender
+// +ebpf:map:raw:key=StructNeighKey
+// +ebpf:map:raw:val=StructNeighVal
+// +ebpf:map:type=BPF_MAP_TYPE_PERCPU_HASH
+
+type NeighRenderItem struct {
+	Key StructNeighKeyRender `json:"key"`
+	Val StructNeighValRender `json:"val"`
+}
+
+type NeighRender struct {
+	Items []NeighRenderItem `json:"items"`
+}

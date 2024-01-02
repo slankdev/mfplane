@@ -1,0 +1,141 @@
+kind: auto
+items:
+- mapfile: /sys/fs/bpf/xdp/globals/l1_encap_source
+  encap_source:
+    items:
+    - key: {index:  0}
+      val: {addr: fc00:ff00::0}
+- mapfile: /sys/fs/bpf/xdp/globals/l1_fib4
+  fib4:
+    items:
+    - key: {prefix: "142.0.0.1/32"}
+      val:
+        end_mfn_l:
+          backend_block_index: 0
+          nat_port_hash_bit: 0x00ff
+    - key: {prefix: "142.0.0.2/32"}
+      val:
+        end_mfn_l:
+          backend_block_index: 0
+          nat_port_hash_bit: 0x00ff
+- mapfile: /sys/fs/bpf/xdp/globals/l1_fib6
+  fib6:
+    items:
+    - key: {prefix: "fc00:ff01::/32"}
+      val:
+        end_mfn_l:
+          backend_block_index: 0
+          vip: "142.0.0.1"
+          nat_port_hash_bit: 0x00ff
+          usid_block_length: 32
+          usid_function_length: 32
+          nat_mapping: 0
+          nat_filtering: 0
+          sources:
+          - prefix: "10.0.1.0/24"
+    - key: {prefix: "fc00:ff02::/32"}
+      val:
+        end_mfn_l:
+          backend_block_index: 0
+          vip: "142.0.0.2"
+          nat_port_hash_bit: 0x00ff
+          usid_block_length: 32
+          usid_function_length: 32
+          nat_mapping: 0
+          nat_filtering: 0
+          sources:
+          - prefix: "10.0.2.0/24"
+    - key: {prefix: "fc00:3100::/24"}
+      val:
+        l3xconnect:
+          nexthops:
+          - nh_addr6: fe80::5054:ff:feff:3
+- mapfile: /sys/fs/bpf/xdp/globals/l1_lb_backend
+  lb_backend:
+    items:
+    - {key: {index:  0}, val: {addr: "fc00:3100:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index:  1}, val: {addr: "fc00:3100:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index:  2}, val: {addr: "fc00:3100:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index:  3}, val: {addr: "fc00:3100:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index:  4}, val: {addr: "fc00:3100:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index:  5}, val: {addr: "fc00:3100:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index:  6}, val: {addr: "fc00:3100:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index:  7}, val: {addr: "fc00:3200:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index:  8}, val: {addr: "fc00:3200:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index:  9}, val: {addr: "fc00:3200:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index: 10}, val: {addr: "fc00:3200:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index: 11}, val: {addr: "fc00:3200:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index: 12}, val: {addr: "fc00:3200:0000:0000:0000:0000:0000:0000"}}
+    - {key: {index: 13}, val: {addr: "fc00:3200:0000:0000:0000:0000:0000:0000"}}
+- mapfile: /sys/fs/bpf/xdp/globals/l1_neigh
+  neigh:
+    items:
+    - key:
+        addr6: fe80::5054:ff:feff:3
+      val:
+        mac: 52:54:00:ff:00:04
+- mapfile: /sys/fs/bpf/xdp/globals/n1_overlay_fib4
+  overlay_fib4:
+    items:
+    - {key: {vrf_id: 1, addr: "20.0.0.0"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.1"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.2"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.3"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.4"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.5"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.6"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.7"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.8"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.9"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.10"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.11"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.12"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.13"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.14"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.15"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - {key: {vrf_id: 1, addr: "20.0.0.16"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+- mapfile: /sys/fs/bpf/xdp/globals/n1_fib6
+  fib6:
+    items:
+    - key:
+        prefix: "fc00:3100::/32"
+      val:
+        end_mfn_n:
+          backend_block_index: 0
+          vip: "142.0.0.1"
+          nat_port_hash_bit: 0x00ff
+          usid_block_length: 16
+          usid_function_length: 16
+          nat_mapping: 0
+          nat_filtering: 0
+          sources:
+          - prefix: "20.0.0.0/16"
+    - key: {prefix: "fc00:1101::/32"}
+      val:
+        l3xconnect:
+          nexthops:
+          - nh_addr6: 2001::1
+- mapfile: /sys/fs/bpf/xdp/globals/n1_fib4
+  fib4:
+    items:
+    - key: {prefix: "142.0.0.2/32"}
+      val:
+        end_mfn_n:
+          backend_block_index: 0
+          nat_port_hash_bit: 0x00ff
+    - key: {prefix: "30.0.0.0/8"}
+      val:
+        l3xconnect:
+          nexthops:
+          - nh_addr4: 40.0.0.1
+- mapfile: /sys/fs/bpf/xdp/globals/n1_neigh
+  neigh:
+    items:
+    - key:
+        addr4: 40.0.0.1
+      val:
+        mac: 52:54:00:ff:00:02
+    - key:
+        addr6: 2001::1
+      val:
+        mac: 52:54:00:ff:00:01

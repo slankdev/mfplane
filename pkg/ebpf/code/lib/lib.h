@@ -24,6 +24,13 @@
 #error "please define NAME"
 #endif
 
+#ifndef AF_INET
+#define AF_INET 2
+#endif
+#ifndef AF_INET6
+#define AF_INET6 10
+#endif
+
 #include "ebpfmap.h"
 
 #define NSEC_PER_SEC  (1000ULL * 1000ULL * 1000UL)
@@ -46,7 +53,7 @@
 #ifdef DEBUG
 #define assert_len(interest, end)              \
   ({                                           \
-    if ((unsigned long)(interest + 1) > end) { \
+    if (!interest || (unsigned long)(interest + 1) > end) { \
       bpf_printk(STR(NAME)"assert_len abort"); \
       return XDP_ABORTED;                      \
     }                                          \
@@ -54,10 +61,20 @@
 #else
 #define assert_len(interest, end)            \
   ({                                         \
-    if ((unsigned long)(interest + 1) > end) \
+    if (!interest || (unsigned long)(interest + 1) > end) \
       return XDP_ABORTED;                    \
   })
 #endif
+
+struct srh {
+  __u8 next_header;
+  __u8 hdr_ext_len;
+  __u8 routing_type;
+  __u8 segment_left;
+  __u8 last_entry;
+  __u8 flags;
+  __u16 tag;
+} __attribute__ ((packed));
 
 // TODO(slankdev); no support multiple sids in sid-list
 struct outer_header {
@@ -85,9 +102,6 @@ static inline int
 ignore_packet(struct xdp_md *ctx, int line)
 {
   debug_function_call(ctx, __func__, line);
-#ifdef DEBUG_IGNORE_PACKET
-  bpf_printk(STR(NAME)"ignore packet");
-#endif
   return XDP_PASS;
 }
 
@@ -95,9 +109,6 @@ static inline int
 error_packet(struct xdp_md *ctx, int line)
 {
   debug_function_call(ctx, __func__, line);
-#ifdef DEBUG_ERROR_PACKET
-  bpf_printk(STR(NAME)"error packet");
-#endif
   return XDP_DROP;
 }
 
@@ -105,9 +116,6 @@ static inline int
 tx_packet(struct xdp_md *ctx, int line)
 {
   debug_function_call(ctx, __func__, line);
-#ifdef DEBUG_TX_PACKET
-  bpf_printk(STR(NAME)"tx packet");
-#endif
   return XDP_TX;
 }
 

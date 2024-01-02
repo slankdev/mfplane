@@ -9,9 +9,9 @@ import (
 	"github.com/slankdev/mfplane/pkg/util"
 )
 
-type EndMflNormalTestCase struct{}
+type EndMflHEncapsRedTestCase struct{}
 
-func (tc EndMflNormalTestCase) GenerateInput() ([]byte, error) {
+func (tc EndMflHEncapsRedTestCase) GenerateInput() ([]byte, error) {
 	// Ethernet
 	ethernetLayer := &layers.Ethernet{
 		SrcMAC:       util.MustParseMAC("52:54:00:00:00:01"),
@@ -22,25 +22,10 @@ func (tc EndMflNormalTestCase) GenerateInput() ([]byte, error) {
 	// IPv6
 	ipv6Layer := &layers.IPv6{
 		Version:    6,
-		NextHeader: layers.IPProtocolIPv6Routing,
+		NextHeader: layers.IPProtocolIPv4,
 		HopLimit:   64,
 		SrcIP:      net.ParseIP("2001:db8::1"),
 		DstIP:      net.ParseIP("fc00:ff01::"),
-	}
-
-	// SRH
-	segmentList := []net.IP{
-		net.ParseIP("fc00:ff01::"),
-	}
-	seg6Layer := &util.Srv6Layer{
-		NextHeader:   uint8(layers.IPProtocolIPv4),
-		HdrExtLen:    uint8((8+16*len(segmentList))/8 - 1),
-		RoutingType:  4, // SRH
-		SegmentsLeft: uint8(len(segmentList)),
-		LastEntry:    uint8(len(segmentList) - 1),
-		Flags:        0,
-		Tag:          0,
-		Segments:     segmentList,
 	}
 
 	// IPv4
@@ -67,7 +52,6 @@ func (tc EndMflNormalTestCase) GenerateInput() ([]byte, error) {
 		gopacket.SerializeOptions{FixLengths: true, ComputeChecksums: true},
 		ethernetLayer,
 		ipv6Layer,
-		seg6Layer,
 		ipv4Layer,
 		udpLayer,
 		gopacket.Payload([]byte("Hello, MF-Plane!")),
@@ -78,7 +62,7 @@ func (tc EndMflNormalTestCase) GenerateInput() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (tc EndMflNormalTestCase) GenerateOutput() (int, []byte, error) {
+func (tc EndMflHEncapsRedTestCase) GenerateOutput() (int, []byte, error) {
 	// Ethernet
 	ethernetLayer := &layers.Ethernet{
 		SrcMAC:       util.MustParseMAC("52:54:00:00:00:02"),
@@ -145,11 +129,11 @@ func (tc EndMflNormalTestCase) GenerateOutput() (int, []byte, error) {
 	return XDP_TX, buf.Bytes(), nil
 }
 
-func (tc EndMflNormalTestCase) OutputPostProcess(b []byte) ([]byte, error) {
+func (tc EndMflHEncapsRedTestCase) OutputPostProcess(b []byte) ([]byte, error) {
 	return b, nil
 }
 
-func (tc EndMflNormalTestCase) PreTestMapContext() *ProgRunMapContext {
+func (tc EndMflHEncapsRedTestCase) PreTestMapContext() *ProgRunMapContext {
 	c := ProgRunMapContext{
 		Fib6Render: Fib6Render{
 			Items: []Fib6RenderItem{
@@ -200,6 +184,8 @@ func (tc EndMflNormalTestCase) PreTestMapContext() *ProgRunMapContext {
 				},
 			},
 		},
+		NatOutRender: NatOutRender{},
+		NatRetRender: NatRetRender{},
 		LbBackendRender: LbBackendRender{
 			Items: []LbBackendRenderItem{
 				{Key: StructArrayKey32Render{Index: 0}, Val: StructFlowProcessorRender{Addr: "fc00:3100::"}},
@@ -222,7 +208,7 @@ func (tc EndMflNormalTestCase) PreTestMapContext() *ProgRunMapContext {
 	return &c
 }
 
-func (tc EndMflNormalTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContext) {
+func (tc EndMflHEncapsRedTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContext) {
 	mc.EncapSourceRender = EncapSourceRender{}
 	mc.Fib4Render = Fib4Render{}
 	mc.NeighRender = NeighRender{}
@@ -231,7 +217,7 @@ func (tc EndMflNormalTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContex
 	mc.OverlayFib4Render = OverlayFib4Render{}
 }
 
-func (tc EndMflNormalTestCase) PostTestMapContextExpect() *ProgRunMapContext {
+func (tc EndMflHEncapsRedTestCase) PostTestMapContextExpect() *ProgRunMapContext {
 	c := ProgRunMapContext{
 		Fib6Render: Fib6Render{
 			Items: []Fib6RenderItem{
@@ -264,7 +250,7 @@ func (tc EndMflNormalTestCase) PostTestMapContextExpect() *ProgRunMapContext {
 								{Prefix: "10.0.1.0/24"},
 							},
 							StatsTotalPkts:  1,
-							StatsTotalBytes: 122,
+							StatsTotalBytes: 98,
 						},
 					},
 				},
@@ -292,6 +278,6 @@ func (tc EndMflNormalTestCase) PostTestMapContextExpect() *ProgRunMapContext {
 	return &c
 }
 
-func TestEndMflNormalTestCase(t *testing.T) {
-	ExecuteTestCase(EndMflNormalTestCase{}, t)
+func TestEndMflHEncapsRedTestCase(t *testing.T) {
+	ExecuteTestCase(EndMflHEncapsRedTestCase{}, t)
 }

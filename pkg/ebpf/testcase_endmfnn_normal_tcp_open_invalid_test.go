@@ -86,29 +86,30 @@ func (tc EndMfnNormalTcpOpenInvalidTestCase) OutputPostProcess(b []byte) ([]byte
 	return nil, nil
 }
 
-func (tc EndMfnNormalTcpOpenInvalidTestCase) PreTestMapContext() *MapContext {
-	c := MapContext{
-		Fib6: Fib6Render{
+func (tc EndMfnNormalTcpOpenInvalidTestCase) PreTestMapContext() *ProgRunMapContext {
+	c := ProgRunMapContext{
+		Fib6Render: Fib6Render{
 			Items: []Fib6RenderItem{
 				{
 					Key: StructTrie6KeyRender{
 						Prefix: "fc00:3100::/32",
 					},
 					Val: StructTrie6ValRender{
-						Action:             456,
-						BackendBlockIndex:  0,
-						Vip:                "142.0.0.1",
-						NatPortHashBit:     255,
-						UsidBlockLength:    16,
-						UsidFunctionLength: 16,
-						StatsTotalBytes:    6850,
-						StatsTotalPkts:     51,
-						StatsRedirBytes:    0,
-						StatsRedirPkts:     0,
-						NatMapping:         0,
-						NatFiltering:       0,
-						Sources: []StructTrie6ValRenderSnatSource{
-							{Prefix: "10.0.1.0/24"},
+						EndMNFN: &EndMFN{
+							BackendBlockIndex:  0,
+							Vip:                "142.0.0.1",
+							NatPortHashBit:     255,
+							UsidBlockLength:    16,
+							UsidFunctionLength: 16,
+							StatsTotalBytes:    6850,
+							StatsTotalPkts:     51,
+							StatsRedirBytes:    0,
+							StatsRedirPkts:     0,
+							NatMapping:         0,
+							NatFiltering:       0,
+							Sources: []StructTrie6ValRenderSnatSource{
+								{Prefix: "10.0.1.0/24"},
+							},
 						},
 					},
 				},
@@ -118,18 +119,19 @@ func (tc EndMfnNormalTcpOpenInvalidTestCase) PreTestMapContext() *MapContext {
 	return &c
 }
 
-func (tc EndMfnNormalTcpOpenInvalidTestCase) PostTestMapContextPreprocess(mc *MapContext) {
-	mc.Fib6 = Fib6Render{}
-	mc.LbBackend = LbBackendRender{}
-	return
+func (tc EndMfnNormalTcpOpenInvalidTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContext) {
+	mc.Fib4Render = Fib4Render{}
+	mc.Fib6Render = Fib6Render{}
+	mc.NeighRender = NeighRender{}
+	mc.NatOutRender = NatOutRender{}
+	mc.NatRetRender = NatRetRender{}
+	mc.LbBackendRender = LbBackendRender{}
+	mc.EncapSourceRender = EncapSourceRender{}
+	mc.OverlayFib4Render = OverlayFib4Render{}
 }
 
-func (tc EndMfnNormalTcpOpenInvalidTestCase) PostTestMapContextExpect() *MapContext {
-	c := MapContext{
-		NatOut:      NatOutRender{Items: []NatOutRenderItem{}},
-		NatRet:      NatRetRender{Items: []NatRetRenderItem{}},
-		OverlayFib4: OverlayFib4Render{Items: []OverlayFib4RenderItem{}},
-	}
+func (tc EndMfnNormalTcpOpenInvalidTestCase) PostTestMapContextExpect() *ProgRunMapContext {
+	c := ProgRunMapContext{}
 	return &c
 }
 

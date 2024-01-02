@@ -164,6 +164,7 @@ import (
 
 	"github.com/cilium/ebpf"
 	"github.com/spf13/cobra"
+	"github.com/pkg/errors"
 
 	"github.com/slankdev/mfplane/pkg/util"
 )
@@ -178,11 +179,11 @@ func (r *{{.RenderName}}) WriteImpl(mapfile string) error {
 	for _, entry := range r.Items {
 		key, err := entry.Key.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "{{.RenderName}}.WriteImpl.key.ToRaw")
 		}
 		val, err := entry.Val.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "{{.RenderName}}.WriteImpl.val.ToRaw")
 		}
 
 		// install to eBPF map
@@ -192,15 +193,15 @@ func (r *{{.RenderName}}) WriteImpl(mapfile string) error {
 			func(m *ebpf.Map) error {
 				return UpdatePerCPUArrayAll(m, key, val, ebpf.UpdateAny)
 			}); err != nil {
-			return err
+			return errors.Wrap(err, "{{.RenderName}}.WriteImpl.percpumap")
 		}
 {{ else }}
 		m, err := ebpf.LoadPinnedMap(mapfile, nil)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "{{.RenderName}}.WriteImpl.loadPinnedMap")
 		}
 		if err := m.Update(key, val, ebpf.UpdateAny); err != nil {
-			return err
+			return errors.Wrap(err, "{{.RenderName}}.WriteImpl.update")
 		}
 {{ end }}
 	}
@@ -210,7 +211,7 @@ func (r *{{.RenderName}}) WriteImpl(mapfile string) error {
 func (r *{{.RenderName}}) ReadImpl(mapfile string) error {
 	m, err := ebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "{{.RenderName}}.WriteImpl.loadPinnedMap")
 	}
 
 	// Parse
@@ -228,16 +229,17 @@ func (r *{{.RenderName}}) ReadImpl(mapfile string) error {
 {{ end }}
 		kr, err := key.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "{{.RenderName}}.WriteImpl.key.ToRender")
 		}
 		vr, err := val.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "{{.RenderName}}.WriteImpl.val.ToRender")
 		}
 		k, ok1 := kr.(*{{.RenderKeyStructName}})
 		v, ok2 := vr.(*{{.RenderValStructName}})
 		if !ok1 || !ok2 {
-			return fmt.Errorf("cast error")
+			err := fmt.Errorf("cast error")
+			return errors.Wrap(err, "{{.RenderName}}.WriteImpl.val.ToRender")
 		}
 		entries = append(entries, {{.RenderName}}Item{Key: *k, Val: *v})
 	}
@@ -396,7 +398,7 @@ func ReadAll(root string) (*MapGeneric, error) {
 			case strings.HasSuffix(file.Name(), "{{.Name}}"):
 				{{.Name}} := {{.RenderName}}{}
 				if err := Read(mapfile, &{{.Name}}); err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
 				}
 				item.{{.RenderName}} = &{{.Name}}
 {{ end }}
@@ -422,11 +424,69 @@ func WriteAll(all *MapGeneric) error {
 				return fmt.Errorf("type is {{.Name}} but property is not set")
 			}
 			if err := Write(item.Mapfile, item.{{.RenderName}}); err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
 			}
 {{ end }}
 		}
 	}
 	return nil
+}
+
+type ProgRunMapContext struct {
+{{- range . }}
+	{{ .RenderName }} {{ .RenderName }}
+{{- end }}
+}
+
+func FlushProgRunMapContext(progName string) error {
+	name := progName
+	root := "/sys/fs/bpf/xdp/globals/"
+	for _, mapName := range []string{
+{{- range . }}
+		"{{- .Name -}}",
+{{- end }}
+	} {
+		if err := Flush(root + name + "_" + mapName); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func SetProgRunMapContext(mc *ProgRunMapContext, progName string) error {
+	name := progName
+	root := "/sys/fs/bpf/xdp/globals/"
+
+{{- range . }}
+	if len(mc.{{ .RenderName }}.Items) > 0 {
+		if err := Write(
+			root+name+"_{{ .Name }}",
+			&mc.{{ .RenderName }}); err != nil {
+			return errors.Wrap(err, "{{ .Name }}")
+		}
+	}
+{{- end }}
+
+	return nil
+}
+
+func DumpProgRunMapContext(progName string) (*ProgRunMapContext, error) {
+	name := progName
+	root := "/sys/fs/bpf/xdp/globals/"
+
+{{- range . }}
+	{{ .Name }} := {{ .RenderName }}{}
+	if err := Read(
+		root+name+"_{{ .Name }}",
+		&{{ .Name }}); err != nil {
+		return nil, errors.Wrap(err, "{{ .Name }}")
+	}
+{{- end }}
+
+	return &ProgRunMapContext{
+{{- range . }}
+		{{ .RenderName }}: {{ .Name }},
+{{- end }}
+	}, nil
 }
 `
