@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/cilium/ebpf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -28,17 +30,9 @@ type TestCase interface {
 	GenerateInput() ([]byte, error)
 	GenerateOutput() (int, []byte, error)
 	OutputPostProcess(b []byte) ([]byte, error)
-	PreTestMapContext() *MapContext
-	PostTestMapContextPreprocess(mc *MapContext)
-	PostTestMapContextExpect() *MapContext
-}
-
-type MapContext struct {
-	Fib6        Fib6Render
-	NatOut      NatOutRender
-	NatRet      NatRetRender
-	LbBackend   LbBackendRender
-	OverlayFib4 OverlayFib4Render
+	PreTestMapContext() *ProgRunMapContext
+	PostTestMapContextPreprocess(mc *ProgRunMapContext)
+	PostTestMapContextExpect() *ProgRunMapContext
 }
 
 func unlinkAll(rootdir string) error {
@@ -98,6 +92,7 @@ func TestMain(m *testing.M) {
 		[]string{
 			"DEBUG_FUNCTION_CALL",
 			"DEBUG_MF_REDIRECT",
+			"DEBUG_PARSE_METADATA",
 		},
 	)
 	if err != nil {
@@ -107,111 +102,6 @@ func TestMain(m *testing.M) {
 
 	ebpfObjFile = fmt.Sprintf("%s/bin/out.o", tmppath)
 	m.Run()
-}
-
-func FlushMapContext() error {
-	name := ebpfProgramName
-	root := "/sys/fs/bpf/xdp/globals/"
-	for _, mapName := range []string{
-		"fib6",
-		"fib4",
-		"nat_out",
-		"nat_ret",
-		"overlay_fib4",
-	} {
-		if err := Flush(root + name + "_" + mapName); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func SetMapContext(mc *MapContext) error {
-	name := ebpfProgramName
-	root := "/sys/fs/bpf/xdp/globals/"
-
-	if len(mc.Fib6.Items) > 0 {
-		if err := Write(
-			root+name+"_fib6",
-			&mc.Fib6); err != nil {
-			return errors.Wrap(err, "mapSetFib6")
-		}
-	}
-	if len(mc.NatOut.Items) > 0 {
-		if err := Write(
-			root+name+"_nat_out",
-			&mc.NatOut); err != nil {
-			return errors.Wrap(err, "mapSetNatOut")
-		}
-	}
-	if len(mc.NatRet.Items) > 0 {
-		if err := Write(
-			root+name+"_nat_ret",
-			&mc.NatRet); err != nil {
-			return errors.Wrap(err, "mapSetNatRet")
-		}
-	}
-	if len(mc.LbBackend.Items) > 0 {
-		if err := Write(
-			root+name+"_lb_backend",
-			&mc.LbBackend); err != nil {
-			return errors.Wrap(err, "LbBackend")
-		}
-	}
-	if len(mc.OverlayFib4.Items) > 0 {
-		if err := Write(
-			root+name+"_overlay_fib4",
-			&mc.OverlayFib4); err != nil {
-			return errors.Wrap(err, "OverlayFib4")
-		}
-	}
-	return nil
-}
-
-func DumpMapContext() (*MapContext, error) {
-	name := ebpfProgramName
-	root := "/sys/fs/bpf/xdp/globals/"
-
-	natOut := NatOutRender{}
-	if err := Read(
-		root+name+"_nat_out",
-		&natOut); err != nil {
-		return nil, errors.Wrap(err, "nat_out")
-	}
-	natRet := NatRetRender{}
-	if err := Read(
-		root+name+"_nat_ret",
-		&natRet); err != nil {
-		return nil, errors.Wrap(err, "nat_ret")
-	}
-	fib6 := Fib6Render{}
-	if err := Read(
-		root+name+"_fib6",
-		&fib6); err != nil {
-		return nil, errors.Wrap(err, "fib6")
-	}
-	lbBackend := LbBackendRender{}
-	if err := Read(
-		root+name+"_lb_backend",
-		&lbBackend,
-	); err != nil {
-		return nil, errors.Wrap(err, "lb_backend")
-	}
-	overlayFib4 := OverlayFib4Render{}
-	if err := Read(
-		root+name+"_overlay_fib4",
-		&overlayFib4,
-	); err != nil {
-		return nil, errors.Wrap(err, "overlay_fib4")
-	}
-
-	return &MapContext{
-		Fib6:        fib6,
-		NatOut:      natOut,
-		NatRet:      natRet,
-		LbBackend:   lbBackend,
-		OverlayFib4: overlayFib4,
-	}, nil
 }
 
 func DiffPackets(b1, b2 []byte) (bool, string, error) {
@@ -244,14 +134,24 @@ func ExecuteTestCase(tc TestCase, t *testing.T) {
 	// Load ebpf program
 	prog, err := XdpLoad(ebpfObjFile, "xdp_ingress")
 	if err != nil {
+		var ve *ebpf.VerifierError
+		if errors.As(err, &ve) {
+			s := fmt.Sprint("\n\n\n")
+			for _, log := range ve.Log {
+				s += fmt.Sprintln(log)
+			}
+			s += fmt.Sprint("\n\n\n")
+			s += fmt.Sprintf("%d logs\n", len(ve.Log))
+			_ = os.WriteFile("/tmp/verifier.log", []byte(s), os.ModePerm)
+		}
 		t.Error(err)
 	}
-	if err := FlushMapContext(); err != nil {
+	if err := FlushProgRunMapContext(ebpfProgramName); err != nil {
 		t.Error(err)
 	}
 
 	// Set ebpf map fib6
-	if err := SetMapContext(tc.PreTestMapContext()); err != nil {
+	if err := SetProgRunMapContext(tc.PreTestMapContext(), ebpfProgramName); err != nil {
 		t.Error(err)
 	}
 
@@ -291,7 +191,7 @@ func ExecuteTestCase(tc TestCase, t *testing.T) {
 
 	// Dump result map data
 	// Proprocess
-	dump, err := DumpMapContext()
+	dump, err := DumpProgRunMapContext(ebpfProgramName)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,5 +199,20 @@ func ExecuteTestCase(tc TestCase, t *testing.T) {
 	check := tc.PostTestMapContextExpect()
 	if !reflect.DeepEqual(check, dump) {
 		t.Errorf("map invalid DIFF:\n%s", cmp.Diff(check, dump))
+	}
+}
+
+func TestXDPLoad(t *testing.T) {
+	if _, err := XdpLoad(ebpfObjFile, "xdp_ingress"); err != nil {
+		var ve *ebpf.VerifierError
+		if errors.As(err, &ve) {
+			s := fmt.Sprintf("Bpf Verifier failed at %s\n", time.Now().String())
+			for _, log := range ve.Log {
+				s += fmt.Sprintln(log)
+			}
+			s += fmt.Sprintf("%d logs\n", len(ve.Log))
+			_ = os.WriteFile("/tmp/verifier.log", []byte(s), os.ModePerm)
+		}
+		t.Error(errors.Wrap(err, "log:/tmp/verifier.log"))
 	}
 }

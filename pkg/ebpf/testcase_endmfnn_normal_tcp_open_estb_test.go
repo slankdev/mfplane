@@ -83,7 +83,7 @@ func (tc EndMfnNormalTcpOpenEstbTestCase) GenerateOutput() (int, []byte, error) 
 	// Ethernet
 	ethernetLayer := &layers.Ethernet{
 		SrcMAC:       util.MustParseMAC("52:54:00:00:00:02"),
-		DstMAC:       util.MustParseMAC("52:54:00:00:00:01"),
+		DstMAC:       util.MustParseMAC("52:54:00:22:00:01"),
 		EthernetType: layers.EthernetTypeIPv6,
 	}
 
@@ -151,35 +151,60 @@ func (tc EndMfnNormalTcpOpenEstbTestCase) OutputPostProcess(b []byte) ([]byte, e
 	return b, nil
 }
 
-func (tc EndMfnNormalTcpOpenEstbTestCase) PreTestMapContext() *MapContext {
-	c := MapContext{
-		Fib6: Fib6Render{
+func (tc EndMfnNormalTcpOpenEstbTestCase) PreTestMapContext() *ProgRunMapContext {
+	c := ProgRunMapContext{
+		Fib6Render: Fib6Render{
 			Items: []Fib6RenderItem{
 				{
 					Key: StructTrie6KeyRender{
 						Prefix: "fc00:3100::/32",
 					},
 					Val: StructTrie6ValRender{
-						Action:             456,
-						BackendBlockIndex:  0,
-						Vip:                "142.0.0.1",
-						NatPortHashBit:     255,
-						UsidBlockLength:    16,
-						UsidFunctionLength: 16,
-						StatsTotalBytes:    6850,
-						StatsTotalPkts:     51,
-						StatsRedirBytes:    0,
-						StatsRedirPkts:     0,
-						NatMapping:         0,
-						NatFiltering:       0,
-						Sources: []StructTrie6ValRenderSnatSource{
-							{Prefix: "10.0.1.0/24"},
+						EndMNFN: &EndMFN{
+							BackendBlockIndex:  0,
+							Vip:                "142.0.0.1",
+							NatPortHashBit:     255,
+							UsidBlockLength:    16,
+							UsidFunctionLength: 16,
+							StatsTotalBytes:    6850,
+							StatsTotalPkts:     51,
+							StatsRedirBytes:    0,
+							StatsRedirPkts:     0,
+							NatMapping:         0,
+							NatFiltering:       0,
+							Sources: []StructTrie6ValRenderSnatSource{
+								{Prefix: "10.0.1.0/24"},
+							},
+						},
+					},
+				},
+				{
+					Key: StructTrie6KeyRender{
+						Prefix: "fc00:1101::/32",
+					},
+					Val: StructTrie6ValRender{
+						L3XConnect: &L3XConnect{
+							Nexthops: []StructTrieValNexthopRender{
+								{NhAddr6: "fe80::1"},
+							},
 						},
 					},
 				},
 			},
 		},
-		OverlayFib4: OverlayFib4Render{
+		NeighRender: NeighRender{
+			Items: []NeighRenderItem{
+				{
+					Key: StructNeighKeyRender{
+						Addr6: "fe80::1",
+					},
+					Val: StructNeighValRender{
+						Mac: "52:54:00:22:00:01",
+					},
+				},
+			},
+		},
+		OverlayFib4Render: OverlayFib4Render{
 			Items: []OverlayFib4RenderItem{
 				{
 					Key: StructOverlayFib4KeyRender{
@@ -195,7 +220,7 @@ func (tc EndMfnNormalTcpOpenEstbTestCase) PreTestMapContext() *MapContext {
 				},
 			},
 		},
-		NatOut: NatOutRender{
+		NatOutRender: NatOutRender{
 			Items: []NatOutRenderItem{
 				{
 					Key: StructAddrPortRender{
@@ -219,7 +244,7 @@ func (tc EndMfnNormalTcpOpenEstbTestCase) PreTestMapContext() *MapContext {
 				},
 			},
 		},
-		NatRet: NatRetRender{
+		NatRetRender: NatRetRender{
 			Items: []NatRetRenderItem{
 				{
 					Key: StructAddrPortRender{
@@ -247,23 +272,25 @@ func (tc EndMfnNormalTcpOpenEstbTestCase) PreTestMapContext() *MapContext {
 	return &c
 }
 
-func (tc EndMfnNormalTcpOpenEstbTestCase) PostTestMapContextPreprocess(mc *MapContext) {
-	mc.Fib6 = Fib6Render{}
-	mc.LbBackend = LbBackendRender{}
-	mc.OverlayFib4 = OverlayFib4Render{}
-	for i := 0; i < len(mc.NatOut.Items); i++ {
-		mc.NatOut.Items[i].Val.UpdatedAt = 0
+func (tc EndMfnNormalTcpOpenEstbTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContext) {
+	mc.Fib4Render = Fib4Render{}
+	mc.Fib6Render = Fib6Render{}
+	mc.NeighRender = NeighRender{}
+	mc.LbBackendRender = LbBackendRender{}
+	mc.EncapSourceRender = EncapSourceRender{}
+	mc.OverlayFib4Render = OverlayFib4Render{}
+	for i := 0; i < len(mc.NatOutRender.Items); i++ {
+		mc.NatOutRender.Items[i].Val.UpdatedAt = 0
 	}
-	for i := 0; i < len(mc.NatRet.Items); i++ {
-		mc.NatRet.Items[i].Val.UpdatedAt = 0
+	for i := 0; i < len(mc.NatRetRender.Items); i++ {
+		mc.NatRetRender.Items[i].Val.UpdatedAt = 0
 	}
 	return
 }
 
-func (tc EndMfnNormalTcpOpenEstbTestCase) PostTestMapContextExpect() *MapContext {
-	c := MapContext{
-		Fib6: Fib6Render{},
-		NatOut: NatOutRender{
+func (tc EndMfnNormalTcpOpenEstbTestCase) PostTestMapContextExpect() *ProgRunMapContext {
+	c := ProgRunMapContext{
+		NatOutRender: NatOutRender{
 			Items: []NatOutRenderItem{
 				{
 					Key: StructAddrPortRender{
@@ -287,7 +314,7 @@ func (tc EndMfnNormalTcpOpenEstbTestCase) PostTestMapContextExpect() *MapContext
 				},
 			},
 		},
-		NatRet: NatRetRender{
+		NatRetRender: NatRetRender{
 			Items: []NatRetRenderItem{
 				{
 					Key: StructAddrPortRender{
