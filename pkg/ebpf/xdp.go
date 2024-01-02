@@ -2,6 +2,7 @@ package ebpf
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
@@ -15,6 +16,20 @@ func XdpLoad(progFile, section string) (*ebpf.Program, error) {
 		return nil, err
 	}
 	coll, err := ebpf.NewCollectionWithOptions(spec, ebpf.CollectionOptions{
+		Programs: ebpf.ProgramOptions{
+			// NOTE(slankdev): with ebpf.LogLevelInstruction, too many time to verfy.
+			// LogLevel: (
+			//     ebpf.LogLevelBranch |
+			//     ebpf.LogLevelInstruction |
+			//     ebpf.LogLevelStats
+			// ),
+			// ref: https://pkg.go.dev/github.com/cilium/ebpf#pkg-constants
+			// LogLevel: (ebpf.LogLevelBranch | ebpf.LogLevelStats),
+
+			// ebpf.maxVerifierLogSize is math.MaxUint32 >> 2 (1073741823)
+			// ref: https://github.com/cilium/ebpf/blob/v0.12.3/prog.go#L42
+			LogSize: math.MaxUint32 >> 2,
+		},
 		Maps: ebpf.MapOptions{PinPath: "/sys/fs/bpf/xdp/globals"},
 	})
 	if err != nil {

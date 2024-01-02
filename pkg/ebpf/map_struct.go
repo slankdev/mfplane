@@ -3,6 +3,7 @@ package ebpf
 import (
 	"fmt"
 	"net"
+	"syscall"
 
 	"github.com/slankdev/mfplane/pkg/util"
 )
@@ -161,27 +162,118 @@ var (
 	_ KVRender = &StructTrie4KeyRender{}
 )
 
+const (
+	TRIE4_VAL_ACTION_END_MFNN    = 0
+	TRIE4_VAL_ACTION_L3_XCONNECT = 2
+)
+
+type StructTrieValNexthop struct {
+	NhFamily uint16    `json:"nh_family"`
+	NhAddr4  [4]uint8  `json:"nh_addr4"`
+	NhAddr6  [16]uint8 `json:"nh_addr6"`
+}
+
 type StructTrie4Val struct {
-	BackendBlockIndex uint16 `json:"backend_block_index"`
-	NatPortHashBit    uint16 `json:"nat_port_hash_bit"`
+	Action            uint16                   `json:"action"`
+	BackendBlockIndex uint16                   `json:"backend_block_index"`
+	NatPortHashBit    uint16                   `json:"nat_port_hash_bit"`
+	L3XConnNhCount    uint16                   `json:"l3_xcon_nh_count"`
+	L3XConnNh         [16]StructTrieValNexthop `json:"l3xconnect"`
 }
 
 func (raw *StructTrie4Val) ToRender() (KVRender, error) {
 	render := StructTrie4ValRender{}
-	render.BackendBlockIndex = raw.BackendBlockIndex
-	render.NatPortHashBit = raw.NatPortHashBit
+	switch raw.Action {
+	case TRIE4_VAL_ACTION_END_MFNN:
+		render.EndMNFL4 = &EndMFN{
+			BackendBlockIndex: raw.BackendBlockIndex,
+			NatPortHashBit:    raw.NatPortHashBit,
+		}
+	case TRIE4_VAL_ACTION_L3_XCONNECT:
+		l3x := L3XConnect{}
+		for i := 0; i < int(raw.L3XConnNhCount); i++ {
+			nh := raw.L3XConnNh[i]
+			nhRender := StructTrieValNexthopRender{}
+			switch nh.NhFamily {
+			case syscall.AF_INET:
+				nhRender.NhAddr4 = net.IP(nh.NhAddr4[:]).String()
+			case syscall.AF_INET6:
+				nhRender.NhAddr6 = net.IP(nh.NhAddr6[:]).String()
+			default:
+				return nil, fmt.Errorf("invalid nh family %d", nh.NhFamily)
+			}
+			l3x.Nexthops = append(l3x.Nexthops, nhRender)
+		}
+		render.L3XConnect = &l3x
+	default:
+		return nil, fmt.Errorf("invalid format")
+	}
 	return &render, nil
 }
 
-type StructTrie4ValRender struct {
+const (
+	TRIE6_VAL_ACTION_UNSPEC      = 0
+	TRIE6_VAL_ACTION_L3_XCONNECT = 1
+	TRIE6_VAL_ACTION_END_MFNL    = 123
+	TRIE6_VAL_ACTION_END_MFNN    = 456
+)
+
+type StructTrieValNexthopRender struct {
+	NhAddr4 string `json:"nh_addr4,omitemtpy"`
+	NhAddr6 string `json:"nh_addr6,omitempty"`
+}
+
+type EndMFNL4 struct {
 	BackendBlockIndex uint16 `json:"backend_block_index"`
 	NatPortHashBit    uint16 `json:"nat_port_hash_bit"`
 }
 
+type StructTrie4ValRender struct {
+	EndMNFL4   *EndMFN     `json:"end_mfn_l,omitempty"`
+	L3XConnect *L3XConnect `json:"l3xconnect,omitempty"`
+}
+
 func (render *StructTrie4ValRender) ToRaw() (KVRaw, error) {
+	cnt := 0
 	raw := StructTrie4Val{}
-	raw.BackendBlockIndex = render.BackendBlockIndex
-	raw.NatPortHashBit = render.NatPortHashBit
+	if render.EndMNFL4 != nil {
+		cnt++
+		raw.Action = TRIE4_VAL_ACTION_END_MFNN
+		raw.BackendBlockIndex = render.EndMNFL4.BackendBlockIndex
+		raw.NatPortHashBit = render.EndMNFL4.NatPortHashBit
+	}
+	if render.L3XConnect != nil {
+		cnt++
+		raw.Action = TRIE4_VAL_ACTION_L3_XCONNECT
+		if len(render.L3XConnect.Nexthops) > 16 {
+			return nil, fmt.Errorf("too long")
+		}
+		raw.L3XConnNhCount = uint16(len(render.L3XConnect.Nexthops))
+		for i, nh := range render.L3XConnect.Nexthops {
+			nhcnt := 0
+			if nh.NhAddr4 != "" {
+				nhcnt++
+				addr4 := net.ParseIP(nh.NhAddr4)
+				if addr4 == nil {
+					return nil, fmt.Errorf("%s is invalid as ip-addr", nh.NhAddr4)
+				}
+				copy(raw.L3XConnNh[i].NhAddr4[:], addr4[12:])
+				raw.L3XConnNh[i].NhFamily = syscall.AF_INET
+			}
+			if nh.NhAddr6 != "" {
+				nhcnt++
+				addr6 := net.ParseIP(nh.NhAddr6)
+				if addr6 == nil {
+					return nil, fmt.Errorf("%s is invalid as ip-addr", nh.NhAddr4)
+				}
+				copy(raw.L3XConnNh[i].NhAddr6[:], addr6[0:])
+				raw.L3XConnNh[i].NhFamily = syscall.AF_INET6
+			}
+			if nhcnt != 1 {
+				return nil, fmt.Errorf("invalid format")
+			}
+		}
+	}
 	return &raw, nil
 }
 
@@ -241,32 +333,65 @@ type StructTrie6Val struct {
 	NatMapping         uint8                         `json:"nat_mapping"`
 	NatFiltering       uint8                         `json:"nat_filtering"`
 	Sources            [256]StructTrie6ValSnatSource `json:"sources"`
+
+	// L3 Cross-Connect
+	L3XConnNhCount uint16                   `json:"l3_xcon_nh_count"`
+	L3XConnNh      [16]StructTrieValNexthop `json:"l3xconnect"`
 }
 
 func (raw *StructTrie6Val) ToRender() (KVRender, error) {
-	render := StructTrie6ValRender{}
-	render.Action = raw.Action
-	render.BackendBlockIndex = raw.BackendBlockIndex
-	render.NatPortHashBit = raw.NatPortBashBit
-	render.UsidBlockLength = raw.UsidBlockLength
-	render.UsidFunctionLength = raw.UsidFunctionLength
-	render.StatsTotalBytes = raw.StatsTotalBytes
-	render.StatsTotalPkts = raw.StatsTotalPkts
-	render.StatsRedirBytes = raw.StatsRedirBytes
-	render.StatsRedirPkts = raw.StatsRedirPkts
-	render.NatMapping = raw.NatMapping
-	render.NatFiltering = raw.NatFiltering
-	render.Vip = fmt.Sprintf("%s", net.IP(raw.Vip[:]))
+	// End.MFN.L
+	// End.MFN.N
+	endmfn := EndMFN{}
+	endmfn.BackendBlockIndex = raw.BackendBlockIndex
+	endmfn.NatPortHashBit = raw.NatPortBashBit
+	endmfn.UsidBlockLength = raw.UsidBlockLength
+	endmfn.UsidFunctionLength = raw.UsidFunctionLength
+	endmfn.StatsTotalBytes = raw.StatsTotalBytes
+	endmfn.StatsTotalPkts = raw.StatsTotalPkts
+	endmfn.StatsRedirBytes = raw.StatsRedirBytes
+	endmfn.StatsRedirPkts = raw.StatsRedirPkts
+	endmfn.NatMapping = raw.NatMapping
+	endmfn.NatFiltering = raw.NatFiltering
+	endmfn.Vip = fmt.Sprintf("%s", net.IP(raw.Vip[:]))
 	for idx := 0; idx < len(raw.Sources); idx++ {
 		src := raw.Sources[idx]
 		if src.Addr == 0 && src.Prefixlen == 0 {
 			continue
 		}
-		render.Sources = append(render.Sources, StructTrie6ValRenderSnatSource{
+		endmfn.Sources = append(endmfn.Sources, StructTrie6ValRenderSnatSource{
 			Prefix: fmt.Sprintf("%s/%d",
 				util.ConvertUint32ToIP(raw.Sources[idx].Addr),
 				raw.Sources[idx].Prefixlen),
 		})
+	}
+
+	// L3 Cross-Connect
+	l3x := L3XConnect{}
+	for i := 0; i < int(raw.L3XConnNhCount); i++ {
+		nh := raw.L3XConnNh[i]
+		nhRender := StructTrieValNexthopRender{}
+		switch nh.NhFamily {
+		case syscall.AF_INET:
+			nhRender.NhAddr4 = net.IP(nh.NhAddr4[:]).String()
+		case syscall.AF_INET6:
+			nhRender.NhAddr6 = net.IP(nh.NhAddr6[:]).String()
+		default:
+			return nil, fmt.Errorf("invalid nh family %d", nh.NhFamily)
+		}
+		l3x.Nexthops = append(l3x.Nexthops, nhRender)
+	}
+
+	render := StructTrie6ValRender{}
+	switch raw.Action {
+	case TRIE6_VAL_ACTION_END_MFNL:
+		render.EndMNFL = &endmfn
+	case TRIE6_VAL_ACTION_END_MFNN:
+		render.EndMNFN = &endmfn
+	case TRIE6_VAL_ACTION_L3_XCONNECT:
+		render.L3XConnect = &l3x
+	default:
+		return nil, fmt.Errorf("invalid action %d", raw.Action)
 	}
 	return &render, nil
 }
@@ -275,8 +400,11 @@ type StructTrie6ValRenderSnatSource struct {
 	Prefix string `json:"prefix"`
 }
 
-type StructTrie6ValRender struct {
-	Action             uint16                           `json:"action"`
+type L3XConnect struct {
+	Nexthops []StructTrieValNexthopRender `json:"nexthops"`
+}
+
+type EndMFN struct {
 	BackendBlockIndex  uint16                           `json:"backend_block_index"`
 	Vip                string                           `json:"vip"`
 	NatPortHashBit     uint16                           `json:"nat_port_hash_bit"`
@@ -291,29 +419,99 @@ type StructTrie6ValRender struct {
 	Sources            []StructTrie6ValRenderSnatSource `json:"sources"`
 }
 
+type StructTrie6ValRender struct {
+	EndMNFL    *EndMFN     `json:"end_mfn_l,omitempty"`
+	EndMNFN    *EndMFN     `json:"end_mfn_n,omitempty"`
+	L3XConnect *L3XConnect `json:"l3xconnect,omitempty"`
+}
+
 func (render *StructTrie6ValRender) ToRaw() (KVRaw, error) {
+	cnt := 0
 	raw := StructTrie6Val{}
-	raw.Action = render.Action
-	raw.BackendBlockIndex = render.BackendBlockIndex
-	raw.NatPortBashBit = render.NatPortHashBit
-	raw.UsidBlockLength = render.UsidBlockLength
-	raw.UsidFunctionLength = render.UsidFunctionLength
-	raw.StatsTotalBytes = render.StatsTotalBytes
-	raw.StatsTotalPkts = render.StatsTotalPkts
-	raw.StatsRedirBytes = render.StatsRedirBytes
-	raw.StatsRedirPkts = render.StatsRedirPkts
-	raw.NatMapping = render.NatMapping
-	raw.NatFiltering = render.NatFiltering
-	vipdata := net.ParseIP(render.Vip)
-	copy(raw.Vip[:], vipdata[12:])
-	for idx, src := range render.Sources {
-		_, ipnet, err := net.ParseCIDR(src.Prefix)
-		if err != nil {
-			return nil, err
+	if render.EndMNFL != nil {
+		cnt++
+		raw.Action = TRIE6_VAL_ACTION_END_MFNL
+		raw.BackendBlockIndex = render.EndMNFL.BackendBlockIndex
+		raw.NatPortBashBit = render.EndMNFL.NatPortHashBit
+		raw.UsidBlockLength = render.EndMNFL.UsidBlockLength
+		raw.UsidFunctionLength = render.EndMNFL.UsidFunctionLength
+		raw.StatsTotalBytes = render.EndMNFL.StatsTotalBytes
+		raw.StatsTotalPkts = render.EndMNFL.StatsTotalPkts
+		raw.StatsRedirBytes = render.EndMNFL.StatsRedirBytes
+		raw.StatsRedirPkts = render.EndMNFL.StatsRedirPkts
+		raw.NatMapping = render.EndMNFL.NatMapping
+		raw.NatFiltering = render.EndMNFL.NatFiltering
+		vipdata := net.ParseIP(render.EndMNFL.Vip)
+		copy(raw.Vip[:], vipdata[12:])
+		for idx, src := range render.EndMNFL.Sources {
+			_, ipnet, err := net.ParseCIDR(src.Prefix)
+			if err != nil {
+				return nil, err
+			}
+			raw.Sources[idx].Addr = util.ConvertIPToUint32(ipnet.IP)
+			raw.Sources[idx].Prefixlen = uint32(util.Plen(ipnet.Mask))
 		}
-		raw.Sources[idx].Addr = util.ConvertIPToUint32(ipnet.IP)
-		raw.Sources[idx].Prefixlen = uint32(util.Plen(ipnet.Mask))
 	}
+	if render.EndMNFN != nil {
+		cnt++
+		raw.Action = TRIE6_VAL_ACTION_END_MFNN
+		raw.BackendBlockIndex = render.EndMNFN.BackendBlockIndex
+		raw.NatPortBashBit = render.EndMNFN.NatPortHashBit
+		raw.UsidBlockLength = render.EndMNFN.UsidBlockLength
+		raw.UsidFunctionLength = render.EndMNFN.UsidFunctionLength
+		raw.StatsTotalBytes = render.EndMNFN.StatsTotalBytes
+		raw.StatsTotalPkts = render.EndMNFN.StatsTotalPkts
+		raw.StatsRedirBytes = render.EndMNFN.StatsRedirBytes
+		raw.StatsRedirPkts = render.EndMNFN.StatsRedirPkts
+		raw.NatMapping = render.EndMNFN.NatMapping
+		raw.NatFiltering = render.EndMNFN.NatFiltering
+		vipdata := net.ParseIP(render.EndMNFN.Vip)
+		copy(raw.Vip[:], vipdata[12:])
+		for idx, src := range render.EndMNFN.Sources {
+			_, ipnet, err := net.ParseCIDR(src.Prefix)
+			if err != nil {
+				return nil, err
+			}
+			raw.Sources[idx].Addr = util.ConvertIPToUint32(ipnet.IP)
+			raw.Sources[idx].Prefixlen = uint32(util.Plen(ipnet.Mask))
+		}
+	}
+	if render.L3XConnect != nil {
+		cnt++
+		raw.Action = TRIE6_VAL_ACTION_L3_XCONNECT
+		raw.L3XConnNhCount = uint16(len(render.L3XConnect.Nexthops))
+		for i, nh := range render.L3XConnect.Nexthops {
+			if i >= 16 {
+				return nil, fmt.Errorf("render.L3XConnNh is too long (len=%d)", len(render.L3XConnect.Nexthops))
+			}
+			nhcnt := 0
+			if nh.NhAddr4 != "" {
+				nhcnt++
+				addr4 := net.ParseIP(nh.NhAddr4)
+				if addr4 == nil {
+					return nil, fmt.Errorf("%s is invalid as ip-addr", nh.NhAddr4)
+				}
+				copy(raw.L3XConnNh[i].NhAddr4[:], addr4[12:])
+				raw.L3XConnNh[i].NhFamily = syscall.AF_INET
+			}
+			if nh.NhAddr6 != "" {
+				nhcnt++
+				addr6 := net.ParseIP(nh.NhAddr6)
+				if addr6 == nil {
+					return nil, fmt.Errorf("%s is invalid as ip-addr", nh.NhAddr4)
+				}
+				copy(raw.L3XConnNh[i].NhAddr6[:], addr6[0:])
+				raw.L3XConnNh[i].NhFamily = syscall.AF_INET6
+			}
+			if nhcnt != 1 {
+				return nil, fmt.Errorf("invalid format nb-nh must be 1 but %d", cnt)
+			}
+		}
+	}
+	if cnt != 1 {
+		return nil, fmt.Errorf("invalid action cnt=%d", cnt)
+	}
+
 	return &raw, nil
 }
 
@@ -511,4 +709,102 @@ var (
 	// uint32
 	_ KVRaw    = &StructArrayKey32{}
 	_ KVRender = &StructArrayKey32Render{}
+)
+
+type StructNeighKey struct {
+	Family uint32    `json:"family"`
+	Addr4  [4]uint8  `json:"addr4"`
+	Addr6  [16]uint8 `json:"addr6"`
+}
+
+func (raw *StructNeighKey) ToRender() (KVRender, error) {
+	render := StructNeighKeyRender{}
+	switch raw.Family {
+	case syscall.AF_INET:
+		render.Addr4 = net.IP(raw.Addr4[:]).String()
+	case syscall.AF_INET6:
+		render.Addr6 = net.IP(raw.Addr6[:]).String()
+	default:
+		return nil, fmt.Errorf("invalid family %d", raw.Family)
+
+	}
+	return &render, nil
+}
+
+type StructNeighKeyRender struct {
+	Addr4 string `json:"addr4,omitempty"`
+	Addr6 string `json:"addr6,omitempty"`
+}
+
+func (render *StructNeighKeyRender) ToRaw() (KVRaw, error) {
+	raw := StructNeighKey{}
+	cnt := 0
+	if render.Addr4 != "" {
+		cnt++
+		addr4 := net.ParseIP(render.Addr4)
+		if addr4 == nil {
+			return nil, fmt.Errorf("%s is invalid as ip-addr", render.Addr4)
+		}
+		copy(raw.Addr4[:], addr4[12:])
+		raw.Family = syscall.AF_INET
+	}
+	if render.Addr6 != "" {
+		cnt++
+		addr6 := net.ParseIP(render.Addr6)
+		if addr6 == nil {
+			return nil, fmt.Errorf("%s is invalid as ip-addr", render.Addr4)
+		}
+		copy(raw.Addr6[:], addr6[0:])
+		raw.Family = syscall.AF_INET6
+	}
+	if cnt != 1 {
+		return nil, fmt.Errorf("invalid format nb-keys must be 1 but %d", cnt)
+	}
+	return &raw, nil
+}
+
+var (
+	// struct neigh_key
+	_ KVRaw    = &StructNeighKey{}
+	_ KVRender = &StructNeighKeyRender{}
+)
+
+type StructNeighVal struct {
+	Flags uint32   `json:"flags"`
+	Mac   [6]uint8 `json:"mac"`
+}
+
+func (raw *StructNeighVal) ToRender() (KVRender, error) {
+	render := StructNeighValRender{}
+	render.Flags = raw.Flags
+	render.Mac = fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x",
+		raw.Mac[0], raw.Mac[1], raw.Mac[2], raw.Mac[3], raw.Mac[4], raw.Mac[5])
+	return &render, nil
+}
+
+func (raw *StructNeighVal) Summarize(list []StructNeighVal) {
+	raw.Flags = list[0].Flags
+	raw.Mac = list[0].Mac
+}
+
+type StructNeighValRender struct {
+	Flags uint32 `json:"flags"`
+	Mac   string `json:"mac"`
+}
+
+func (render *StructNeighValRender) ToRaw() (KVRaw, error) {
+	mac, err := net.ParseMAC(render.Mac)
+	if err != nil {
+		return nil, err
+	}
+	raw := StructNeighVal{}
+	raw.Flags = render.Flags
+	copy(raw.Mac[:], mac)
+	return &raw, nil
+}
+
+var (
+	// struct neigh_key
+	_ KVRaw    = &StructNeighVal{}
+	_ KVRender = &StructNeighValRender{}
 )

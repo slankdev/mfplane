@@ -93,6 +93,10 @@ func Flush(mapfile string) error {
 		return errors.Wrap(err, "ebpf.LoadPinnedMap")
 	}
 
+	if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+		return nil
+	}
+
 	// Parse
 	key := []byte{}
 	val := []byte{}
