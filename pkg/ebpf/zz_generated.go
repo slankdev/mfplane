@@ -10,6 +10,7 @@ import (
 
 	"github.com/cilium/ebpf"
 	"github.com/spf13/cobra"
+	"github.com/pkg/errors"
 
 	"github.com/slankdev/mfplane/pkg/util"
 )
@@ -22,11 +23,11 @@ func (r *EncapSourceRender) WriteImpl(mapfile string) error {
 	for _, entry := range r.Items {
 		key, err := entry.Key.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "EncapSourceRender.WriteImpl.key.ToRaw")
 		}
 		val, err := entry.Val.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "EncapSourceRender.WriteImpl.val.ToRaw")
 		}
 
 		// install to eBPF map
@@ -35,7 +36,7 @@ func (r *EncapSourceRender) WriteImpl(mapfile string) error {
 			func(m *ebpf.Map) error {
 				return UpdatePerCPUArrayAll(m, key, val, ebpf.UpdateAny)
 			}); err != nil {
-			return err
+			return errors.Wrap(err, "EncapSourceRender.WriteImpl.percpumap")
 		}
 
 	}
@@ -45,7 +46,7 @@ func (r *EncapSourceRender) WriteImpl(mapfile string) error {
 func (r *EncapSourceRender) ReadImpl(mapfile string) error {
 	m, err := ebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "EncapSourceRender.WriteImpl.loadPinnedMap")
 	}
 
 	// Parse
@@ -59,16 +60,17 @@ func (r *EncapSourceRender) ReadImpl(mapfile string) error {
 
 		kr, err := key.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "EncapSourceRender.WriteImpl.key.ToRender")
 		}
 		vr, err := val.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "EncapSourceRender.WriteImpl.val.ToRender")
 		}
 		k, ok1 := kr.(*StructArrayKey32Render)
 		v, ok2 := vr.(*StructEncapSourceRender)
 		if !ok1 || !ok2 {
-			return fmt.Errorf("cast error")
+			err := fmt.Errorf("cast error")
+			return errors.Wrap(err, "EncapSourceRender.WriteImpl.val.ToRender")
 		}
 		entries = append(entries, EncapSourceRenderItem{Key: *k, Val: *v})
 	}
@@ -175,20 +177,20 @@ func (r *Fib4Render) WriteImpl(mapfile string) error {
 	for _, entry := range r.Items {
 		key, err := entry.Key.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Fib4Render.WriteImpl.key.ToRaw")
 		}
 		val, err := entry.Val.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Fib4Render.WriteImpl.val.ToRaw")
 		}
 
 		// install to eBPF map
 		m, err := ebpf.LoadPinnedMap(mapfile, nil)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Fib4Render.WriteImpl.loadPinnedMap")
 		}
 		if err := m.Update(key, val, ebpf.UpdateAny); err != nil {
-			return err
+			return errors.Wrap(err, "Fib4Render.WriteImpl.update")
 		}
 
 	}
@@ -198,7 +200,7 @@ func (r *Fib4Render) WriteImpl(mapfile string) error {
 func (r *Fib4Render) ReadImpl(mapfile string) error {
 	m, err := ebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Fib4Render.WriteImpl.loadPinnedMap")
 	}
 
 	// Parse
@@ -210,16 +212,17 @@ func (r *Fib4Render) ReadImpl(mapfile string) error {
 
 		kr, err := key.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Fib4Render.WriteImpl.key.ToRender")
 		}
 		vr, err := val.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Fib4Render.WriteImpl.val.ToRender")
 		}
 		k, ok1 := kr.(*StructTrie4KeyRender)
 		v, ok2 := vr.(*StructTrie4ValRender)
 		if !ok1 || !ok2 {
-			return fmt.Errorf("cast error")
+			err := fmt.Errorf("cast error")
+			return errors.Wrap(err, "Fib4Render.WriteImpl.val.ToRender")
 		}
 		entries = append(entries, Fib4RenderItem{Key: *k, Val: *v})
 	}
@@ -326,20 +329,20 @@ func (r *Fib6Render) WriteImpl(mapfile string) error {
 	for _, entry := range r.Items {
 		key, err := entry.Key.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Fib6Render.WriteImpl.key.ToRaw")
 		}
 		val, err := entry.Val.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Fib6Render.WriteImpl.val.ToRaw")
 		}
 
 		// install to eBPF map
 		m, err := ebpf.LoadPinnedMap(mapfile, nil)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Fib6Render.WriteImpl.loadPinnedMap")
 		}
 		if err := m.Update(key, val, ebpf.UpdateAny); err != nil {
-			return err
+			return errors.Wrap(err, "Fib6Render.WriteImpl.update")
 		}
 
 	}
@@ -349,7 +352,7 @@ func (r *Fib6Render) WriteImpl(mapfile string) error {
 func (r *Fib6Render) ReadImpl(mapfile string) error {
 	m, err := ebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Fib6Render.WriteImpl.loadPinnedMap")
 	}
 
 	// Parse
@@ -361,16 +364,17 @@ func (r *Fib6Render) ReadImpl(mapfile string) error {
 
 		kr, err := key.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Fib6Render.WriteImpl.key.ToRender")
 		}
 		vr, err := val.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Fib6Render.WriteImpl.val.ToRender")
 		}
 		k, ok1 := kr.(*StructTrie6KeyRender)
 		v, ok2 := vr.(*StructTrie6ValRender)
 		if !ok1 || !ok2 {
-			return fmt.Errorf("cast error")
+			err := fmt.Errorf("cast error")
+			return errors.Wrap(err, "Fib6Render.WriteImpl.val.ToRender")
 		}
 		entries = append(entries, Fib6RenderItem{Key: *k, Val: *v})
 	}
@@ -477,11 +481,11 @@ func (r *LbBackendRender) WriteImpl(mapfile string) error {
 	for _, entry := range r.Items {
 		key, err := entry.Key.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "LbBackendRender.WriteImpl.key.ToRaw")
 		}
 		val, err := entry.Val.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "LbBackendRender.WriteImpl.val.ToRaw")
 		}
 
 		// install to eBPF map
@@ -490,7 +494,7 @@ func (r *LbBackendRender) WriteImpl(mapfile string) error {
 			func(m *ebpf.Map) error {
 				return UpdatePerCPUArrayAll(m, key, val, ebpf.UpdateAny)
 			}); err != nil {
-			return err
+			return errors.Wrap(err, "LbBackendRender.WriteImpl.percpumap")
 		}
 
 	}
@@ -500,7 +504,7 @@ func (r *LbBackendRender) WriteImpl(mapfile string) error {
 func (r *LbBackendRender) ReadImpl(mapfile string) error {
 	m, err := ebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "LbBackendRender.WriteImpl.loadPinnedMap")
 	}
 
 	// Parse
@@ -514,16 +518,17 @@ func (r *LbBackendRender) ReadImpl(mapfile string) error {
 
 		kr, err := key.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "LbBackendRender.WriteImpl.key.ToRender")
 		}
 		vr, err := val.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "LbBackendRender.WriteImpl.val.ToRender")
 		}
 		k, ok1 := kr.(*StructArrayKey32Render)
 		v, ok2 := vr.(*StructFlowProcessorRender)
 		if !ok1 || !ok2 {
-			return fmt.Errorf("cast error")
+			err := fmt.Errorf("cast error")
+			return errors.Wrap(err, "LbBackendRender.WriteImpl.val.ToRender")
 		}
 		entries = append(entries, LbBackendRenderItem{Key: *k, Val: *v})
 	}
@@ -630,20 +635,20 @@ func (r *NatOutRender) WriteImpl(mapfile string) error {
 	for _, entry := range r.Items {
 		key, err := entry.Key.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NatOutRender.WriteImpl.key.ToRaw")
 		}
 		val, err := entry.Val.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NatOutRender.WriteImpl.val.ToRaw")
 		}
 
 		// install to eBPF map
 		m, err := ebpf.LoadPinnedMap(mapfile, nil)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NatOutRender.WriteImpl.loadPinnedMap")
 		}
 		if err := m.Update(key, val, ebpf.UpdateAny); err != nil {
-			return err
+			return errors.Wrap(err, "NatOutRender.WriteImpl.update")
 		}
 
 	}
@@ -653,7 +658,7 @@ func (r *NatOutRender) WriteImpl(mapfile string) error {
 func (r *NatOutRender) ReadImpl(mapfile string) error {
 	m, err := ebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "NatOutRender.WriteImpl.loadPinnedMap")
 	}
 
 	// Parse
@@ -665,16 +670,17 @@ func (r *NatOutRender) ReadImpl(mapfile string) error {
 
 		kr, err := key.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NatOutRender.WriteImpl.key.ToRender")
 		}
 		vr, err := val.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NatOutRender.WriteImpl.val.ToRender")
 		}
 		k, ok1 := kr.(*StructAddrPortRender)
 		v, ok2 := vr.(*StructAddrPortStatsRender)
 		if !ok1 || !ok2 {
-			return fmt.Errorf("cast error")
+			err := fmt.Errorf("cast error")
+			return errors.Wrap(err, "NatOutRender.WriteImpl.val.ToRender")
 		}
 		entries = append(entries, NatOutRenderItem{Key: *k, Val: *v})
 	}
@@ -781,20 +787,20 @@ func (r *NatRetRender) WriteImpl(mapfile string) error {
 	for _, entry := range r.Items {
 		key, err := entry.Key.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NatRetRender.WriteImpl.key.ToRaw")
 		}
 		val, err := entry.Val.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NatRetRender.WriteImpl.val.ToRaw")
 		}
 
 		// install to eBPF map
 		m, err := ebpf.LoadPinnedMap(mapfile, nil)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NatRetRender.WriteImpl.loadPinnedMap")
 		}
 		if err := m.Update(key, val, ebpf.UpdateAny); err != nil {
-			return err
+			return errors.Wrap(err, "NatRetRender.WriteImpl.update")
 		}
 
 	}
@@ -804,7 +810,7 @@ func (r *NatRetRender) WriteImpl(mapfile string) error {
 func (r *NatRetRender) ReadImpl(mapfile string) error {
 	m, err := ebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "NatRetRender.WriteImpl.loadPinnedMap")
 	}
 
 	// Parse
@@ -816,16 +822,17 @@ func (r *NatRetRender) ReadImpl(mapfile string) error {
 
 		kr, err := key.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NatRetRender.WriteImpl.key.ToRender")
 		}
 		vr, err := val.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NatRetRender.WriteImpl.val.ToRender")
 		}
 		k, ok1 := kr.(*StructAddrPortRender)
 		v, ok2 := vr.(*StructAddrPortStatsRender)
 		if !ok1 || !ok2 {
-			return fmt.Errorf("cast error")
+			err := fmt.Errorf("cast error")
+			return errors.Wrap(err, "NatRetRender.WriteImpl.val.ToRender")
 		}
 		entries = append(entries, NatRetRenderItem{Key: *k, Val: *v})
 	}
@@ -925,18 +932,18 @@ func init() {
 }
 
 var (
-	_ MapRender = &OverlayFib4Render{}
+	_ MapRender = &NeighRender{}
 )
 
-func (r *OverlayFib4Render) WriteImpl(mapfile string) error {
+func (r *NeighRender) WriteImpl(mapfile string) error {
 	for _, entry := range r.Items {
 		key, err := entry.Key.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NeighRender.WriteImpl.key.ToRaw")
 		}
 		val, err := entry.Val.ToRaw()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NeighRender.WriteImpl.val.ToRaw")
 		}
 
 		// install to eBPF map
@@ -945,7 +952,161 @@ func (r *OverlayFib4Render) WriteImpl(mapfile string) error {
 			func(m *ebpf.Map) error {
 				return UpdatePerCPUArrayAll(m, key, val, ebpf.UpdateAny)
 			}); err != nil {
-			return err
+			return errors.Wrap(err, "NeighRender.WriteImpl.percpumap")
+		}
+
+	}
+	return nil
+}
+
+func (r *NeighRender) ReadImpl(mapfile string) error {
+	m, err := ebpf.LoadPinnedMap(mapfile, nil)
+	if err != nil {
+		return errors.Wrap(err, "NeighRender.WriteImpl.loadPinnedMap")
+	}
+
+	// Parse
+	iterate := m.Iterate()
+	entries := []NeighRenderItem{}
+	key := StructNeighKey{}
+	percpuval := []StructNeighVal{}
+	for iterate.Next(&key, &percpuval) {
+		val := StructNeighVal{}
+		val.Summarize(percpuval)
+
+		kr, err := key.ToRender()
+		if err != nil {
+			return errors.Wrap(err, "NeighRender.WriteImpl.key.ToRender")
+		}
+		vr, err := val.ToRender()
+		if err != nil {
+			return errors.Wrap(err, "NeighRender.WriteImpl.val.ToRender")
+		}
+		k, ok1 := kr.(*StructNeighKeyRender)
+		v, ok2 := vr.(*StructNeighValRender)
+		if !ok1 || !ok2 {
+			err := fmt.Errorf("cast error")
+			return errors.Wrap(err, "NeighRender.WriteImpl.val.ToRender")
+		}
+		entries = append(entries, NeighRenderItem{Key: *k, Val: *v})
+	}
+
+	r.Items = entries
+	return nil
+}
+
+func NewCommandMapSet_neigh() *cobra.Command {
+	var clioptFile string
+	var clioptNamePrefix string
+	cmd := &cobra.Command{
+		Use: "neigh",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+
+			// Read input file
+			fileContent, err := os.ReadFile(clioptFile)
+			if err != nil {
+				return err
+			}
+
+			// Parse input file
+			entries := NeighRender{}
+			if err := util.YamlUnmarshalViaJson(fileContent, &entries); err != nil {
+				return err
+			}
+
+			// Set maps
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_neigh"
+			if err := Write(mapfile, &entries); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptFile, "file", "f", "", "")
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	return cmd
+}
+
+func NewCommandMapInspect_neigh() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "neigh",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_neigh"
+			entries := NeighRender{}
+			if err := Read(mapfile, &entries); err != nil {
+				return err
+			}
+
+			// Print
+			util.Jprintln(entries)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
+func NewCommandMapFlush_neigh() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "neigh",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_neigh"))
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
+func init() {
+	Drivers = append(Drivers, Driver{
+		SetCommand:     NewCommandMapSet_neigh(),
+		InspectCommand: NewCommandMapInspect_neigh(),
+		FlushCommand:   NewCommandMapFlush_neigh(),
+	})
+}
+
+var (
+	_ MapRender = &OverlayFib4Render{}
+)
+
+func (r *OverlayFib4Render) WriteImpl(mapfile string) error {
+	for _, entry := range r.Items {
+		key, err := entry.Key.ToRaw()
+		if err != nil {
+			return errors.Wrap(err, "OverlayFib4Render.WriteImpl.key.ToRaw")
+		}
+		val, err := entry.Val.ToRaw()
+		if err != nil {
+			return errors.Wrap(err, "OverlayFib4Render.WriteImpl.val.ToRaw")
+		}
+
+		// install to eBPF map
+		if err := BatchPinnedMapOperation(
+			mapfile,
+			func(m *ebpf.Map) error {
+				return UpdatePerCPUArrayAll(m, key, val, ebpf.UpdateAny)
+			}); err != nil {
+			return errors.Wrap(err, "OverlayFib4Render.WriteImpl.percpumap")
 		}
 
 	}
@@ -955,7 +1116,7 @@ func (r *OverlayFib4Render) WriteImpl(mapfile string) error {
 func (r *OverlayFib4Render) ReadImpl(mapfile string) error {
 	m, err := ebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "OverlayFib4Render.WriteImpl.loadPinnedMap")
 	}
 
 	// Parse
@@ -969,16 +1130,17 @@ func (r *OverlayFib4Render) ReadImpl(mapfile string) error {
 
 		kr, err := key.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "OverlayFib4Render.WriteImpl.key.ToRender")
 		}
 		vr, err := val.ToRender()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "OverlayFib4Render.WriteImpl.val.ToRender")
 		}
 		k, ok1 := kr.(*StructOverlayFib4KeyRender)
 		v, ok2 := vr.(*StructOverlayFib4ValRender)
 		if !ok1 || !ok2 {
-			return fmt.Errorf("cast error")
+			err := fmt.Errorf("cast error")
+			return errors.Wrap(err, "OverlayFib4Render.WriteImpl.val.ToRender")
 		}
 		entries = append(entries, OverlayFib4RenderItem{Key: *k, Val: *v})
 	}
@@ -1091,6 +1253,8 @@ type MapGenericItem struct {
 
 	NatRetRender *NatRetRender `json:"nat_ret,omitempty"`
 
+	NeighRender *NeighRender `json:"neigh,omitempty"`
+
 	Fib4Render *Fib4Render `json:"fib4,omitempty"`
 
 	Fib6Render *Fib6Render `json:"fib6,omitempty"`
@@ -1118,6 +1282,10 @@ func (i MapGenericItem) IsValid() error {
 
 	if i.NatRetRender != nil {
 		setTypes = append(setTypes, "nat_ret")
+	}
+
+	if i.NeighRender != nil {
+		setTypes = append(setTypes, "neigh")
 	}
 
 	if i.Fib4Render != nil {
@@ -1153,49 +1321,56 @@ func ReadAll(root string) (*MapGeneric, error) {
 			case strings.HasSuffix(file.Name(), "encap_source"):
 				encap_source := EncapSourceRender{}
 				if err := Read(mapfile, &encap_source); err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
 				}
 				item.EncapSourceRender = &encap_source
 
 			case strings.HasSuffix(file.Name(), "overlay_fib4"):
 				overlay_fib4 := OverlayFib4Render{}
 				if err := Read(mapfile, &overlay_fib4); err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
 				}
 				item.OverlayFib4Render = &overlay_fib4
 
 			case strings.HasSuffix(file.Name(), "lb_backend"):
 				lb_backend := LbBackendRender{}
 				if err := Read(mapfile, &lb_backend); err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
 				}
 				item.LbBackendRender = &lb_backend
 
 			case strings.HasSuffix(file.Name(), "nat_out"):
 				nat_out := NatOutRender{}
 				if err := Read(mapfile, &nat_out); err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
 				}
 				item.NatOutRender = &nat_out
 
 			case strings.HasSuffix(file.Name(), "nat_ret"):
 				nat_ret := NatRetRender{}
 				if err := Read(mapfile, &nat_ret); err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
 				}
 				item.NatRetRender = &nat_ret
+
+			case strings.HasSuffix(file.Name(), "neigh"):
+				neigh := NeighRender{}
+				if err := Read(mapfile, &neigh); err != nil {
+					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
+				}
+				item.NeighRender = &neigh
 
 			case strings.HasSuffix(file.Name(), "fib4"):
 				fib4 := Fib4Render{}
 				if err := Read(mapfile, &fib4); err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
 				}
 				item.Fib4Render = &fib4
 
 			case strings.HasSuffix(file.Name(), "fib6"):
 				fib6 := Fib6Render{}
 				if err := Read(mapfile, &fib6); err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
 				}
 				item.Fib6Render = &fib6
 
@@ -1221,7 +1396,7 @@ func WriteAll(all *MapGeneric) error {
 				return fmt.Errorf("type is encap_source but property is not set")
 			}
 			if err := Write(item.Mapfile, item.EncapSourceRender); err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
 			}
 
 		case strings.HasSuffix(item.Mapfile, "overlay_fib4"):
@@ -1229,7 +1404,7 @@ func WriteAll(all *MapGeneric) error {
 				return fmt.Errorf("type is overlay_fib4 but property is not set")
 			}
 			if err := Write(item.Mapfile, item.OverlayFib4Render); err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
 			}
 
 		case strings.HasSuffix(item.Mapfile, "lb_backend"):
@@ -1237,7 +1412,7 @@ func WriteAll(all *MapGeneric) error {
 				return fmt.Errorf("type is lb_backend but property is not set")
 			}
 			if err := Write(item.Mapfile, item.LbBackendRender); err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
 			}
 
 		case strings.HasSuffix(item.Mapfile, "nat_out"):
@@ -1245,7 +1420,7 @@ func WriteAll(all *MapGeneric) error {
 				return fmt.Errorf("type is nat_out but property is not set")
 			}
 			if err := Write(item.Mapfile, item.NatOutRender); err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
 			}
 
 		case strings.HasSuffix(item.Mapfile, "nat_ret"):
@@ -1253,7 +1428,15 @@ func WriteAll(all *MapGeneric) error {
 				return fmt.Errorf("type is nat_ret but property is not set")
 			}
 			if err := Write(item.Mapfile, item.NatRetRender); err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
+			}
+
+		case strings.HasSuffix(item.Mapfile, "neigh"):
+			if item.NeighRender == nil {
+				return fmt.Errorf("type is neigh but property is not set")
+			}
+			if err := Write(item.Mapfile, item.NeighRender); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
 			}
 
 		case strings.HasSuffix(item.Mapfile, "fib4"):
@@ -1261,7 +1444,7 @@ func WriteAll(all *MapGeneric) error {
 				return fmt.Errorf("type is fib4 but property is not set")
 			}
 			if err := Write(item.Mapfile, item.Fib4Render); err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
 			}
 
 		case strings.HasSuffix(item.Mapfile, "fib6"):
@@ -1269,10 +1452,168 @@ func WriteAll(all *MapGeneric) error {
 				return fmt.Errorf("type is fib6 but property is not set")
 			}
 			if err := Write(item.Mapfile, item.Fib6Render); err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
 			}
 
 		}
 	}
 	return nil
+}
+
+type ProgRunMapContext struct {
+	EncapSourceRender EncapSourceRender
+	OverlayFib4Render OverlayFib4Render
+	LbBackendRender LbBackendRender
+	NatOutRender NatOutRender
+	NatRetRender NatRetRender
+	NeighRender NeighRender
+	Fib4Render Fib4Render
+	Fib6Render Fib6Render
+}
+
+func FlushProgRunMapContext(progName string) error {
+	name := progName
+	root := "/sys/fs/bpf/xdp/globals/"
+	for _, mapName := range []string{
+		"encap_source",
+		"overlay_fib4",
+		"lb_backend",
+		"nat_out",
+		"nat_ret",
+		"neigh",
+		"fib4",
+		"fib6",
+	} {
+		if err := Flush(root + name + "_" + mapName); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func SetProgRunMapContext(mc *ProgRunMapContext, progName string) error {
+	name := progName
+	root := "/sys/fs/bpf/xdp/globals/"
+	if len(mc.EncapSourceRender.Items) > 0 {
+		if err := Write(
+			root+name+"_encap_source",
+			&mc.EncapSourceRender); err != nil {
+			return errors.Wrap(err, "encap_source")
+		}
+	}
+	if len(mc.OverlayFib4Render.Items) > 0 {
+		if err := Write(
+			root+name+"_overlay_fib4",
+			&mc.OverlayFib4Render); err != nil {
+			return errors.Wrap(err, "overlay_fib4")
+		}
+	}
+	if len(mc.LbBackendRender.Items) > 0 {
+		if err := Write(
+			root+name+"_lb_backend",
+			&mc.LbBackendRender); err != nil {
+			return errors.Wrap(err, "lb_backend")
+		}
+	}
+	if len(mc.NatOutRender.Items) > 0 {
+		if err := Write(
+			root+name+"_nat_out",
+			&mc.NatOutRender); err != nil {
+			return errors.Wrap(err, "nat_out")
+		}
+	}
+	if len(mc.NatRetRender.Items) > 0 {
+		if err := Write(
+			root+name+"_nat_ret",
+			&mc.NatRetRender); err != nil {
+			return errors.Wrap(err, "nat_ret")
+		}
+	}
+	if len(mc.NeighRender.Items) > 0 {
+		if err := Write(
+			root+name+"_neigh",
+			&mc.NeighRender); err != nil {
+			return errors.Wrap(err, "neigh")
+		}
+	}
+	if len(mc.Fib4Render.Items) > 0 {
+		if err := Write(
+			root+name+"_fib4",
+			&mc.Fib4Render); err != nil {
+			return errors.Wrap(err, "fib4")
+		}
+	}
+	if len(mc.Fib6Render.Items) > 0 {
+		if err := Write(
+			root+name+"_fib6",
+			&mc.Fib6Render); err != nil {
+			return errors.Wrap(err, "fib6")
+		}
+	}
+
+	return nil
+}
+
+func DumpProgRunMapContext(progName string) (*ProgRunMapContext, error) {
+	name := progName
+	root := "/sys/fs/bpf/xdp/globals/"
+	encap_source := EncapSourceRender{}
+	if err := Read(
+		root+name+"_encap_source",
+		&encap_source); err != nil {
+		return nil, errors.Wrap(err, "encap_source")
+	}
+	overlay_fib4 := OverlayFib4Render{}
+	if err := Read(
+		root+name+"_overlay_fib4",
+		&overlay_fib4); err != nil {
+		return nil, errors.Wrap(err, "overlay_fib4")
+	}
+	lb_backend := LbBackendRender{}
+	if err := Read(
+		root+name+"_lb_backend",
+		&lb_backend); err != nil {
+		return nil, errors.Wrap(err, "lb_backend")
+	}
+	nat_out := NatOutRender{}
+	if err := Read(
+		root+name+"_nat_out",
+		&nat_out); err != nil {
+		return nil, errors.Wrap(err, "nat_out")
+	}
+	nat_ret := NatRetRender{}
+	if err := Read(
+		root+name+"_nat_ret",
+		&nat_ret); err != nil {
+		return nil, errors.Wrap(err, "nat_ret")
+	}
+	neigh := NeighRender{}
+	if err := Read(
+		root+name+"_neigh",
+		&neigh); err != nil {
+		return nil, errors.Wrap(err, "neigh")
+	}
+	fib4 := Fib4Render{}
+	if err := Read(
+		root+name+"_fib4",
+		&fib4); err != nil {
+		return nil, errors.Wrap(err, "fib4")
+	}
+	fib6 := Fib6Render{}
+	if err := Read(
+		root+name+"_fib6",
+		&fib6); err != nil {
+		return nil, errors.Wrap(err, "fib6")
+	}
+
+	return &ProgRunMapContext{
+		EncapSourceRender: encap_source,
+		OverlayFib4Render: overlay_fib4,
+		LbBackendRender: lb_backend,
+		NatOutRender: nat_out,
+		NatRetRender: nat_ret,
+		NeighRender: neigh,
+		Fib4Render: fib4,
+		Fib6Render: fib6,
+	}, nil
 }
