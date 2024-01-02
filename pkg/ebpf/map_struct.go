@@ -9,9 +9,9 @@ import (
 )
 
 type StructAddrPort struct {
-	Addr  [4]uint8 `json:"addr"`
-	Port  uint16   `json:"port"`
-	Proto uint8    `json:"proto"`
+	Addr  [4]uint8
+	Port  uint16
+	Proto uint8
 }
 
 func (val *StructAddrPort) ToRender() (KVRender, error) {
@@ -47,14 +47,14 @@ var (
 )
 
 type StructAddrPortStats struct {
-	Addr      [4]uint8 `json:"addr"`
-	Port      uint16   `json:"port"`
-	Proto     uint8    `json:"proto"`
-	Pkts      uint64   `json:"pkts"`
-	Bytes     uint64   `json:"bytes"`
-	CreatedAt uint64   `json:"created_at"`
-	UpdatedAt uint64   `json:"update_at"`
-	Flags     uint64   `json:"flags"`
+	Addr      [4]uint8
+	Port      uint16
+	Proto     uint8
+	Pkts      uint64
+	Bytes     uint64
+	CreatedAt uint64
+	UpdatedAt uint64
+	Flags     uint64
 }
 
 const (
@@ -131,8 +131,8 @@ var (
 )
 
 type StructTrie4Key struct {
-	Prefixlen uint32   `json:"prefixlen"`
-	Addr      [4]uint8 `json:"addr"`
+	Prefixlen uint32
+	Addr      [4]uint8
 }
 
 func (raw *StructTrie4Key) ToRender() (KVRender, error) {
@@ -168,17 +168,17 @@ const (
 )
 
 type StructTrieValNexthop struct {
-	NhFamily uint16    `json:"nh_family"`
-	NhAddr4  [4]uint8  `json:"nh_addr4"`
-	NhAddr6  [16]uint8 `json:"nh_addr6"`
+	NhFamily uint16
+	NhAddr4  [4]uint8
+	NhAddr6  [16]uint8
 }
 
 type StructTrie4Val struct {
-	Action            uint16                   `json:"action"`
-	BackendBlockIndex uint16                   `json:"backend_block_index"`
-	NatPortHashBit    uint16                   `json:"nat_port_hash_bit"`
-	L3XConnNhCount    uint16                   `json:"l3_xcon_nh_count"`
-	L3XConnNh         [16]StructTrieValNexthop `json:"l3xconnect"`
+	Action            uint16
+	BackendBlockIndex uint16
+	NatPortHashBit    uint16
+	L3XConnNhCount    uint16
+	L3XConnNh         [16]StructTrieValNexthop
 }
 
 func (raw *StructTrie4Val) ToRender() (KVRender, error) {
@@ -284,8 +284,8 @@ var (
 )
 
 type StructTrie6Key struct {
-	Prefixlen uint32    `json:"prefixlen"`
-	Addr      [16]uint8 `json:"addr"`
+	Prefixlen uint32
+	Addr      [16]uint8
 }
 
 func (raw *StructTrie6Key) ToRender() (KVRender, error) {
@@ -315,8 +315,8 @@ var (
 )
 
 type StructTrie6ValSnatSource struct {
-	Prefixlen uint32 `json:"prefixlen"`
-	Addr      uint32 `json:"addr"`
+	Prefixlen uint32
+	Addr      uint32
 }
 
 type StructTrie6Val struct {
@@ -521,7 +521,7 @@ var (
 )
 
 type StructEncapSource struct {
-	Addr [16]uint8 `json:"addr"`
+	Addr [16]uint8
 }
 
 func (raw *StructEncapSource) ToRender() (KVRender, error) {
@@ -640,9 +640,9 @@ var (
 )
 
 type StructFlowProcessor struct {
-	Addr            [16]uint8 `json:"addr"`
-	StatsTotalBytes uint64    `json:"stats_total_bytes"`
-	StatsTotalPkts  uint64    `json:"stats_total_pkts"`
+	Addr            [16]uint8
+	StatsTotalBytes uint64
+	StatsTotalPkts  uint64
 }
 
 func (v *StructFlowProcessor) ToRender() (KVRender, error) {
@@ -712,9 +712,9 @@ var (
 )
 
 type StructNeighKey struct {
-	Family uint32    `json:"family"`
-	Addr4  [4]uint8  `json:"addr4"`
-	Addr6  [16]uint8 `json:"addr6"`
+	Family uint32
+	Addr4  [4]uint8
+	Addr6  [16]uint8
 }
 
 func (raw *StructNeighKey) ToRender() (KVRender, error) {
@@ -770,8 +770,8 @@ var (
 )
 
 type StructNeighVal struct {
-	Flags uint32   `json:"flags"`
-	Mac   [6]uint8 `json:"mac"`
+	Flags uint32
+	Mac   [6]uint8
 }
 
 func (raw *StructNeighVal) ToRender() (KVRender, error) {
