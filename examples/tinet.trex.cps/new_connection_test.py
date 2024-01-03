@@ -18,7 +18,7 @@ class Prof1():
         prog_s.wait_for_peer_close()
 
         # ip generator
-        ip_gen_c = ASTFIPGenDist(ip_range=["20.0.0.0", "20.0.0.16"], distribution="seq")
+        ip_gen_c = ASTFIPGenDist(ip_range=["20.0.0.0", "20.0.255.255"], distribution="seq")
         ip_gen_s = ASTFIPGenDist(ip_range=["30.0.0.0", "30.0.255.255"], distribution="seq")
         ip_gen = ASTFIPGen(glob=ASTFIPGenGlobal(ip_offset="1.0.0.0"),
                            dist_client=ip_gen_c,
