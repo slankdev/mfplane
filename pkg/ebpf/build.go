@@ -12,10 +12,7 @@ import (
 func Build(log *zap.SugaredLogger,
 	file string,
 	clioptVerbose bool,
-	clioptDebug bool,
 	clioptName string,
-	clioptDebugIgnorePacket bool,
-	clioptDebugErrorPacket bool,
 	clioptDefine []string,
 ) (string, error) {
 	// create temp dir
@@ -52,15 +49,6 @@ func Build(log *zap.SugaredLogger,
 	cflags := "-target bpf -O2 -g -I /usr/include/x86_64-linux-gnu"
 	cflags += fmt.Sprintf(" -I %s/code", tmppath)
 	cflags += " -D NAME=" + clioptName
-	if clioptDebug {
-		cflags += " -DDEBUG"
-	}
-	if clioptDebugIgnorePacket {
-		cflags += " -DDEBUG_IGNORE_PACKET"
-	}
-	if clioptDebugErrorPacket {
-		cflags += " -DDEBUG_ERROR_PACKET"
-	}
 	for _, def := range clioptDefine {
 		cflags += " -D " + def
 	}
