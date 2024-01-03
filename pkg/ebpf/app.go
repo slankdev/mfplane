@@ -80,9 +80,6 @@ func NewCommandXdpAttach(name string) *cobra.Command {
 
 func NewCommandXdpAttachOne(name, file, section string) *cobra.Command {
 	var clioptInterface string
-	var clioptDebug bool
-	var clioptDebugIgnorePacket bool
-	var clioptDebugErrorPacket bool
 	var clioptForce bool
 	var clioptVerbose bool
 	var clioptMode string
@@ -103,10 +100,7 @@ func NewCommandXdpAttachOne(name, file, section string) *cobra.Command {
 			// Build ebpf program
 			tmppath, err := Build(log, file,
 				clioptVerbose,
-				clioptDebug,
 				clioptName,
-				clioptDebugIgnorePacket,
-				clioptDebugErrorPacket,
 				clioptDefine,
 			)
 			if err != nil {
@@ -141,11 +135,8 @@ func NewCommandXdpAttachOne(name, file, section string) *cobra.Command {
 	f.StringVarP(&clioptNetns, "netns", "N", "", "")
 	f.StringVarP(&clioptMode, "mode", "m", "xdpgeneric", "xdp  or xdpgeneric")
 	f.BoolVarP(&clioptVerbose, "verbose", "v", false, "")
-	f.BoolVarP(&clioptDebug, "debug", "d", false, "")
 	f.BoolVarP(&clioptForce, "force", "f", false,
 		"if attached, once detach and try force attach the bpf code")
-	f.BoolVar(&clioptDebugIgnorePacket, "debug-ignore-packet", false, "")
-	f.BoolVar(&clioptDebugErrorPacket, "debug-error-packet", false, "")
 	f.StringArrayVar(&clioptDefine, "define", []string{},
 		"i.e. --define DEBUG_FUNCTION_CALL")
 	return cmd
@@ -166,7 +157,6 @@ func NewCommandBpfMap() *cobra.Command {
 }
 
 func NewCommandMapList() *cobra.Command {
-	var clioptDebug bool
 	var clioptVerbose bool
 	var clioptPinDir string
 	cmd := &cobra.Command{
@@ -206,7 +196,6 @@ func NewCommandMapList() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
-	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
 		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
 	return cmd
@@ -264,7 +253,6 @@ func NewCommandXdpDetach(name string) *cobra.Command {
 	var clioptInterface string
 	var clioptMode string
 	var clioptNetns string
-	var clioptDebug bool
 	var clioptVerbose bool
 	cmd := &cobra.Command{
 		Use: name,
@@ -294,7 +282,6 @@ func NewCommandXdpDetach(name string) *cobra.Command {
 		"xdp  or xdpgeneric")
 	cmd.Flags().StringVarP(&clioptNetns, "netns", "N", "", "")
 	cmd.Flags().BoolVarP(&clioptVerbose, "verbose", "v", false, "")
-	cmd.Flags().BoolVarP(&clioptDebug, "debug", "d", false, "")
 	return cmd
 }
 

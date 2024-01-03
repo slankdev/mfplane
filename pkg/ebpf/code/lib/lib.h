@@ -102,6 +102,9 @@ static inline int
 ignore_packet(struct xdp_md *ctx, int line)
 {
   debug_function_call(ctx, __func__, line);
+#ifdef DEBUG_IGNORE_PACKET
+  bpf_printk(STR(NAME)"%p:call %s:%d", ctx, __func__, line);
+#endif
   return XDP_PASS;
 }
 
@@ -109,6 +112,9 @@ static inline int
 error_packet(struct xdp_md *ctx, int line)
 {
   debug_function_call(ctx, __func__, line);
+#ifdef DEBUG_ERROR_PACKET
+  bpf_printk(STR(NAME)"%p:call %s:%d", ctx, __func__, line);
+#endif
   return XDP_DROP;
 }
 
