@@ -107,22 +107,25 @@ struct {
   __uint(pinning, LIBBPF_PIN_BY_NAME);
 } GLUE(NAME, neigh) SEC(".maps");
 
+// NOTE(slankdev); It's possible verifier will be failed when the semantic
+// sorting is adopted. In this case, we sorted by size and its alignment
+// perspective.
 struct metadata {
-  __u8 ether_dst[6];
-  __u16 ether_type;
-  __u16 l3_offset;
-  __u8 l3_proto;
-  __u32 l3_saddr;
-  __u32 l3_daddr;
-  __u16 l4_sport;
-  __u16 l4_dport;
-  __u16 l4_icmp_id;
-  __u16 num_segs;
-  struct in6_addr outer_ip6_saddr;
-  struct in6_addr outer_ip6_daddr;
-  __u8 nh_family;
-  __u32 nh_addr4;
-  struct in6_addr nh_addr6;
+  __u8 ether_dst[6];               // 6
+  __u16 ether_type;                // 8
+  __u16 l3_offset;                 // 10
+  __u8 l3_proto;                   // 11
+  __u8 nh_family;                  // 12
+  __u32 l3_saddr;                  // 16
+  __u32 l3_daddr;                  // 20
+  __u16 l4_sport;                  // 22
+  __u16 l4_dport;                  // 24
+  __u16 l4_icmp_id;                // 26
+  __u16 num_segs;                  // 28
+  __u32 nh_addr4;                  // 32
+  struct in6_addr outer_ip6_saddr; // 48
+  struct in6_addr outer_ip6_daddr; // 64
+  struct in6_addr nh_addr6;        // 72
 };
 
 static inline int
@@ -728,6 +731,10 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   struct overlay_fib4_key overlay_key = {0};
   overlay_key.vrf_id = 1;
   overlay_key.addr = in_ih->daddr;
+#ifndef OVERLAY_FIB4_PREFIX_MASK
+#define OVERLAY_FIB4_PREFIX_MASK 0xffffffff
+#endif
+  overlay_key.addr &= bpf_htonl(OVERLAY_FIB4_PREFIX_MASK);
   struct overlay_fib4_val *overlay_val = bpf_map_lookup_elem(
     &GLUE(NAME, overlay_fib4), &overlay_key);
   if (!overlay_val) {
