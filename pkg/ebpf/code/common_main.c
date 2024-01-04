@@ -70,7 +70,7 @@ struct {
 } GLUE(NAME, encap_source) SEC(".maps");
 
 struct {
-  __uint(type, BPF_MAP_TYPE_LRU_HASH);
+  __uint(type, BPF_MAP_TYPE_HASH);
   __uint(max_entries, NAT_CACHE_MAX_RULES);
   __type(key, struct addr_port);
   __type(value, struct addr_port_stats);
@@ -78,7 +78,7 @@ struct {
 } GLUE(NAME, nat_out) SEC(".maps");
 
 struct {
-  __uint(type, BPF_MAP_TYPE_LRU_HASH);
+  __uint(type, BPF_MAP_TYPE_HASH);
   __uint(max_entries, NAT_CACHE_MAX_RULES);
   __type(key, struct addr_port);
   __type(value, struct addr_port_stats);

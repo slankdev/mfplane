@@ -57,7 +57,7 @@ type Fib6Render struct {
 // +ebpf:map:render:val=StructAddrPortStatsRender
 // +ebpf:map:raw:key=StructAddrPort
 // +ebpf:map:raw:val=StructAddrPortStats
-// +ebpf:map:type=BPF_MAP_TYPE_LRU_HASH
+// +ebpf:map:type=BPF_MAP_TYPE_HASH
 
 type NatOutRenderItem struct {
 	Key StructAddrPortRender      `json:"key"`
@@ -74,7 +74,7 @@ type NatOutRender struct {
 // +ebpf:map:render:val=StructAddrPortStatsRender
 // +ebpf:map:raw:key=StructAddrPort
 // +ebpf:map:raw:val=StructAddrPortStats
-// +ebpf:map:type=BPF_MAP_TYPE_LRU_HASH
+// +ebpf:map:type=BPF_MAP_TYPE_HASH
 
 type NatRetRenderItem struct {
 	Key StructAddrPortRender      `json:"key"`
