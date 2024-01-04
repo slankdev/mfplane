@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"time"
 
+	ciliumebpf "github.com/cilium/ebpf"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -103,6 +105,7 @@ func IsExpired(addrPortStats ebpf.StructAddrPortStatsRender) (bool, error) {
 }
 
 func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
+	keys := []ebpf.StructAddrPort{}
 	for _, ent := range natOut.Items {
 		expired, err := IsExpired(ent.Val)
 		if err != nil {
@@ -117,15 +120,31 @@ func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
 				zap.String("natAddr", ent.Val.Addr),
 				zap.Uint16("natPort", ent.Val.Port),
 			)
-			if err := ebpf.Delete(mapfile, &ent.Key); err != nil {
+			raw, err := ent.Key.ToRaw()
+			if err != nil {
 				return err
 			}
+			raw0, ok := raw.(*ebpf.StructAddrPort)
+			if !ok {
+				return fmt.Errorf("cast error")
+			}
+			keys = append(keys, *raw0)
 		}
+	}
+
+	// BatchDelete
+	m, err := ciliumebpf.LoadPinnedMap(mapfile, nil)
+	if err != nil {
+		return errors.Wrap(err, "ebpf.LoadPinnedMap")
+	}
+	if _, err := m.BatchDelete(keys, nil); err != nil {
+		return errors.Wrap(err, "m.BatchDelete")
 	}
 	return nil
 }
 
 func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
+	keys := []ebpf.StructAddrPort{}
 	for _, ent := range natRet.Items {
 		expired, err := IsExpired(ent.Val)
 		if err != nil {
@@ -140,10 +159,25 @@ func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
 				zap.String("natAddr", ent.Val.Addr),
 				zap.Uint16("natPort", ent.Val.Port),
 			)
-			if err := ebpf.Delete(mapfile, &ent.Key); err != nil {
+			raw, err := ent.Key.ToRaw()
+			if err != nil {
 				return err
 			}
+			raw0, ok := raw.(*ebpf.StructAddrPort)
+			if !ok {
+				return fmt.Errorf("cast error")
+			}
+			keys = append(keys, *raw0)
 		}
+	}
+
+	// BatchDelete
+	m, err := ciliumebpf.LoadPinnedMap(mapfile, nil)
+	if err != nil {
+		return errors.Wrap(err, "ebpf.LoadPinnedMap")
+	}
+	if _, err := m.BatchDelete(keys, nil); err != nil {
+		return errors.Wrap(err, "m.BatchDelete")
 	}
 	return nil
 }

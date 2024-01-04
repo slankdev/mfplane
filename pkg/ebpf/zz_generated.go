@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unsafe"
 
 	"github.com/cilium/ebpf"
 	"github.com/spf13/cobra"
@@ -149,15 +150,38 @@ func NewCommandMapInspect_encap_source() *cobra.Command {
 func NewCommandMapFlush_encap_source() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "encap_source",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_encap_source"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_encap_source")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
 	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
 		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
 	return cmd
 }
 
@@ -328,15 +352,38 @@ func NewCommandMapInspect_fib4() *cobra.Command {
 func NewCommandMapFlush_fib4() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "fib4",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_fib4"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_fib4")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
 	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
 		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
 	return cmd
 }
 
@@ -507,15 +554,38 @@ func NewCommandMapInspect_fib6() *cobra.Command {
 func NewCommandMapFlush_fib6() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "fib6",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_fib6"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_fib6")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
 	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
 		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
 	return cmd
 }
 
@@ -688,15 +758,38 @@ func NewCommandMapInspect_lb_backend() *cobra.Command {
 func NewCommandMapFlush_lb_backend() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "lb_backend",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_lb_backend"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_lb_backend")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
 	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
 		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
 	return cmd
 }
 
@@ -867,15 +960,38 @@ func NewCommandMapInspect_nat_out() *cobra.Command {
 func NewCommandMapFlush_nat_out() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "nat_out",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_nat_out"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_nat_out")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
 	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
 		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
 	return cmd
 }
 
@@ -1046,15 +1162,38 @@ func NewCommandMapInspect_nat_ret() *cobra.Command {
 func NewCommandMapFlush_nat_ret() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "nat_ret",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_nat_ret"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_nat_ret")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
 	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
 		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
 	return cmd
 }
 
@@ -1227,15 +1366,38 @@ func NewCommandMapInspect_neigh() *cobra.Command {
 func NewCommandMapFlush_neigh() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "neigh",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_neigh"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_neigh")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
 	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
 		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
 	return cmd
 }
 
@@ -1408,15 +1570,38 @@ func NewCommandMapInspect_overlay_fib4() *cobra.Command {
 func NewCommandMapFlush_overlay_fib4() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "overlay_fib4",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_overlay_fib4"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_overlay_fib4")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
 	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
 		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
 	return cmd
 }
 
