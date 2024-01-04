@@ -330,11 +330,38 @@ func NewCommandMapFlush_{{.Name}}() *cobra.Command {
 	return cmd
 }
 
+func NewCommandMapSize_{{.Name}}() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "{{.Name}}",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_{{.Name}}"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
 func init() {
 	Drivers = append(Drivers, Driver{
 		SetCommand:     NewCommandMapSet_{{.Name}}(),
 		InspectCommand: NewCommandMapInspect_{{.Name}}(),
 		FlushCommand:   NewCommandMapFlush_{{.Name}}(),
+		SizeCommand:    NewCommandMapSize_{{.Name}}(),
 	})
 }
 `

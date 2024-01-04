@@ -161,11 +161,38 @@ func NewCommandMapFlush_encap_source() *cobra.Command {
 	return cmd
 }
 
+func NewCommandMapSize_encap_source() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "encap_source",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_encap_source"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
 func init() {
 	Drivers = append(Drivers, Driver{
 		SetCommand:     NewCommandMapSet_encap_source(),
 		InspectCommand: NewCommandMapInspect_encap_source(),
 		FlushCommand:   NewCommandMapFlush_encap_source(),
+		SizeCommand:    NewCommandMapSize_encap_source(),
 	})
 }
 
@@ -313,11 +340,38 @@ func NewCommandMapFlush_fib4() *cobra.Command {
 	return cmd
 }
 
+func NewCommandMapSize_fib4() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "fib4",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_fib4"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
 func init() {
 	Drivers = append(Drivers, Driver{
 		SetCommand:     NewCommandMapSet_fib4(),
 		InspectCommand: NewCommandMapInspect_fib4(),
 		FlushCommand:   NewCommandMapFlush_fib4(),
+		SizeCommand:    NewCommandMapSize_fib4(),
 	})
 }
 
@@ -465,11 +519,38 @@ func NewCommandMapFlush_fib6() *cobra.Command {
 	return cmd
 }
 
+func NewCommandMapSize_fib6() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "fib6",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_fib6"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
 func init() {
 	Drivers = append(Drivers, Driver{
 		SetCommand:     NewCommandMapSet_fib6(),
 		InspectCommand: NewCommandMapInspect_fib6(),
 		FlushCommand:   NewCommandMapFlush_fib6(),
+		SizeCommand:    NewCommandMapSize_fib6(),
 	})
 }
 
@@ -619,11 +700,38 @@ func NewCommandMapFlush_lb_backend() *cobra.Command {
 	return cmd
 }
 
+func NewCommandMapSize_lb_backend() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "lb_backend",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_lb_backend"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
 func init() {
 	Drivers = append(Drivers, Driver{
 		SetCommand:     NewCommandMapSet_lb_backend(),
 		InspectCommand: NewCommandMapInspect_lb_backend(),
 		FlushCommand:   NewCommandMapFlush_lb_backend(),
+		SizeCommand:    NewCommandMapSize_lb_backend(),
 	})
 }
 
@@ -771,11 +879,38 @@ func NewCommandMapFlush_nat_out() *cobra.Command {
 	return cmd
 }
 
+func NewCommandMapSize_nat_out() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "nat_out",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_nat_out"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
 func init() {
 	Drivers = append(Drivers, Driver{
 		SetCommand:     NewCommandMapSet_nat_out(),
 		InspectCommand: NewCommandMapInspect_nat_out(),
 		FlushCommand:   NewCommandMapFlush_nat_out(),
+		SizeCommand:    NewCommandMapSize_nat_out(),
 	})
 }
 
@@ -923,11 +1058,38 @@ func NewCommandMapFlush_nat_ret() *cobra.Command {
 	return cmd
 }
 
+func NewCommandMapSize_nat_ret() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "nat_ret",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_nat_ret"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
 func init() {
 	Drivers = append(Drivers, Driver{
 		SetCommand:     NewCommandMapSet_nat_ret(),
 		InspectCommand: NewCommandMapInspect_nat_ret(),
 		FlushCommand:   NewCommandMapFlush_nat_ret(),
+		SizeCommand:    NewCommandMapSize_nat_ret(),
 	})
 }
 
@@ -1077,11 +1239,38 @@ func NewCommandMapFlush_neigh() *cobra.Command {
 	return cmd
 }
 
+func NewCommandMapSize_neigh() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "neigh",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_neigh"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
 func init() {
 	Drivers = append(Drivers, Driver{
 		SetCommand:     NewCommandMapSet_neigh(),
 		InspectCommand: NewCommandMapInspect_neigh(),
 		FlushCommand:   NewCommandMapFlush_neigh(),
+		SizeCommand:    NewCommandMapSize_neigh(),
 	})
 }
 
@@ -1231,11 +1420,38 @@ func NewCommandMapFlush_overlay_fib4() *cobra.Command {
 	return cmd
 }
 
+func NewCommandMapSize_overlay_fib4() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "overlay_fib4",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_overlay_fib4"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
 func init() {
 	Drivers = append(Drivers, Driver{
 		SetCommand:     NewCommandMapSet_overlay_fib4(),
 		InspectCommand: NewCommandMapInspect_overlay_fib4(),
 		FlushCommand:   NewCommandMapFlush_overlay_fib4(),
+		SizeCommand:    NewCommandMapSize_overlay_fib4(),
 	})
 }
 

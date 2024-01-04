@@ -153,6 +153,7 @@ func NewCommandBpfMap() *cobra.Command {
 	cmd.AddCommand(NewCommandMapInspect())
 	cmd.AddCommand(NewCommandMapInspectAuto())
 	cmd.AddCommand(NewCommandMapFlush())
+	cmd.AddCommand(NewCommandMapSize())
 	return cmd
 }
 

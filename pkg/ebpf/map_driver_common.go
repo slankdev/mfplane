@@ -12,6 +12,7 @@ type Driver struct {
 	SetCommand     *cobra.Command
 	InspectCommand *cobra.Command
 	FlushCommand   *cobra.Command
+	SizeCommand    *cobra.Command
 }
 
 var (
@@ -49,6 +50,18 @@ func NewCommandMapFlush() *cobra.Command {
 	for _, d := range Drivers {
 		if d.FlushCommand != nil {
 			cmd.AddCommand(d.FlushCommand)
+		}
+	}
+	return cmd
+}
+
+func NewCommandMapSize() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "size",
+	}
+	for _, d := range Drivers {
+		if d.SizeCommand != nil {
+			cmd.AddCommand(d.SizeCommand)
 		}
 	}
 	return cmd
@@ -107,4 +120,19 @@ func Flush(mapfile string) error {
 		}
 	}
 	return nil
+}
+
+func Size(mapfile string) (uint32, error) {
+	m, err := ebpf.LoadPinnedMap(mapfile, nil)
+	if err != nil {
+		return 0, errors.Wrap(err, "ebpf.LoadPinnedMap")
+	}
+	cnt := uint32(0)
+	key := []byte{}
+	val := []byte{}
+	iterate := m.Iterate()
+	for iterate.Next(&key, &val) {
+		cnt++
+	}
+	return cnt, nil
 }
