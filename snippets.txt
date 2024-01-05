@@ -22,6 +22,7 @@ rate(mfplane_receive_pkts{netns=~"N.*"}[10s])
 
 sudo -E go test -count=1 -v ./pkg/ebpf/ -run TestEndMflHEncapsRedTestCase
 sudo -E go test -count=1 -v ./pkg/ebpf/ -run TestXDPLoad
+sudo -E go test -count=1 -v ./pkg/ebpf/ -run TestEndMfnNormalTcpEstbDataTestCase ## PR
 sudo llvm-objdump -D /var/run/mfplane/2100407645/bin/out.o | less
 sudo llvm-objdump-12 -S -D /var/run/mfplane/1809548951/bin/out.o | less
 sudo llvm-objdump-12 -S --no-show-raw-insn /var/run/mfplane/1809548951/bin/out.o | less

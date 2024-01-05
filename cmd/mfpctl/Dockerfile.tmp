@@ -1,0 +1,26 @@
+# DIST
+FROM golang:1.19 as dist
+ARG GIT_SHA=unknown
+ARG GIT_BRANCH=unknown
+ARG GIT_TAG=unknown
+ARG BUILD_DATE=unknown
+WORKDIR /opt
+COPY ./vendor ./vendor
+COPY ./internal ./internal
+COPY ./pkg ./pkg
+COPY ./cmd ./cmd
+COPY ./go.mod ./go.mod
+COPY ./go.sum ./go.sum
+RUN \
+  --mount=type=cache,target=/home/staruser/.cache/go-build \
+  --mount=type=cache,target=/home/staruser/go/pkg/mod \
+  CGO_ENABLED=0 go build -o ./bin/mfpctl -ldflags "\
+  -X github.com/slankdev/mfplane/pkg/util.gitSHA=$GIT_SHA \
+  -X github.com/slankdev/mfplane/pkg/util.gitBranch=$GIT_BRANCH \
+  -X github.com/slankdev/mfplane/pkg/util.gitTag=$GIT_TAG \
+  -X github.com/slankdev/mfplane/pkg/util.buildDate=$BUILD_DATE \
+  " ./cmd/mfpctl/main.go
+
+# ROOTFS
+FROM ghcr.io/slankdev/mfplane-mfpctl:v0.3.2 as rootfs
+COPY --from=dist /opt/bin/mfpctl /usr/bin/
