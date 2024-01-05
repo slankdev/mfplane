@@ -45,7 +45,11 @@ func NewCommandDaemonNat() *cobra.Command {
 	}
 	cmd.Flags().IntVarP(&clioptLoglevel, "log", "l", int(zapcore.InfoLevel),
 		"-1:Debug, 0:Info, 1:Warn: 2:Error")
-
+	cmd.Flags().Uint32Var(&conntrack_tcp_timeout_opening, "conntrack_tcp_timeout_opening", 10, "")
+	cmd.Flags().Uint32Var(&conntrack_tcp_timeout_closing, "conntrack_tcp_timeout_closing", 1, "")
+	cmd.Flags().Uint32Var(&conntrack_tcp_timeout_established, "conntrack_tcp_timeout_established", 1200, "")
+	cmd.Flags().Uint32Var(&conntrack_udp_timeout, "conntrack_udp_timeout", 10, "")
+	cmd.Flags().Uint32Var(&conntrack_icmp_timeout, "conntrack_icmp_timeout", 10, "")
 	return cmd
 }
 
@@ -56,11 +60,11 @@ var (
 	mapfileDir = "/sys/fs/bpf/xdp/globals"
 
 	// Timers
-	conntrack_tcp_timeout_opening     = 10
-	conntrack_tcp_timeout_closing     = 1
-	conntrack_tcp_timeout_established = 1200
-	conntrack_udp_timeout             = 10
-	conntrack_icmp_timeout            = 10
+	conntrack_tcp_timeout_opening     uint32
+	conntrack_tcp_timeout_closing     uint32
+	conntrack_tcp_timeout_established uint32
+	conntrack_udp_timeout             uint32
+	conntrack_icmp_timeout            uint32
 )
 
 func IsExpired(addrPortStats ebpf.StructAddrPortStatsRender) (bool, error) {
