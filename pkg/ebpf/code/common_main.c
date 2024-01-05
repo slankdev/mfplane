@@ -25,6 +25,9 @@
 #ifndef NAT_CACHE_MAX_RULES
 #define NAT_CACHE_MAX_RULES 65535
 #endif
+#ifndef SNAT_MATCH_LOOP_COUNT
+#define SNAT_MATCH_LOOP_COUNT 256
+#endif
 
 struct {
   __uint(type, BPF_MAP_TYPE_LPM_TRIE);
@@ -108,27 +111,6 @@ struct {
   __uint(map_flags, BPF_F_NO_PREALLOC);
   __uint(pinning, LIBBPF_PIN_BY_NAME);
 } GLUE(NAME, neigh) SEC(".maps");
-
-// NOTE(slankdev); It's possible verifier will be failed when the semantic
-// sorting is adopted. In this case, we sorted by size and its alignment
-// perspective.
-struct metadata {
-  __u8 ether_dst[6];               // 6
-  __u16 ether_type;                // 8
-  __u16 l3_offset;                 // 10
-  __u8 l3_proto;                   // 11
-  __u8 nh_family;                  // 12
-  __u32 l3_saddr;                  // 16
-  __u32 l3_daddr;                  // 20
-  __u16 l4_sport;                  // 22
-  __u16 l4_dport;                  // 24
-  __u16 l4_icmp_id;                // 26
-  __u16 num_segs;                  // 28
-  __u32 nh_addr4;                  // 32
-  struct in6_addr outer_ip6_saddr; // 48
-  struct in6_addr outer_ip6_daddr; // 64
-  struct in6_addr nh_addr6;        // 72
-};
 
 static inline int
 tx_packet_neigh(struct xdp_md *ctx, int line,
@@ -489,7 +471,7 @@ process_ipv4(struct xdp_md *ctx, struct metadata *md)
 static inline int
 snat_match(struct trie6_val *val, __u32 saddr)
 {
-  for (int i = 0; i < 256; i++) {
+  for (int i = 0; i < SNAT_MATCH_LOOP_COUNT; i++) {
     __u32 plen = val->sources[i].prefixlen;
     __u32 addr = val->sources[i].addr;
     if (plen == 0 && addr == 0)
@@ -1163,8 +1145,12 @@ process_ethernet(struct xdp_md *ctx)
 {
   debug_function_call(ctx, __func__, __LINE__);
 
-  struct metadata md = {0};
-  int ret = parse_metadata(ctx, &md);
+  // Parse metadata
+  __u32 idx = 0;
+  struct metadata *md = bpf_map_lookup_elem(&GLUE(NAME, metadata), &idx);
+  if (!md)
+    return error_packet(ctx, __LINE__);
+  int ret = parse_metadata(ctx, md);
 #ifdef DEBUG_PARSE_METADATA
   bpf_printk(STR(NAME)"%p:parse_metadata result=%d", ctx, ret);
 #endif
@@ -1172,11 +1158,11 @@ process_ethernet(struct xdp_md *ctx)
     return ignore_packet(ctx, __LINE__);
   }
 
-  switch (md.ether_type) {
+  switch (md->ether_type) {
   case ETH_P_IP:
-    return process_ipv4(ctx, &md);
+    return process_ipv4(ctx, md);
   case ETH_P_IPV6:
-    return process_ipv6(ctx, &md);
+    return process_ipv6(ctx, md);
   default:
     return ignore_packet(ctx, __LINE__);
   }

@@ -112,7 +112,7 @@ func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
 			return err
 		}
 		if expired {
-			log.Info("clear nat_out",
+			log.Debug("clear nat_out",
 				zap.String("map", mapfile),
 				zap.Uint8("proto", ent.Key.Proto),
 				zap.String("orgAddr", ent.Key.Addr),
@@ -132,14 +132,20 @@ func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
 		}
 	}
 
+	if len(keys) == 0 {
+		return nil
+	}
+
 	// BatchDelete
 	m, err := ciliumebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
 		return errors.Wrap(err, "ebpf.LoadPinnedMap")
 	}
+	log.Info("nat_out batchDelete starting", zap.Int("count", len(keys)))
 	if _, err := m.BatchDelete(keys, nil); err != nil {
 		return errors.Wrap(err, "m.BatchDelete")
 	}
+	log.Info("nat_out batchDelete finished", zap.Int("count", len(keys)))
 	return nil
 }
 
@@ -151,7 +157,7 @@ func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
 			return err
 		}
 		if expired {
-			log.Info("clear nat_ret",
+			log.Debug("clear nat_ret",
 				zap.String("map", mapfile),
 				zap.Uint8("proto", ent.Key.Proto),
 				zap.String("orgAddr", ent.Key.Addr),
@@ -171,14 +177,20 @@ func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
 		}
 	}
 
+	if len(keys) == 0 {
+		return nil
+	}
+
 	// BatchDelete
 	m, err := ciliumebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
 		return errors.Wrap(err, "ebpf.LoadPinnedMap")
 	}
+	log.Info("nat_ret batchDelete starting", zap.Int("count", len(keys)))
 	if _, err := m.BatchDelete(keys, nil); err != nil {
 		return errors.Wrap(err, "m.BatchDelete")
 	}
+	log.Info("nat_ret batchDelete finished", zap.Int("count", len(keys)))
 	return nil
 }
 
