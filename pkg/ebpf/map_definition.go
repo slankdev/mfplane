@@ -57,7 +57,7 @@ type Fib6Render struct {
 // +ebpf:map:render:val=StructAddrPortStatsRender
 // +ebpf:map:raw:key=StructAddrPort
 // +ebpf:map:raw:val=StructAddrPortStats
-// +ebpf:map:type=BPF_MAP_TYPE_LRU_HASH
+// +ebpf:map:type=BPF_MAP_TYPE_HASH
 
 type NatOutRenderItem struct {
 	Key StructAddrPortRender      `json:"key"`
@@ -74,7 +74,7 @@ type NatOutRender struct {
 // +ebpf:map:render:val=StructAddrPortStatsRender
 // +ebpf:map:raw:key=StructAddrPort
 // +ebpf:map:raw:val=StructAddrPortStats
-// +ebpf:map:type=BPF_MAP_TYPE_LRU_HASH
+// +ebpf:map:type=BPF_MAP_TYPE_HASH
 
 type NatRetRenderItem struct {
 	Key StructAddrPortRender      `json:"key"`
@@ -134,4 +134,21 @@ type NeighRenderItem struct {
 
 type NeighRender struct {
 	Items []NeighRenderItem `json:"items"`
+}
+
+// +ebpf:map:name=counter
+// +ebpf:map:render=CounterRender
+// +ebpf:map:render:key=StructArrayKey32Render
+// +ebpf:map:render:val=StructCounterValRender
+// +ebpf:map:raw:key=StructArrayKey32
+// +ebpf:map:raw:val=StructCounterVal
+// +ebpf:map:type=BPF_MAP_TYPE_PERCPU_ARRAY
+
+type CounterRenderItem struct {
+	Key StructArrayKey32Render `json:"key"`
+	Val StructCounterValRender `json:"val"`
+}
+
+type CounterRender struct {
+	Items []CounterRenderItem `json:"items"`
 }

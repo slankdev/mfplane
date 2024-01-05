@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unsafe"
 
 	"github.com/cilium/ebpf"
 	"github.com/spf13/cobra"
@@ -14,6 +15,210 @@ import (
 
 	"github.com/slankdev/mfplane/pkg/util"
 )
+
+var (
+	_ MapRender = &CounterRender{}
+)
+
+func (r *CounterRender) WriteImpl(mapfile string) error {
+	for _, entry := range r.Items {
+		key, err := entry.Key.ToRaw()
+		if err != nil {
+			return errors.Wrap(err, "CounterRender.WriteImpl.key.ToRaw")
+		}
+		val, err := entry.Val.ToRaw()
+		if err != nil {
+			return errors.Wrap(err, "CounterRender.WriteImpl.val.ToRaw")
+		}
+
+		// install to eBPF map
+		if err := BatchPinnedMapOperation(
+			mapfile,
+			func(m *ebpf.Map) error {
+				return UpdatePerCPUArrayAll(m, key, val, ebpf.UpdateAny)
+			}); err != nil {
+			return errors.Wrap(err, "CounterRender.WriteImpl.percpumap")
+		}
+
+	}
+	return nil
+}
+
+func (r *CounterRender) ReadImpl(mapfile string) error {
+	m, err := ebpf.LoadPinnedMap(mapfile, nil)
+	if err != nil {
+		return errors.Wrap(err, "CounterRender.WriteImpl.loadPinnedMap")
+	}
+
+	// Parse
+	iterate := m.Iterate()
+	entries := []CounterRenderItem{}
+	key := StructArrayKey32{}
+	percpuval := []StructCounterVal{}
+	for iterate.Next(&key, &percpuval) {
+		val := StructCounterVal{}
+		val.Summarize(percpuval)
+
+		kr, err := key.ToRender()
+		if err != nil {
+			return errors.Wrap(err, "CounterRender.WriteImpl.key.ToRender")
+		}
+		vr, err := val.ToRender()
+		if err != nil {
+			return errors.Wrap(err, "CounterRender.WriteImpl.val.ToRender")
+		}
+		k, ok1 := kr.(*StructArrayKey32Render)
+		v, ok2 := vr.(*StructCounterValRender)
+		if !ok1 || !ok2 {
+			err := fmt.Errorf("cast error")
+			return errors.Wrap(err, "CounterRender.WriteImpl.val.ToRender")
+		}
+		entries = append(entries, CounterRenderItem{Key: *k, Val: *v})
+	}
+
+	r.Items = entries
+	return nil
+}
+
+func NewCommandMapSet_counter() *cobra.Command {
+	var clioptFile string
+	var clioptNamePrefix string
+	cmd := &cobra.Command{
+		Use: "counter",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+
+			// Read input file
+			fileContent, err := os.ReadFile(clioptFile)
+			if err != nil {
+				return err
+			}
+
+			// Parse input file
+			entries := CounterRender{}
+			if err := util.YamlUnmarshalViaJson(fileContent, &entries); err != nil {
+				return err
+			}
+
+			// Set maps
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_counter"
+			if err := Write(mapfile, &entries); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptFile, "file", "f", "", "")
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	return cmd
+}
+
+func NewCommandMapInspect_counter() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "counter",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_counter"
+			entries := CounterRender{}
+			if err := Read(mapfile, &entries); err != nil {
+				return err
+			}
+
+			// Print
+			util.Jprintln(entries)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
+func NewCommandMapFlush_counter() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	var clioptBatchDelete bool
+	cmd := &cobra.Command{
+		Use: "counter",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_counter")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
+	return cmd
+}
+
+func NewCommandMapSize_counter() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "counter",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_counter"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
+func init() {
+	Drivers = append(Drivers, Driver{
+		SetCommand:     NewCommandMapSet_counter(),
+		InspectCommand: NewCommandMapInspect_counter(),
+		FlushCommand:   NewCommandMapFlush_counter(),
+		SizeCommand:    NewCommandMapSize_counter(),
+	})
+}
 
 var (
 	_ MapRender = &EncapSourceRender{}
@@ -149,10 +354,59 @@ func NewCommandMapInspect_encap_source() *cobra.Command {
 func NewCommandMapFlush_encap_source() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "encap_source",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_encap_source"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_encap_source")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
+	return cmd
+}
+
+func NewCommandMapSize_encap_source() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "encap_source",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_encap_source"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
@@ -166,6 +420,7 @@ func init() {
 		SetCommand:     NewCommandMapSet_encap_source(),
 		InspectCommand: NewCommandMapInspect_encap_source(),
 		FlushCommand:   NewCommandMapFlush_encap_source(),
+		SizeCommand:    NewCommandMapSize_encap_source(),
 	})
 }
 
@@ -301,10 +556,59 @@ func NewCommandMapInspect_fib4() *cobra.Command {
 func NewCommandMapFlush_fib4() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "fib4",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_fib4"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_fib4")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
+	return cmd
+}
+
+func NewCommandMapSize_fib4() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "fib4",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_fib4"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
@@ -318,6 +622,7 @@ func init() {
 		SetCommand:     NewCommandMapSet_fib4(),
 		InspectCommand: NewCommandMapInspect_fib4(),
 		FlushCommand:   NewCommandMapFlush_fib4(),
+		SizeCommand:    NewCommandMapSize_fib4(),
 	})
 }
 
@@ -453,10 +758,59 @@ func NewCommandMapInspect_fib6() *cobra.Command {
 func NewCommandMapFlush_fib6() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "fib6",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_fib6"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_fib6")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
+	return cmd
+}
+
+func NewCommandMapSize_fib6() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "fib6",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_fib6"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
@@ -470,6 +824,7 @@ func init() {
 		SetCommand:     NewCommandMapSet_fib6(),
 		InspectCommand: NewCommandMapInspect_fib6(),
 		FlushCommand:   NewCommandMapFlush_fib6(),
+		SizeCommand:    NewCommandMapSize_fib6(),
 	})
 }
 
@@ -607,10 +962,59 @@ func NewCommandMapInspect_lb_backend() *cobra.Command {
 func NewCommandMapFlush_lb_backend() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "lb_backend",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_lb_backend"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_lb_backend")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
+	return cmd
+}
+
+func NewCommandMapSize_lb_backend() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "lb_backend",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_lb_backend"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
@@ -624,6 +1028,7 @@ func init() {
 		SetCommand:     NewCommandMapSet_lb_backend(),
 		InspectCommand: NewCommandMapInspect_lb_backend(),
 		FlushCommand:   NewCommandMapFlush_lb_backend(),
+		SizeCommand:    NewCommandMapSize_lb_backend(),
 	})
 }
 
@@ -759,10 +1164,59 @@ func NewCommandMapInspect_nat_out() *cobra.Command {
 func NewCommandMapFlush_nat_out() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "nat_out",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_nat_out"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_nat_out")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
+	return cmd
+}
+
+func NewCommandMapSize_nat_out() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "nat_out",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_nat_out"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
@@ -776,6 +1230,7 @@ func init() {
 		SetCommand:     NewCommandMapSet_nat_out(),
 		InspectCommand: NewCommandMapInspect_nat_out(),
 		FlushCommand:   NewCommandMapFlush_nat_out(),
+		SizeCommand:    NewCommandMapSize_nat_out(),
 	})
 }
 
@@ -911,10 +1366,59 @@ func NewCommandMapInspect_nat_ret() *cobra.Command {
 func NewCommandMapFlush_nat_ret() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "nat_ret",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_nat_ret"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_nat_ret")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
+	return cmd
+}
+
+func NewCommandMapSize_nat_ret() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "nat_ret",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_nat_ret"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
@@ -928,6 +1432,7 @@ func init() {
 		SetCommand:     NewCommandMapSet_nat_ret(),
 		InspectCommand: NewCommandMapInspect_nat_ret(),
 		FlushCommand:   NewCommandMapFlush_nat_ret(),
+		SizeCommand:    NewCommandMapSize_nat_ret(),
 	})
 }
 
@@ -1065,10 +1570,59 @@ func NewCommandMapInspect_neigh() *cobra.Command {
 func NewCommandMapFlush_neigh() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "neigh",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_neigh"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_neigh")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
+	return cmd
+}
+
+func NewCommandMapSize_neigh() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "neigh",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_neigh"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
@@ -1082,6 +1636,7 @@ func init() {
 		SetCommand:     NewCommandMapSet_neigh(),
 		InspectCommand: NewCommandMapInspect_neigh(),
 		FlushCommand:   NewCommandMapFlush_neigh(),
+		SizeCommand:    NewCommandMapSize_neigh(),
 	})
 }
 
@@ -1219,10 +1774,59 @@ func NewCommandMapInspect_overlay_fib4() *cobra.Command {
 func NewCommandMapFlush_overlay_fib4() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "overlay_fib4",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_overlay_fib4"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_overlay_fib4")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
+	return cmd
+}
+
+func NewCommandMapSize_overlay_fib4() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "overlay_fib4",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_overlay_fib4"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
@@ -1236,6 +1840,7 @@ func init() {
 		SetCommand:     NewCommandMapSet_overlay_fib4(),
 		InspectCommand: NewCommandMapInspect_overlay_fib4(),
 		FlushCommand:   NewCommandMapFlush_overlay_fib4(),
+		SizeCommand:    NewCommandMapSize_overlay_fib4(),
 	})
 }
 
@@ -1248,6 +1853,8 @@ type MapGenericItem struct {
 	OverlayFib4Render *OverlayFib4Render `json:"overlay_fib4,omitempty"`
 
 	LbBackendRender *LbBackendRender `json:"lb_backend,omitempty"`
+
+	CounterRender *CounterRender `json:"counter,omitempty"`
 
 	NatOutRender *NatOutRender `json:"nat_out,omitempty"`
 
@@ -1274,6 +1881,10 @@ func (i MapGenericItem) IsValid() error {
 
 	if i.LbBackendRender != nil {
 		setTypes = append(setTypes, "lb_backend")
+	}
+
+	if i.CounterRender != nil {
+		setTypes = append(setTypes, "counter")
 	}
 
 	if i.NatOutRender != nil {
@@ -1338,6 +1949,13 @@ func ReadAll(root string) (*MapGeneric, error) {
 					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
 				}
 				item.LbBackendRender = &lb_backend
+
+			case strings.HasSuffix(file.Name(), "counter"):
+				counter := CounterRender{}
+				if err := Read(mapfile, &counter); err != nil {
+					return nil, errors.Wrap(err, fmt.Sprintf("read:%s", mapfile))
+				}
+				item.CounterRender = &counter
 
 			case strings.HasSuffix(file.Name(), "nat_out"):
 				nat_out := NatOutRender{}
@@ -1415,6 +2033,14 @@ func WriteAll(all *MapGeneric) error {
 				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
 			}
 
+		case strings.HasSuffix(item.Mapfile, "counter"):
+			if item.CounterRender == nil {
+				return fmt.Errorf("type is counter but property is not set")
+			}
+			if err := Write(item.Mapfile, item.CounterRender); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("write:%s", item.Mapfile))
+			}
+
 		case strings.HasSuffix(item.Mapfile, "nat_out"):
 			if item.NatOutRender == nil {
 				return fmt.Errorf("type is nat_out but property is not set")
@@ -1464,6 +2090,7 @@ type ProgRunMapContext struct {
 	EncapSourceRender EncapSourceRender
 	OverlayFib4Render OverlayFib4Render
 	LbBackendRender LbBackendRender
+	CounterRender CounterRender
 	NatOutRender NatOutRender
 	NatRetRender NatRetRender
 	NeighRender NeighRender
@@ -1478,6 +2105,7 @@ func FlushProgRunMapContext(progName string) error {
 		"encap_source",
 		"overlay_fib4",
 		"lb_backend",
+		"counter",
 		"nat_out",
 		"nat_ret",
 		"neigh",
@@ -1513,6 +2141,13 @@ func SetProgRunMapContext(mc *ProgRunMapContext, progName string) error {
 			root+name+"_lb_backend",
 			&mc.LbBackendRender); err != nil {
 			return errors.Wrap(err, "lb_backend")
+		}
+	}
+	if len(mc.CounterRender.Items) > 0 {
+		if err := Write(
+			root+name+"_counter",
+			&mc.CounterRender); err != nil {
+			return errors.Wrap(err, "counter")
 		}
 	}
 	if len(mc.NatOutRender.Items) > 0 {
@@ -1575,6 +2210,12 @@ func DumpProgRunMapContext(progName string) (*ProgRunMapContext, error) {
 		&lb_backend); err != nil {
 		return nil, errors.Wrap(err, "lb_backend")
 	}
+	counter := CounterRender{}
+	if err := Read(
+		root+name+"_counter",
+		&counter); err != nil {
+		return nil, errors.Wrap(err, "counter")
+	}
 	nat_out := NatOutRender{}
 	if err := Read(
 		root+name+"_nat_out",
@@ -1610,6 +2251,7 @@ func DumpProgRunMapContext(progName string) (*ProgRunMapContext, error) {
 		EncapSourceRender: encap_source,
 		OverlayFib4Render: overlay_fib4,
 		LbBackendRender: lb_backend,
+		CounterRender: counter,
 		NatOutRender: nat_out,
 		NatRetRender: nat_ret,
 		NeighRender: neigh,

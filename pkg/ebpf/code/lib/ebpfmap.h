@@ -154,4 +154,22 @@ struct neigh_val {
   __u8 mac[6];
 }  __attribute__ ((packed));
 
+struct counter_val {
+  __u64 xdp_action_tx_pkts;
+  __u64 xdp_action_tx_bytes;
+  __u64 xdp_action_drop_pkts;
+  __u64 xdp_action_drop_bytes;
+  __u64 xdp_action_abort_pkts;
+  __u64 xdp_action_abort_bytes;
+  __u64 xdp_action_pass_pkts;
+  __u64 xdp_action_pass_bytes;
+
+  // TODO(slankdev):
+  // fib4_miss
+  // fib6_miss
+  // neigh_miss
+  // nat_out_miss
+  // nat_ret_miss
+}  __attribute__ ((packed));
+
 #endif /* _EBPFMAP_H_ */

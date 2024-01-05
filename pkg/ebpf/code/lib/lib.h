@@ -32,6 +32,7 @@
 #endif
 
 #include "ebpfmap.h"
+#include "map_definition.h"
 
 #define NSEC_PER_SEC  (1000ULL * 1000ULL * 1000UL)
 #define NSEC_PER_MSEC (1000ULL * 1000ULL)
@@ -105,6 +106,15 @@ ignore_packet(struct xdp_md *ctx, int line)
 #ifdef DEBUG_IGNORE_PACKET
   bpf_printk(STR(NAME)"%p:call %s:%d", ctx, __func__, line);
 #endif
+
+  // Increment Counter Vals
+  __u32 idx = 0;
+  struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+  if (cv) {
+    cv->xdp_action_pass_pkts ++;
+    // cv->xdp_action_pass_bytes += ??;
+  }
+
   return XDP_PASS;
 }
 
@@ -115,6 +125,15 @@ error_packet(struct xdp_md *ctx, int line)
 #ifdef DEBUG_ERROR_PACKET
   bpf_printk(STR(NAME)"%p:call %s:%d", ctx, __func__, line);
 #endif
+
+  // Increment Counter Vals
+  __u32 idx = 0;
+  struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+  if (cv) {
+    cv->xdp_action_drop_pkts ++;
+    // cv->xdp_action_drop_bytes += ??;
+  }
+
   return XDP_DROP;
 }
 
@@ -122,6 +141,15 @@ static inline int
 tx_packet(struct xdp_md *ctx, int line)
 {
   debug_function_call(ctx, __func__, line);
+
+  // Increment Counter Vals
+  __u32 idx = 0;
+  struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+  if (cv) {
+    cv->xdp_action_tx_pkts ++;
+    // cv->xdp_action_tx_bytes += ??;
+  }
+
   return XDP_TX;
 }
 

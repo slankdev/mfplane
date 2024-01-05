@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"time"
 
+	ciliumebpf "github.com/cilium/ebpf"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -45,7 +47,11 @@ func NewCommandDaemonNat() *cobra.Command {
 	}
 	cmd.Flags().IntVarP(&clioptLoglevel, "log", "l", int(zapcore.InfoLevel),
 		"-1:Debug, 0:Info, 1:Warn: 2:Error")
-
+	cmd.Flags().Uint32Var(&conntrack_tcp_timeout_opening, "conntrack_tcp_timeout_opening", 10, "")
+	cmd.Flags().Uint32Var(&conntrack_tcp_timeout_closing, "conntrack_tcp_timeout_closing", 1, "")
+	cmd.Flags().Uint32Var(&conntrack_tcp_timeout_established, "conntrack_tcp_timeout_established", 1200, "")
+	cmd.Flags().Uint32Var(&conntrack_udp_timeout, "conntrack_udp_timeout", 10, "")
+	cmd.Flags().Uint32Var(&conntrack_icmp_timeout, "conntrack_icmp_timeout", 10, "")
 	return cmd
 }
 
@@ -56,11 +62,11 @@ var (
 	mapfileDir = "/sys/fs/bpf/xdp/globals"
 
 	// Timers
-	conntrack_tcp_timeout_opening     = 10
-	conntrack_tcp_timeout_closing     = 1
-	conntrack_tcp_timeout_established = 1200
-	conntrack_udp_timeout             = 10
-	conntrack_icmp_timeout            = 10
+	conntrack_tcp_timeout_opening     uint32
+	conntrack_tcp_timeout_closing     uint32
+	conntrack_tcp_timeout_established uint32
+	conntrack_udp_timeout             uint32
+	conntrack_icmp_timeout            uint32
 )
 
 func IsExpired(addrPortStats ebpf.StructAddrPortStatsRender) (bool, error) {
@@ -99,6 +105,7 @@ func IsExpired(addrPortStats ebpf.StructAddrPortStatsRender) (bool, error) {
 }
 
 func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
+	keys := []ebpf.StructAddrPort{}
 	for _, ent := range natOut.Items {
 		expired, err := IsExpired(ent.Val)
 		if err != nil {
@@ -113,15 +120,31 @@ func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
 				zap.String("natAddr", ent.Val.Addr),
 				zap.Uint16("natPort", ent.Val.Port),
 			)
-			if err := ebpf.Delete(mapfile, &ent.Key); err != nil {
+			raw, err := ent.Key.ToRaw()
+			if err != nil {
 				return err
 			}
+			raw0, ok := raw.(*ebpf.StructAddrPort)
+			if !ok {
+				return fmt.Errorf("cast error")
+			}
+			keys = append(keys, *raw0)
 		}
+	}
+
+	// BatchDelete
+	m, err := ciliumebpf.LoadPinnedMap(mapfile, nil)
+	if err != nil {
+		return errors.Wrap(err, "ebpf.LoadPinnedMap")
+	}
+	if _, err := m.BatchDelete(keys, nil); err != nil {
+		return errors.Wrap(err, "m.BatchDelete")
 	}
 	return nil
 }
 
 func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
+	keys := []ebpf.StructAddrPort{}
 	for _, ent := range natRet.Items {
 		expired, err := IsExpired(ent.Val)
 		if err != nil {
@@ -136,10 +159,25 @@ func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
 				zap.String("natAddr", ent.Val.Addr),
 				zap.Uint16("natPort", ent.Val.Port),
 			)
-			if err := ebpf.Delete(mapfile, &ent.Key); err != nil {
+			raw, err := ent.Key.ToRaw()
+			if err != nil {
 				return err
 			}
+			raw0, ok := raw.(*ebpf.StructAddrPort)
+			if !ok {
+				return fmt.Errorf("cast error")
+			}
+			keys = append(keys, *raw0)
 		}
+	}
+
+	// BatchDelete
+	m, err := ciliumebpf.LoadPinnedMap(mapfile, nil)
+	if err != nil {
+		return errors.Wrap(err, "ebpf.LoadPinnedMap")
+	}
+	if _, err := m.BatchDelete(keys, nil); err != nil {
+		return errors.Wrap(err, "m.BatchDelete")
 	}
 	return nil
 }

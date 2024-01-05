@@ -161,6 +161,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unsafe"
 
 	"github.com/cilium/ebpf"
 	"github.com/spf13/cobra"
@@ -318,10 +319,59 @@ func NewCommandMapInspect_{{.Name}}() *cobra.Command {
 func NewCommandMapFlush_{{.Name}}() *cobra.Command {
 	var clioptNamePrefix string
 	var clioptPinDir string
+	var clioptBatchDelete bool
 	cmd := &cobra.Command{
 		Use: "{{.Name}}",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Flush(filepath.Join(clioptPinDir, clioptNamePrefix+"_{{.Name}}"))
+			mapfile := filepath.Join(clioptPinDir, clioptNamePrefix+"_{{.Name}}")
+			if clioptBatchDelete {
+				m, err := ebpf.LoadPinnedMap(mapfile, nil)
+				if err != nil {
+					return errors.Wrap(err, "ebpf.LoadPinnedMap")
+				}
+				if m.Type() == ebpf.Array || m.Type() == ebpf.PerCPUArray {
+					return nil
+				}
+				keys := [][unsafe.Sizeof(StructAddrPort{})]byte{}
+				key := [unsafe.Sizeof(StructAddrPort{})]byte{}
+				val := []byte{}
+				iterate := m.Iterate()
+				for iterate.Next(&key, &val) {
+					keys = append(keys, key)
+				}
+				if _, err := m.BatchDelete(keys, nil); err != nil {
+					return errors.Wrap(err, "m.BatchDelete")
+				}
+			}
+			return Flush(mapfile)
+		},
+	}
+	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
+	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
+		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	cmd.Flags().BoolVarP(&clioptBatchDelete, "batch-delete", "b",
+		false, "use ebpf.Map.BatchDelete")
+	return cmd
+}
+
+func NewCommandMapSize_{{.Name}}() *cobra.Command {
+	var clioptNamePrefix string
+	var clioptPinDir string
+	cmd := &cobra.Command{
+		Use: "{{.Name}}",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// name must be specified, then error
+			// without that feature, it might broke the important data
+			if clioptNamePrefix == "" {
+				return fmt.Errorf("name must be specified")
+			}
+			mapfile := "/sys/fs/bpf/xdp/globals/" + clioptNamePrefix + "_{{.Name}}"
+			size, err := Size(mapfile)
+			if err != nil {
+				return err
+			}
+			fmt.Println(size)
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clioptNamePrefix, "name", "n", "l1", "")
@@ -335,6 +385,7 @@ func init() {
 		SetCommand:     NewCommandMapSet_{{.Name}}(),
 		InspectCommand: NewCommandMapInspect_{{.Name}}(),
 		FlushCommand:   NewCommandMapFlush_{{.Name}}(),
+		SizeCommand:    NewCommandMapSize_{{.Name}}(),
 	})
 }
 `
