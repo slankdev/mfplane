@@ -172,4 +172,25 @@ struct counter_val {
   // nat_ret_miss
 }  __attribute__ ((packed));
 
+// NOTE(slankdev); It's possible verifier will be failed when the semantic
+// sorting is adopted. In this case, we sorted by size and its alignment
+// perspective.
+struct metadata {
+  __u8 ether_dst[6];               // 6
+  __u16 ether_type;                // 8
+  __u16 l3_offset;                 // 10
+  __u8 l3_proto;                   // 11
+  __u8 nh_family;                  // 12
+  __u32 l3_saddr;                  // 16
+  __u32 l3_daddr;                  // 20
+  __u16 l4_sport;                  // 22
+  __u16 l4_dport;                  // 24
+  __u16 l4_icmp_id;                // 26
+  __u16 num_segs;                  // 28
+  __u32 nh_addr4;                  // 32
+  struct in6_addr outer_ip6_saddr; // 48
+  struct in6_addr outer_ip6_daddr; // 64
+  struct in6_addr nh_addr6;        // 72
+}  __attribute__ ((packed));
+
 #endif /* _EBPFMAP_H_ */
