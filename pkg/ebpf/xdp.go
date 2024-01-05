@@ -1,8 +1,10 @@
 package ebpf
 
 import (
+	"errors"
 	"fmt"
 	"math"
+	"os"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
@@ -33,6 +35,15 @@ func XdpLoad(progFile, section string) (*ebpf.Program, error) {
 		Maps: ebpf.MapOptions{PinPath: "/sys/fs/bpf/xdp/globals"},
 	})
 	if err != nil {
+		var ve *ebpf.VerifierError
+		if errors.As(err, &ve) {
+			var s string
+			for _, log := range ve.Log {
+				s += fmt.Sprintln(log)
+			}
+			s += fmt.Sprintf("%d logs\n", len(ve.Log))
+			_ = os.WriteFile("/tmp/verifier.log", []byte(s), os.ModePerm)
+		}
 		return nil, err
 	}
 	prog, ok := coll.Programs[section]
