@@ -31,7 +31,7 @@
 #define AF_INET6 10
 #endif
 
-#include "ebpfmap.h"
+#include "map_struct.h"
 #include "map_definition.h"
 
 #define NSEC_PER_SEC  (1000ULL * 1000ULL * 1000UL)
