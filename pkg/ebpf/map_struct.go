@@ -808,3 +808,62 @@ var (
 	_ KVRaw    = &StructNeighVal{}
 	_ KVRender = &StructNeighValRender{}
 )
+
+type StructCounterVal struct {
+	XdpActionTxPkts     uint64
+	XdpActionTxBytes    uint64
+	XdpActionDropPkts   uint64
+	XdpActionDropBytes  uint64
+	XdpActionAbortPkts  uint64
+	XdpActionAbortBytes uint64
+	XdpActionPassPkts   uint64
+	XdpActionPassBytes  uint64
+}
+
+type StructCounterValRender StructCounterVal
+
+func (raw *StructCounterVal) ToRender() (KVRender, error) {
+	render := StructCounterValRender{}
+	render.XdpActionTxPkts = raw.XdpActionTxPkts
+	render.XdpActionTxBytes = raw.XdpActionTxBytes
+	render.XdpActionDropPkts = raw.XdpActionDropPkts
+	render.XdpActionDropBytes = raw.XdpActionDropBytes
+	render.XdpActionAbortPkts = raw.XdpActionAbortPkts
+	render.XdpActionAbortBytes = raw.XdpActionAbortBytes
+	render.XdpActionPassPkts = raw.XdpActionPassPkts
+	render.XdpActionPassBytes = raw.XdpActionPassBytes
+	return &render, nil
+}
+
+func (render *StructCounterValRender) ToRaw() (KVRaw, error) {
+	raw := StructCounterVal{}
+	raw.XdpActionTxPkts = render.XdpActionTxPkts
+	raw.XdpActionTxBytes = render.XdpActionTxBytes
+	raw.XdpActionDropPkts = render.XdpActionDropPkts
+	raw.XdpActionDropBytes = render.XdpActionDropBytes
+	raw.XdpActionAbortPkts = render.XdpActionAbortPkts
+	raw.XdpActionAbortBytes = render.XdpActionAbortBytes
+	raw.XdpActionPassPkts = render.XdpActionPassPkts
+	raw.XdpActionPassBytes = render.XdpActionPassBytes
+	return &raw, nil
+}
+
+func (raw *StructCounterVal) Summarize(list []StructCounterVal) {
+	*raw = StructCounterVal{}
+	for _, item := range list {
+		raw.XdpActionTxPkts += item.XdpActionTxPkts
+		raw.XdpActionTxBytes += item.XdpActionTxBytes
+		raw.XdpActionDropPkts += item.XdpActionDropPkts
+		raw.XdpActionDropBytes += item.XdpActionDropBytes
+		raw.XdpActionAbortPkts += item.XdpActionAbortPkts
+		raw.XdpActionAbortBytes += item.XdpActionAbortBytes
+		raw.XdpActionPassPkts += item.XdpActionPassPkts
+		raw.XdpActionPassBytes += item.XdpActionPassBytes
+	}
+}
+
+var (
+	// struct neigh_key
+	_ KVRaw    = &StructCounterVal{}
+	_ KVRender = &StructCounterValRender{}
+)

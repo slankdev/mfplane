@@ -271,6 +271,7 @@ func (tc EndMfnNormalTcpCloseFinTestCase) PreTestMapContext() *ProgRunMapContext
 }
 
 func (tc EndMfnNormalTcpCloseFinTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContext) {
+	mc.CounterRender = CounterRender{}
 	mc.Fib4Render = Fib4Render{}
 	mc.Fib6Render = Fib6Render{}
 	mc.NeighRender = NeighRender{}

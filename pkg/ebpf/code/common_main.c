@@ -211,6 +211,15 @@ tx_packet_neigh(struct xdp_md *ctx, int line,
   struct ethhdr *eh = (struct ethhdr *)data;
   assert_len(eh, data_end);
   memcpy(eh->h_dest, mac, 6);
+
+  // Increment Counter Vals
+  __u32 idx = 0;
+  struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+  if (cv) {
+    cv->xdp_action_tx_pkts ++;
+    // cv->xdp_action_tx_bytes += ??;
+  }
+
   return XDP_TX;
 }
 

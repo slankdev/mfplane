@@ -223,6 +223,7 @@ func (tc EndMflNormalTestCase) PreTestMapContext() *ProgRunMapContext {
 }
 
 func (tc EndMflNormalTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContext) {
+	mc.CounterRender = CounterRender{}
 	mc.EncapSourceRender = EncapSourceRender{}
 	mc.Fib4Render = Fib4Render{}
 	mc.NeighRender = NeighRender{}
