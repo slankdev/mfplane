@@ -4,8 +4,8 @@
  * Copyright 2022 Wide Project.
  */
 
-#ifndef _EBPFMAP_H_
-#define _EBPFMAP_H_
+#ifndef _MAP_STRUCT_H_
+#define _MAP_STRUCT_H_
 
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
@@ -193,4 +193,4 @@ struct metadata {
   struct in6_addr nh_addr6;        // 72
 }  __attribute__ ((packed));
 
-#endif /* _EBPFMAP_H_ */
+#endif /* _MAP_STRUCT_H_ */

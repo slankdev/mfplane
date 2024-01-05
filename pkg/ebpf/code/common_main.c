@@ -14,7 +14,6 @@
 #include <linux/pkt_cls.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
-#include "lib/lib.h"
 
 #ifndef MAX_RULES
 #define MAX_RULES 2
@@ -29,88 +28,7 @@
 #define SNAT_MATCH_LOOP_COUNT 256
 #endif
 
-struct {
-  __uint(type, BPF_MAP_TYPE_LPM_TRIE);
-  __uint(key_size, sizeof(struct trie4_key));
-  __uint(value_size, sizeof(struct trie4_val));
-  __uint(max_entries, 50);
-  __uint(map_flags, BPF_F_NO_PREALLOC);
-  __uint(pinning, LIBBPF_PIN_BY_NAME);
-} GLUE(NAME, fib4) SEC(".maps");
-
-struct {
-  __uint(type, BPF_MAP_TYPE_LPM_TRIE);
-  __uint(key_size, sizeof(struct trie6_key));
-  __uint(value_size, sizeof(struct trie6_val));
-  __uint(max_entries, 50);
-  __uint(map_flags, BPF_F_NO_PREALLOC);
-  __uint(pinning, LIBBPF_PIN_BY_NAME);
-} GLUE(NAME, fib6) SEC(".maps");
-
-struct {
-  __uint(type, BPF_MAP_TYPE_PERCPU_HASH);
-  __uint(key_size, sizeof(struct overlay_fib4_key));
-  __uint(value_size, sizeof(struct overlay_fib4_val));
-  __uint(max_entries, 100);
-  __uint(map_flags, BPF_F_NO_PREALLOC);
-  __uint(pinning, LIBBPF_PIN_BY_NAME);
-} GLUE(NAME, overlay_fib4) SEC(".maps");
-
-struct {
-  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-  __type(key, __u32);
-  __type(value, struct flow_processor);
-  __uint(max_entries, RING_SIZE * MAX_RULES);
-  __uint(pinning, LIBBPF_PIN_BY_NAME);
-} GLUE(NAME, lb_backend) SEC(".maps");
-
-struct {
-  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-  __type(key, __u32);
-  __type(value, struct in6_addr);
-  __uint(max_entries, 1);
-  __uint(pinning, LIBBPF_PIN_BY_NAME);
-} GLUE(NAME, encap_source) SEC(".maps");
-
-struct {
-  __uint(type, BPF_MAP_TYPE_HASH);
-  __uint(max_entries, NAT_CACHE_MAX_RULES);
-  __type(key, struct addr_port);
-  __type(value, struct addr_port_stats);
-  __uint(pinning, LIBBPF_PIN_BY_NAME);
-} GLUE(NAME, nat_out) SEC(".maps");
-
-struct {
-  __uint(type, BPF_MAP_TYPE_HASH);
-  __uint(max_entries, NAT_CACHE_MAX_RULES);
-  __type(key, struct addr_port);
-  __type(value, struct addr_port_stats);
-  __uint(pinning, LIBBPF_PIN_BY_NAME);
-} GLUE(NAME, nat_ret) SEC(".maps");
-
-struct {
-  __uint(type, BPF_MAP_TYPE_LRU_HASH);
-  __uint(max_entries, 65535);
-  __type(key, struct mf_redir_rate_stat_key);
-  __type(value, struct mf_redir_rate_stat_val);
-  __uint(pinning, LIBBPF_PIN_BY_NAME);
-} GLUE(NAME, rate_stats) SEC(".maps");
-
-struct {
-  __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
-  __uint(key_size, sizeof(__u32));   // TODO: nos sure it is needed or not
-  __uint(value_size, sizeof(__u32)); // TODO: nos sure it is needed or not
-  __uint(pinning, LIBBPF_PIN_BY_NAME);
-} GLUE(NAME, events) SEC(".maps");
-
-struct {
-  __uint(type, BPF_MAP_TYPE_PERCPU_HASH);
-  __uint(key_size, sizeof(struct neigh_key));
-  __uint(value_size, sizeof(struct neigh_val));
-  __uint(max_entries, 100);
-  __uint(map_flags, BPF_F_NO_PREALLOC);
-  __uint(pinning, LIBBPF_PIN_BY_NAME);
-} GLUE(NAME, neigh) SEC(".maps");
+#include "lib/lib.h"
 
 static inline int
 tx_packet_neigh(struct xdp_md *ctx, int line,
@@ -1154,9 +1072,8 @@ process_ethernet(struct xdp_md *ctx)
 #ifdef DEBUG_PARSE_METADATA
   bpf_printk(STR(NAME)"%p:parse_metadata result=%d", ctx, ret);
 #endif
-  if (ret < 0) {
+  if (ret < 0)
     return ignore_packet(ctx, __LINE__);
-  }
 
   switch (md->ether_type) {
   case ETH_P_IP:
