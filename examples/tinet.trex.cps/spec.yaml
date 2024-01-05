@@ -72,7 +72,7 @@ node_configs:
   - cmd: ip link set net1 down
   - cmd: ip link set net1 address 52:54:00:02:00:01
   - cmd: ip link set net1 up
-  - cmd: nohup ./_t-rex-64 -i --astf --cfg ./cfg.yaml &
+  - cmd: nohup ./_t-rex-64 -i --astf --cfg ./cfg.yaml >/dev/null &
 - name: BR
   cmds:
   - cmd: ip link add br0 type bridge
