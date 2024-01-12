@@ -795,7 +795,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
     if (tcp_closing != 0) {
       asval->flags |= TCP_STATE_CLOSING;
       struct addr_port_stats *nat_ret_val = bpf_map_lookup_elem(
-        &(GLUE(NAME, nat_out)), asval);
+        &(GLUE(NAME, nat_ret)), asval);
       if (nat_ret_val)
         nat_ret_val->flags |= TCP_STATE_CLOSING;
     }
