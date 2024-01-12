@@ -1,0 +1,19 @@
+targets:
+- name: lo-rx-pps
+  command: |
+    ip -s -json link show dev lo | jq .[0].stats64.rx.packets
+- name: lo-tx-pps
+  command: |
+    ip -s -json link show dev lo | jq .[0].stats64.tx.packets
+- name: ens4-rx-pps
+  command: |
+    ip -s -json link show dev ens4 | jq .[0].stats64.rx.packets
+- name: ens4-tx-pps
+  command: |
+    ip -s -json link show dev ens4 | jq .[0].stats64.tx.packets
+- name: ens4-rx-Bps
+  command: |
+    ip -s -json link show dev ens4 | jq .[0].stats64.rx.bytes
+- name: ens4-tx-Bps
+  command: |
+    ip -s -json link show dev ens4 | jq .[0].stats64.tx.bytes
