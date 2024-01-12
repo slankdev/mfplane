@@ -115,10 +115,8 @@ tx_packet_neigh(struct xdp_md *ctx, int line,
   // Increment Counter Vals
   __u32 idx = 0;
   struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
-  if (cv) {
+  if (cv)
     cv->xdp_action_tx_pkts ++;
-    // cv->xdp_action_tx_bytes += ??;
-  }
 
   return XDP_TX;
 }
@@ -436,6 +434,12 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
+  // Increment Counter Vals
+  __u32 idx = 0;
+  struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+  if (cv)
+    cv->mf_redirect_pkts ++;
+
   // Prepare Headers
   struct ethhdr *eh = (struct ethhdr *)data;
   assert_len(eh, data_end);
@@ -576,6 +580,12 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   struct addr_port_stats *nval = NULL;
   nval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret)), &key);
   if (!nval) {
+    __u32 idx = 0;
+    struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+    if (cv) {
+      cv->nat_ret_miss ++;
+      cv->mf_redirect_ret_pkts ++;
+    }
     return process_mf_redirect(ctx, val, md);
   }
   nval->pkts++;
@@ -729,20 +739,31 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
 
   // Check lookup result
   if (!asval) {
+    __u32 idx = 0;
+    struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+    if (cv)
+      cv->nat_out_miss ++;
+
     // Un-Hit sesson cache
     __u32 hash = 0;
     switch (in_ih->protocol) {
     case IPPROTO_TCP:
-      if (tcp_syn == 0)
+      if (tcp_syn == 0) {
+        if (cv)
+          cv->mf_redirect_out_pkts ++;
         return process_mf_redirect(ctx, val, md);
+      }
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
       //bpf_printk(STR(NAME)"hash 0x%08x", hash);
       break;
     case IPPROTO_UDP:
-      if (key->addr[4] != 0x00 || key->addr[5] != 0x00)
+      if (key->addr[4] != 0x00 || key->addr[5] != 0x00) {
+        if (cv)
+          cv->mf_redirect_out_pkts ++;
         return process_mf_redirect(ctx, val, md);
+      }
       hash = jhash_2words(in_ih->saddr, in_l4h->source, 0xdeadbeaf);
       hash = jhash_2words(in_ih->protocol, 0, hash);
       break;
@@ -786,6 +807,16 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
     bpf_map_update_elem(&GLUE(NAME, nat_ret), &natval, &orgval, BPF_ANY);
     bpf_map_update_elem(&GLUE(NAME, nat_out), &orgval, &natval, BPF_ANY);
   } else {
+    if ((tcp_closing == 0) && ((asval->flags & TCP_STATE_CLOSING) != 0)) {
+#ifdef DEBUG_NAT_REUSE_PORT
+      bpf_printk(STR(NAME)"%p:warn reuse closed session cache", ctx);
+#endif
+      __u32 idx = 0;
+      struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+      if (cv)
+        cv->nat_reuse_closed_session ++;
+    }
+
     // Existing connection
     asval->pkts++;
     asval->bytes += data_end - data;
