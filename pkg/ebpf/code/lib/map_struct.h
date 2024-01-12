@@ -75,7 +75,7 @@ struct snat_source {
 struct trie6_val {
   __u16 action;
   __u16 backend_block_index;
-  __u32 vip;
+  __u32 vip[32];
   __u16 nat_port_hash_bit;
   __u16 usid_block_length;
   __u16 usid_function_length;

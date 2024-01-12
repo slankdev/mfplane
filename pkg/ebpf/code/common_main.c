@@ -27,6 +27,9 @@
 #ifndef SNAT_MATCH_LOOP_COUNT
 #define SNAT_MATCH_LOOP_COUNT 256
 #endif
+#ifndef SNAT_VIPS_LOOP_COUNT
+#define SNAT_VIPS_LOOP_COUNT 16
+#endif
 
 #include "lib/lib.h"
 
@@ -742,6 +745,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
   }
 
   // Lookup session cache
+  __u32 sourceaddr = 0;
   __u32 sourceport = 0;
   __u64 now = bpf_ktime_get_sec();
   struct addr_port_stats *asval = bpf_map_lookup_elem(
@@ -790,12 +794,14 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
 
     // TODO(slankdev): we should search un-used slot instead of rand-val.
     __u32 rand = bpf_get_prandom_u32();
+#ifdef SNAT_RANDOM_BIT_ZERO
+    rand = 0;
+#endif
     rand = rand & 0xffff;
     rand = rand & ~val->nat_port_hash_bit;
     sourceport = hash | rand;
 
     struct addr_port_stats natval = {
-      .addr = val->vip,
       .port = sourceport,
       .proto = in_ih->protocol,
       .pkts = 1,
@@ -813,24 +819,34 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
       .update_at = now,
     };
 
-    struct addr_port_stats *tmp_check;
-    tmp_check = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret)), &natval);
-    if (tmp_check) {
-      if (tmp_check->addr != orgval.addr || tmp_check->port != orgval.port) {
-        __u32 idx = 0;
-        struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
-        if (cv)
-          cv->nat_endpoint_independent_mapping_conflict++;
-#ifdef DEBUG_NAT_CONFLICT
-        bpf_printk(STR(NAME)"%p:warn nat conflict hash %04x", ctx, sourceport);
-        bpf_printk(STR(NAME)"%p:warn nat conflict old-conn %08x %04x",
-          ctx, tmp_check->addr, tmp_check->port);
-        bpf_printk(STR(NAME)"%p:warn nat conflict new-conn %08x %04x",
-          ctx, orgval.addr, orgval.port);
-#endif
-        return error_packet(ctx, __LINE__);
-      }
+    int allocated_index = -1;
+    for (int i = 0; i < SNAT_VIPS_LOOP_COUNT; i++) {
+      if (val->vip[i] == 0)
+        break;
+      natval.addr = val->vip[i];
+      struct addr_port_stats *tmp_check;
+      tmp_check = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret)), &natval);
+      if (tmp_check)
+        if (tmp_check->addr != orgval.addr || tmp_check->port != orgval.port)
+          continue;
+      allocated_index = i;
+      break;
     }
+
+    if (allocated_index < 0) {
+      __u32 idx = 0;
+      struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+      if (cv)
+        cv->nat_endpoint_independent_mapping_conflict++;
+#ifdef DEBUG_NAT_CONFLICT
+      bpf_printk(STR(NAME)"conflict (non alloced)");
+      bpf_printk(STR(NAME)"%p:warn nat conflict hash %04x", ctx, sourceport);
+      bpf_printk(STR(NAME)"%p:warn nat conflict new-conn %08x %04x",
+        ctx, orgval.addr, orgval.port);
+#endif
+      return error_packet(ctx, __LINE__);
+    }
+    sourceaddr = val->vip[allocated_index];
 
     if (in_ih->protocol == IPPROTO_ICMP)
       orgval.port = org_icmp_id;
@@ -850,8 +866,9 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
     // Existing connection
     asval->pkts++;
     asval->bytes += data_end - data;
-    sourceport = asval->port;
     asval->update_at = now;
+    sourceport = asval->port;
+    sourceaddr = asval->addr;
 
     if (tcp_closing != 0) {
       asval->flags |= TCP_STATE_CLOSING;
@@ -880,7 +897,7 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
 
   // Update header
   __u32 oldsource = in_ih->saddr;
-  in_ih->saddr = val->vip;
+  in_ih->saddr = sourceaddr;
 
   // Update L4 Checksum
   switch (in_ih->protocol) {

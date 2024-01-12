@@ -3,6 +3,7 @@ package ebpf
 import (
 	"fmt"
 	"net"
+	"reflect"
 	"syscall"
 
 	"github.com/slankdev/mfplane/pkg/util"
@@ -322,7 +323,7 @@ type StructTrie6ValSnatSource struct {
 type StructTrie6Val struct {
 	Action             uint16                        `json:"action"`
 	BackendBlockIndex  uint16                        `json:"backend_block_index"`
-	Vip                [4]uint8                      `json:"vip"`
+	Vip                [32][4]uint8                  `json:"vip"`
 	NatPortBashBit     uint16                        `json:"nat_port_hash_bit"`
 	UsidBlockLength    uint16                        `json:"usid_block_length"`
 	UsidFunctionLength uint16                        `json:"usid_function_length"`
@@ -353,7 +354,11 @@ func (raw *StructTrie6Val) ToRender() (KVRender, error) {
 	endmfn.StatsRedirPkts = raw.StatsRedirPkts
 	endmfn.NatMapping = raw.NatMapping
 	endmfn.NatFiltering = raw.NatFiltering
-	endmfn.Vip = fmt.Sprintf("%s", net.IP(raw.Vip[:]))
+	for i := range raw.Vip {
+		if !reflect.DeepEqual(raw.Vip[i], [4]uint8{0, 0, 0, 0}) {
+			endmfn.Vip = append(endmfn.Vip, fmt.Sprintf("%s", net.IP(raw.Vip[i][:])))
+		}
+	}
 	for idx := 0; idx < len(raw.Sources); idx++ {
 		src := raw.Sources[idx]
 		if src.Addr == 0 && src.Prefixlen == 0 {
@@ -406,7 +411,7 @@ type L3XConnect struct {
 
 type EndMFN struct {
 	BackendBlockIndex  uint16                           `json:"backend_block_index"`
-	Vip                string                           `json:"vip"`
+	Vip                []string                         `json:"vip"`
 	NatPortHashBit     uint16                           `json:"nat_port_hash_bit"`
 	UsidBlockLength    uint16                           `json:"usid_block_length"`
 	UsidFunctionLength uint16                           `json:"usid_function_length"`
@@ -441,8 +446,14 @@ func (render *StructTrie6ValRender) ToRaw() (KVRaw, error) {
 		raw.StatsRedirPkts = render.EndMNFL.StatsRedirPkts
 		raw.NatMapping = render.EndMNFL.NatMapping
 		raw.NatFiltering = render.EndMNFL.NatFiltering
-		vipdata := net.ParseIP(render.EndMNFL.Vip)
-		copy(raw.Vip[:], vipdata[12:])
+		if len(render.EndMNFL.Vip) > len(raw.Vip) {
+			return nil, fmt.Errorf("render.EndMNFL.Vip too long now=%d expect=%d",
+				len(render.EndMNFL.Vip), len(raw.Vip))
+		}
+		for idx, vip := range render.EndMNFL.Vip {
+			vipdata := net.ParseIP(vip)
+			copy(raw.Vip[idx][:], vipdata[12:])
+		}
 		for idx, src := range render.EndMNFL.Sources {
 			_, ipnet, err := net.ParseCIDR(src.Prefix)
 			if err != nil {
@@ -465,8 +476,14 @@ func (render *StructTrie6ValRender) ToRaw() (KVRaw, error) {
 		raw.StatsRedirPkts = render.EndMNFN.StatsRedirPkts
 		raw.NatMapping = render.EndMNFN.NatMapping
 		raw.NatFiltering = render.EndMNFN.NatFiltering
-		vipdata := net.ParseIP(render.EndMNFN.Vip)
-		copy(raw.Vip[:], vipdata[12:])
+		if len(render.EndMNFN.Vip) > len(raw.Vip) {
+			return nil, fmt.Errorf("render.EndMNFL.Vip too long now=%d expect=%d",
+				len(render.EndMNFL.Vip), len(raw.Vip))
+		}
+		for idx, vip := range render.EndMNFN.Vip {
+			vipdata := net.ParseIP(vip)
+			copy(raw.Vip[idx][:], vipdata[12:])
+		}
 		for idx, src := range render.EndMNFN.Sources {
 			_, ipnet, err := net.ParseCIDR(src.Prefix)
 			if err != nil {
