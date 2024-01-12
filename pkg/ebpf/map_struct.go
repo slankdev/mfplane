@@ -818,33 +818,30 @@ type StructCounterVal struct {
 	XdpActionAbortBytes uint64
 	XdpActionPassPkts   uint64
 	XdpActionPassBytes  uint64
+	MfRedirectPkts      uint64
+	MfRedirectBytes     uint64
+	MfRedirectOutPkts   uint64
+	MfRedirectRetPkts   uint64
+	Fib4Miss            uint64
+	Fib6Miss            uint64
+	NeighMiss           uint64
+	NatOutMiss          uint64
+	NatRetMiss          uint64
+	// NatEndpointIndependentMappingConflict - counter for nat conflict.
+	NatEndpointIndependentMappingConflict uint64
+	// NatReuseClosedSession - counter for internal port reuse.
+	NatReuseClosedSession uint64
 }
 
 type StructCounterValRender StructCounterVal
 
 func (raw *StructCounterVal) ToRender() (KVRender, error) {
-	render := StructCounterValRender{}
-	render.XdpActionTxPkts = raw.XdpActionTxPkts
-	render.XdpActionTxBytes = raw.XdpActionTxBytes
-	render.XdpActionDropPkts = raw.XdpActionDropPkts
-	render.XdpActionDropBytes = raw.XdpActionDropBytes
-	render.XdpActionAbortPkts = raw.XdpActionAbortPkts
-	render.XdpActionAbortBytes = raw.XdpActionAbortBytes
-	render.XdpActionPassPkts = raw.XdpActionPassPkts
-	render.XdpActionPassBytes = raw.XdpActionPassBytes
+	render := StructCounterValRender(*raw)
 	return &render, nil
 }
 
 func (render *StructCounterValRender) ToRaw() (KVRaw, error) {
-	raw := StructCounterVal{}
-	raw.XdpActionTxPkts = render.XdpActionTxPkts
-	raw.XdpActionTxBytes = render.XdpActionTxBytes
-	raw.XdpActionDropPkts = render.XdpActionDropPkts
-	raw.XdpActionDropBytes = render.XdpActionDropBytes
-	raw.XdpActionAbortPkts = render.XdpActionAbortPkts
-	raw.XdpActionAbortBytes = render.XdpActionAbortBytes
-	raw.XdpActionPassPkts = render.XdpActionPassPkts
-	raw.XdpActionPassBytes = render.XdpActionPassBytes
+	raw := StructCounterVal(*render)
 	return &raw, nil
 }
 
@@ -859,6 +856,17 @@ func (raw *StructCounterVal) Summarize(list []StructCounterVal) {
 		raw.XdpActionAbortBytes += item.XdpActionAbortBytes
 		raw.XdpActionPassPkts += item.XdpActionPassPkts
 		raw.XdpActionPassBytes += item.XdpActionPassBytes
+		raw.MfRedirectPkts += item.MfRedirectPkts
+		raw.MfRedirectBytes += item.MfRedirectBytes
+		raw.MfRedirectOutPkts += item.MfRedirectOutPkts
+		raw.MfRedirectRetPkts += item.MfRedirectRetPkts
+		raw.Fib4Miss += item.Fib4Miss
+		raw.Fib6Miss += item.Fib6Miss
+		raw.NeighMiss += item.NeighMiss
+		raw.NatOutMiss += item.NatOutMiss
+		raw.NatRetMiss += item.NatRetMiss
+		raw.NatEndpointIndependentMappingConflict += item.NatEndpointIndependentMappingConflict
+		raw.NatReuseClosedSession += item.NatReuseClosedSession
 	}
 }
 

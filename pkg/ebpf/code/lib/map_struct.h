@@ -163,13 +163,17 @@ struct counter_val {
   __u64 xdp_action_abort_bytes;
   __u64 xdp_action_pass_pkts;
   __u64 xdp_action_pass_bytes;
-
-  // TODO(slankdev):
-  // fib4_miss
-  // fib6_miss
-  // neigh_miss
-  // nat_out_miss
-  // nat_ret_miss
+  __u64 mf_redirect_pkts;
+  __u64 mf_redirect_bytes;
+  __u64 mf_redirect_out_pkts;
+  __u64 mf_redirect_ret_pkts;
+  __u64 fib4_miss;
+  __u64 fib6_miss;
+  __u64 neigh_miss;
+  __u64 nat_out_miss;
+  __u64 nat_ret_miss;
+  __u64 nat_endpoint_independent_mapping_conflict;
+  __u64 nat_reuse_closed_session;
 }  __attribute__ ((packed));
 
 // NOTE(slankdev); It's possible verifier will be failed when the semantic
