@@ -115,10 +115,8 @@ tx_packet_neigh(struct xdp_md *ctx, int line,
   // Increment Counter Vals
   __u32 idx = 0;
   struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
-  if (cv) {
+  if (cv)
     cv->xdp_action_tx_pkts ++;
-    // cv->xdp_action_tx_bytes += ??;
-  }
 
   return XDP_TX;
 }
@@ -436,6 +434,12 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
+  // Increment Counter Vals
+  __u32 idx = 0;
+  struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+  if (cv)
+    cv->mf_redirect_pkts ++;
+
   // Prepare Headers
   struct ethhdr *eh = (struct ethhdr *)data;
   assert_len(eh, data_end);
@@ -552,10 +556,12 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   __u8 *dummy_ptr = (__u8 *)&oh->ip6.daddr;
 
   __u8 tcp_closing = 0;
+  __u8 tcp_closing_rst = 0;
   if (in_ih->protocol == IPPROTO_TCP) {
     struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
     assert_len(in_th, data_end);
     tcp_closing = in_th->rst || in_th->fin;
+    tcp_closing_rst = in_th->rst;
   }
 
   // Craft lookup key
@@ -576,6 +582,12 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   struct addr_port_stats *nval = NULL;
   nval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret)), &key);
   if (!nval) {
+    __u32 idx = 0;
+    struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+    if (cv) {
+      cv->nat_ret_miss ++;
+      cv->mf_redirect_ret_pkts ++;
+    }
     return process_mf_redirect(ctx, val, md);
   }
   nval->pkts++;
@@ -595,6 +607,12 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
       &(GLUE(NAME, nat_out)), nval);
     if (nat_out_val)
       nat_out_val->flags |= TCP_STATE_CLOSING;
+#ifdef ENABLE_NAT_TCP_RST_CACHE_CLEAR
+    if (tcp_closing_rst != 0) {
+      bpf_map_delete_elem(&(GLUE(NAME, nat_out)), nval);
+      bpf_map_delete_elem(&(GLUE(NAME, nat_ret)), &key);
+    }
+#endif
   }
 
 #ifdef DEBUG
@@ -695,11 +713,13 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
   // Check whether Syn packet
   __u8 tcp_syn = 0;
   __u8 tcp_closing = 0;
+  __u8 tcp_closing_rst = 0;
   if (in_ih->protocol == IPPROTO_TCP) {
     struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
     assert_len(in_th, data_end);
     tcp_syn = in_th->syn;
     tcp_closing = in_th->rst || in_th->fin;
+    tcp_closing_rst = in_th->rst;
   }
 
   // Save pre-translate values
@@ -729,20 +749,31 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
 
   // Check lookup result
   if (!asval) {
+    __u32 idx = 0;
+    struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+    if (cv)
+      cv->nat_out_miss ++;
+
     // Un-Hit sesson cache
     __u32 hash = 0;
     switch (in_ih->protocol) {
     case IPPROTO_TCP:
-      if (tcp_syn == 0)
+      if (tcp_syn == 0) {
+        if (cv)
+          cv->mf_redirect_out_pkts ++;
         return process_mf_redirect(ctx, val, md);
+      }
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
       //bpf_printk(STR(NAME)"hash 0x%08x", hash);
       break;
     case IPPROTO_UDP:
-      if (key->addr[4] != 0x00 || key->addr[5] != 0x00)
+      if (key->addr[4] != 0x00 || key->addr[5] != 0x00) {
+        if (cv)
+          cv->mf_redirect_out_pkts ++;
         return process_mf_redirect(ctx, val, md);
+      }
       hash = jhash_2words(in_ih->saddr, in_l4h->source, 0xdeadbeaf);
       hash = jhash_2words(in_ih->protocol, 0, hash);
       break;
@@ -781,11 +812,41 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
       .created_at = now,
       .update_at = now,
     };
+
+    struct addr_port_stats *tmp_check;
+    tmp_check = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret)), &natval);
+    if (tmp_check) {
+      if (tmp_check->addr != orgval.addr || tmp_check->port != orgval.port) {
+        __u32 idx = 0;
+        struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+        if (cv)
+          cv->nat_endpoint_independent_mapping_conflict++;
+#ifdef DEBUG_NAT_CONFLICT
+        bpf_printk(STR(NAME)"%p:warn nat conflict hash %04x", ctx, sourceport);
+        bpf_printk(STR(NAME)"%p:warn nat conflict old-conn %08x %04x",
+          ctx, tmp_check->addr, tmp_check->port);
+        bpf_printk(STR(NAME)"%p:warn nat conflict new-conn %08x %04x",
+          ctx, orgval.addr, orgval.port);
+#endif
+        return error_packet(ctx, __LINE__);
+      }
+    }
+
     if (in_ih->protocol == IPPROTO_ICMP)
       orgval.port = org_icmp_id;
     bpf_map_update_elem(&GLUE(NAME, nat_ret), &natval, &orgval, BPF_ANY);
     bpf_map_update_elem(&GLUE(NAME, nat_out), &orgval, &natval, BPF_ANY);
   } else {
+    if ((tcp_closing == 0) && ((asval->flags & TCP_STATE_CLOSING) != 0)) {
+#ifdef DEBUG_NAT_REUSE_PORT
+      bpf_printk(STR(NAME)"%p:warn reuse closed session cache", ctx);
+#endif
+      __u32 idx = 0;
+      struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+      if (cv)
+        cv->nat_reuse_closed_session ++;
+    }
+
     // Existing connection
     asval->pkts++;
     asval->bytes += data_end - data;
@@ -798,6 +859,12 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
         &(GLUE(NAME, nat_ret)), asval);
       if (nat_ret_val)
         nat_ret_val->flags |= TCP_STATE_CLOSING;
+#ifdef ENABLE_NAT_TCP_RST_CACHE_CLEAR
+      if (tcp_closing_rst != 0) {
+        bpf_map_delete_elem(&(GLUE(NAME, nat_out)), &apkey);
+        bpf_map_delete_elem(&(GLUE(NAME, nat_ret)), asval);
+      }
+#endif
     }
   }
 

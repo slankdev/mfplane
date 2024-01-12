@@ -105,6 +105,9 @@ func IsExpired(addrPortStats ebpf.StructAddrPortStatsRender) (bool, error) {
 }
 
 func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
+	cntExpiredOpening := 0
+	cntExpiredClosing := 0
+	cntExpiredEstablished := 0
 	keys := []ebpf.StructAddrPort{}
 	for _, ent := range natOut.Items {
 		expired, err := IsExpired(ent.Val)
@@ -112,6 +115,20 @@ func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
 			return err
 		}
 		if expired {
+			switch ent.Val.Proto {
+			case unix.IPPROTO_TCP:
+				switch {
+				case !ent.Val.Flags.TcpStateClosing &&
+					!ent.Val.Flags.TcpStateEstablish:
+					cntExpiredOpening++
+				case !ent.Val.Flags.TcpStateClosing &&
+					ent.Val.Flags.TcpStateEstablish:
+					cntExpiredEstablished++
+				case ent.Val.Flags.TcpStateClosing:
+					cntExpiredClosing++
+				}
+			}
+
 			log.Debug("clear nat_out",
 				zap.String("map", mapfile),
 				zap.Uint8("proto", ent.Key.Proto),
@@ -141,15 +158,31 @@ func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
 	if err != nil {
 		return errors.Wrap(err, "ebpf.LoadPinnedMap")
 	}
-	log.Info("nat_out batchDelete starting", zap.Int("count", len(keys)))
+	log.Info("nat_out batchDelete start",
+		zap.Int("count", len(keys)),
+		zap.Int("countOpening", cntExpiredOpening),
+		zap.Int("countClosing", cntExpiredClosing),
+		zap.Int("countEstablished", cntExpiredEstablished),
+	)
+	before := time.Now()
 	if _, err := m.BatchDelete(keys, nil); err != nil {
 		return errors.Wrap(err, "m.BatchDelete")
 	}
-	log.Info("nat_out batchDelete finished", zap.Int("count", len(keys)))
+	diff := time.Since(before)
+	log.Info("nat_out batchDelete finished",
+		zap.Int("count", len(keys)),
+		zap.Int("countOpening", cntExpiredOpening),
+		zap.Int("countClosing", cntExpiredClosing),
+		zap.Int("countEstablished", cntExpiredEstablished),
+		zap.Duration("latency", diff),
+	)
 	return nil
 }
 
 func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
+	cntExpiredOpening := 0
+	cntExpiredClosing := 0
+	cntExpiredEstablished := 0
 	keys := []ebpf.StructAddrPort{}
 	for _, ent := range natRet.Items {
 		expired, err := IsExpired(ent.Val)
@@ -157,6 +190,20 @@ func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
 			return err
 		}
 		if expired {
+			switch ent.Val.Proto {
+			case unix.IPPROTO_TCP:
+				switch {
+				case !ent.Val.Flags.TcpStateClosing &&
+					!ent.Val.Flags.TcpStateEstablish:
+					cntExpiredOpening++
+				case !ent.Val.Flags.TcpStateClosing &&
+					ent.Val.Flags.TcpStateEstablish:
+					cntExpiredEstablished++
+				case ent.Val.Flags.TcpStateClosing:
+					cntExpiredClosing++
+				}
+			}
+
 			log.Debug("clear nat_ret",
 				zap.String("map", mapfile),
 				zap.Uint8("proto", ent.Key.Proto),
@@ -186,11 +233,24 @@ func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
 	if err != nil {
 		return errors.Wrap(err, "ebpf.LoadPinnedMap")
 	}
-	log.Info("nat_ret batchDelete starting", zap.Int("count", len(keys)))
+	log.Info("nat_ret batchDelete start",
+		zap.Int("count", len(keys)),
+		zap.Int("countOpening", cntExpiredOpening),
+		zap.Int("countClosing", cntExpiredClosing),
+		zap.Int("countEstablished", cntExpiredEstablished),
+	)
+	before := time.Now()
 	if _, err := m.BatchDelete(keys, nil); err != nil {
 		return errors.Wrap(err, "m.BatchDelete")
 	}
-	log.Info("nat_ret batchDelete finished", zap.Int("count", len(keys)))
+	diff := time.Since(before)
+	log.Info("nat_ret batchDelete finished",
+		zap.Int("count", len(keys)),
+		zap.Int("countOpening", cntExpiredOpening),
+		zap.Int("countClosing", cntExpiredClosing),
+		zap.Int("countEstablished", cntExpiredEstablished),
+		zap.Duration("latency", diff),
+	)
 	return nil
 }
 
@@ -240,26 +300,24 @@ func mainDeamonNat() {
 			// nat_out
 			for _, mapfile := range mapfilesNatOut {
 				natOut := ebpf.NatOutRender{}
-				if err := ebpf.Read(mapfile, &natOut); err != nil {
+				if err := ebpf.Read(mapfile, &natOut); err == nil {
+					if err := batchNatOut(mapfile, &natOut); err != nil {
+						log.Error("ERROR", zap.Error(err))
+					}
+				} else {
 					log.Error("ERROR", zap.Error(err))
-					continue
-				}
-				if err := batchNatOut(mapfile, &natOut); err != nil {
-					log.Error("ERROR", zap.Error(err))
-					continue
 				}
 			}
 
 			// nat_ret
 			for _, mapfile := range mapfilesNatRet {
 				natRet := ebpf.NatRetRender{}
-				if err := ebpf.Read(mapfile, &natRet); err != nil {
+				if err := ebpf.Read(mapfile, &natRet); err == nil {
+					if err := batchNatRet(mapfile, &natRet); err != nil {
+						log.Error("ERROR", zap.Error(err))
+					}
+				} else {
 					log.Error("ERROR", zap.Error(err))
-					continue
-				}
-				if err := batchNatRet(mapfile, &natRet); err != nil {
-					log.Error("ERROR", zap.Error(err))
-					continue
 				}
 			}
 		}
