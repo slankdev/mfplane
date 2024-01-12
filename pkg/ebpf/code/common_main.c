@@ -556,10 +556,12 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   __u8 *dummy_ptr = (__u8 *)&oh->ip6.daddr;
 
   __u8 tcp_closing = 0;
+  __u8 tcp_closing_rst = 0;
   if (in_ih->protocol == IPPROTO_TCP) {
     struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
     assert_len(in_th, data_end);
     tcp_closing = in_th->rst || in_th->fin;
+    tcp_closing_rst = in_th->rst;
   }
 
   // Craft lookup key
@@ -605,6 +607,12 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
       &(GLUE(NAME, nat_out)), nval);
     if (nat_out_val)
       nat_out_val->flags |= TCP_STATE_CLOSING;
+#ifdef ENABLE_NAT_TCP_RST_CACHE_CLEAR
+    if (tcp_closing_rst != 0) {
+      bpf_map_delete_elem(&(GLUE(NAME, nat_out)), nval);
+      bpf_map_delete_elem(&(GLUE(NAME, nat_ret)), &key);
+    }
+#endif
   }
 
 #ifdef DEBUG
@@ -705,11 +713,13 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
   // Check whether Syn packet
   __u8 tcp_syn = 0;
   __u8 tcp_closing = 0;
+  __u8 tcp_closing_rst = 0;
   if (in_ih->protocol == IPPROTO_TCP) {
     struct tcphdr *in_th = (struct tcphdr *)((__u8 *)in_ih + in_ih_len);
     assert_len(in_th, data_end);
     tcp_syn = in_th->syn;
     tcp_closing = in_th->rst || in_th->fin;
+    tcp_closing_rst = in_th->rst;
   }
 
   // Save pre-translate values
@@ -829,6 +839,12 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
         &(GLUE(NAME, nat_ret)), asval);
       if (nat_ret_val)
         nat_ret_val->flags |= TCP_STATE_CLOSING;
+#ifdef ENABLE_NAT_TCP_RST_CACHE_CLEAR
+      if (tcp_closing_rst != 0) {
+        bpf_map_delete_elem(&(GLUE(NAME, nat_out)), &apkey);
+        bpf_map_delete_elem(&(GLUE(NAME, nat_ret)), asval);
+      }
+#endif
     }
   }
 
