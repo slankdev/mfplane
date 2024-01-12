@@ -812,6 +812,26 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
       .created_at = now,
       .update_at = now,
     };
+
+    struct addr_port_stats *tmp_check;
+    tmp_check = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret)), &natval);
+    if (tmp_check) {
+      if (tmp_check->addr != orgval.addr || tmp_check->port != orgval.port) {
+        __u32 idx = 0;
+        struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+        if (cv)
+          cv->nat_endpoint_independent_mapping_conflict++;
+#ifdef DEBUG_NAT_CONFLICT
+        bpf_printk(STR(NAME)"%p:warn nat conflict hash %04x", ctx, sourceport);
+        bpf_printk(STR(NAME)"%p:warn nat conflict old-conn %08x %04x",
+          ctx, tmp_check->addr, tmp_check->port);
+        bpf_printk(STR(NAME)"%p:warn nat conflict new-conn %08x %04x",
+          ctx, orgval.addr, orgval.port);
+#endif
+        return error_packet(ctx, __LINE__);
+      }
+    }
+
     if (in_ih->protocol == IPPROTO_ICMP)
       orgval.port = org_icmp_id;
     bpf_map_update_elem(&GLUE(NAME, nat_ret), &natval, &orgval, BPF_ANY);
