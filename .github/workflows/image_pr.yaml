@@ -21,6 +21,7 @@ jobs:
         include:
         - artifact_name: mfpctl
         - artifact_name: starbedctl
+        - artifact_name: rate
 
     steps:
     - name: clone repo
