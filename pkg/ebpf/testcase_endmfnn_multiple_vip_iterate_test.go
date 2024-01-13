@@ -3,6 +3,7 @@ package ebpf
 import (
 	"fmt"
 	"net"
+	"sort"
 	"testing"
 
 	"github.com/google/gopacket"
@@ -10,21 +11,18 @@ import (
 	"github.com/slankdev/mfplane/pkg/util"
 )
 
-type EndMfnNormalTcpOpenValidTestCase struct{}
+type EndMfnNatMultipleVipIterateTestCase struct{}
 
-func (tc EndMfnNormalTcpOpenValidTestCase) ProgInfo() (string, []string) {
+func (tc EndMfnNatMultipleVipIterateTestCase) ProgInfo() (string, []string) {
 	return "common_main.c", []string{
-		// NOTE(slankdev): with all the following debug feature,
-		// stack size verification will be failed.
-		// "DEBUG_IGNORE_PACKET",
-		// "DEBUG_ERROR_PACKET",
+		"DEBUG_NAT_CONFLICT",
 		"DEBUG_FUNCTION_CALL",
-		"DEBUG_MF_REDIRECT",
-		"DEBUG_PARSE_METADATA",
+		"SNAT_RANDOM_BIT_ZERO",
+		"SNAT_VIPS_LOOP_COUNT=32",
 	}
 }
 
-func (tc EndMfnNormalTcpOpenValidTestCase) GenerateInput() ([]byte, error) {
+func (tc EndMfnNatMultipleVipIterateTestCase) GenerateInput() ([]byte, error) {
 	// Ethernet
 	ethernetLayer := &layers.Ethernet{
 		SrcMAC:       util.MustParseMAC("52:54:00:00:00:01"),
@@ -62,16 +60,15 @@ func (tc EndMfnNormalTcpOpenValidTestCase) GenerateInput() ([]byte, error) {
 		TTL:      64,
 		SrcIP:    net.ParseIP("10.0.1.10"),
 		DstIP:    net.ParseIP("20.0.0.1"),
-		Protocol: layers.IPProtocolTCP,
+		Protocol: layers.IPProtocolUDP,
 	}
 
-	// TCP
-	tcpLayer := &layers.TCP{
+	// UDP
+	udpLayer := &layers.UDP{
 		SrcPort: 10000,
 		DstPort: 443,
-		SYN:     true,
 	}
-	if err := tcpLayer.SetNetworkLayerForChecksum(ipv4Layer); err != nil {
+	if err := udpLayer.SetNetworkLayerForChecksum(ipv4Layer); err != nil {
 		return nil, err
 	}
 
@@ -83,7 +80,8 @@ func (tc EndMfnNormalTcpOpenValidTestCase) GenerateInput() ([]byte, error) {
 		ipv6Layer,
 		seg6Layer,
 		ipv4Layer,
-		tcpLayer,
+		udpLayer,
+		gopacket.Payload([]byte("Hello, MF-Plane!")),
 	); err != nil {
 		return nil, err
 	}
@@ -91,7 +89,7 @@ func (tc EndMfnNormalTcpOpenValidTestCase) GenerateInput() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (tc EndMfnNormalTcpOpenValidTestCase) GenerateOutput() (int, []byte, error) {
+func (tc EndMfnNatMultipleVipIterateTestCase) GenerateOutput() (int, []byte, error) {
 	// Ethernet
 	ethernetLayer := &layers.Ethernet{
 		SrcMAC:       util.MustParseMAC("52:54:00:00:00:02"),
@@ -103,18 +101,17 @@ func (tc EndMfnNormalTcpOpenValidTestCase) GenerateOutput() (int, []byte, error)
 	ipv4Layer := &layers.IPv4{
 		Version:  4,
 		TTL:      64,
-		SrcIP:    net.ParseIP("142.0.0.1"),
+		SrcIP:    net.ParseIP("142.0.0.2"),
 		DstIP:    net.ParseIP("20.0.0.1"),
-		Protocol: layers.IPProtocolTCP,
+		Protocol: layers.IPProtocolUDP,
 	}
 
-	// TCP
-	tcpLayer := &layers.TCP{
-		SrcPort: 0x6700,
+	// UDP
+	udpLayer := &layers.UDP{
+		SrcPort: 0x7c00,
 		DstPort: 443,
-		SYN:     true,
 	}
-	if err := tcpLayer.SetNetworkLayerForChecksum(ipv4Layer); err != nil {
+	if err := udpLayer.SetNetworkLayerForChecksum(ipv4Layer); err != nil {
 		return 0, nil, err
 	}
 
@@ -124,7 +121,8 @@ func (tc EndMfnNormalTcpOpenValidTestCase) GenerateOutput() (int, []byte, error)
 		gopacket.SerializeOptions{FixLengths: true, ComputeChecksums: true},
 		ethernetLayer,
 		ipv4Layer,
-		tcpLayer,
+		udpLayer,
+		gopacket.Payload([]byte("Hello, MF-Plane!")),
 	); err != nil {
 		return 0, nil, err
 	}
@@ -132,7 +130,7 @@ func (tc EndMfnNormalTcpOpenValidTestCase) GenerateOutput() (int, []byte, error)
 	return XDP_TX, buf.Bytes(), nil
 }
 
-func (tc EndMfnNormalTcpOpenValidTestCase) OutputPostProcess(b []byte) ([]byte, error) {
+func (tc EndMfnNatMultipleVipIterateTestCase) OutputPostProcess(b []byte) ([]byte, error) {
 	pkt := gopacket.NewPacket(b, layers.LayerTypeEthernet, gopacket.Default)
 
 	// Check IPv4
@@ -142,17 +140,17 @@ func (tc EndMfnNormalTcpOpenValidTestCase) OutputPostProcess(b []byte) ([]byte, 
 		return nil, fmt.Errorf("Not ipv4 (%s)", tmplayer.LayerType().String())
 	}
 
-	// Check TCP
+	// Check UDP
 	tmplayer = pkt.Layers()[2]
-	tcpLayer, ok := tmplayer.(*layers.TCP)
+	udpLayer, ok := tmplayer.(*layers.UDP)
 	if !ok {
-		return nil, fmt.Errorf("Not tcp (%s)", tmplayer.LayerType().String())
+		return nil, fmt.Errorf("Not udp (%s)", tmplayer.LayerType().String())
 	}
-	tcpLayer.SrcPort = layers.TCPPort(uint16(tcpLayer.SrcPort) & 0xff00)
-	if err := tcpLayer.SetNetworkLayerForChecksum(ipv4Layer); err != nil {
+	udpLayer.SrcPort = layers.UDPPort(uint16(udpLayer.SrcPort) & 0xff00)
+	if err := udpLayer.SetNetworkLayerForChecksum(ipv4Layer); err != nil {
 		return nil, err
 	}
-	pkt.Layers()[2] = tcpLayer
+	pkt.Layers()[2] = udpLayer
 
 	// Re-crafting
 	buf := gopacket.NewSerializeBuffer()
@@ -165,7 +163,7 @@ func (tc EndMfnNormalTcpOpenValidTestCase) OutputPostProcess(b []byte) ([]byte, 
 	return buf.Bytes(), nil
 }
 
-func (tc EndMfnNormalTcpOpenValidTestCase) PreTestMapContext() *ProgRunMapContext {
+func (tc EndMfnNatMultipleVipIterateTestCase) PreTestMapContext() *ProgRunMapContext {
 	c := ProgRunMapContext{
 		Fib6Render: Fib6Render{
 			Items: []Fib6RenderItem{
@@ -175,8 +173,12 @@ func (tc EndMfnNormalTcpOpenValidTestCase) PreTestMapContext() *ProgRunMapContex
 					},
 					Val: StructTrie6ValRender{
 						EndMNFN: &EndMFN{
-							BackendBlockIndex:  0,
-							Vip:                []string{"142.0.0.1"},
+							BackendBlockIndex: 0,
+							Vip: []string{
+								"142.0.0.1",
+								"142.0.0.2",
+								"142.0.0.3",
+							},
 							NatPortHashBit:     255,
 							UsidBlockLength:    16,
 							UsidFunctionLength: 16,
@@ -222,11 +224,51 @@ func (tc EndMfnNormalTcpOpenValidTestCase) PreTestMapContext() *ProgRunMapContex
 				},
 			},
 		},
+		NatOutRender: NatOutRender{
+			Items: []NatOutRenderItem{
+				{
+					Key: StructAddrPortRender{
+						Addr:  "10.0.2.10",
+						Port:  4135,
+						Proto: 17,
+					},
+					Val: StructAddrPortStatsRender{
+						Addr:      "142.0.0.1",
+						Port:      0x007c,
+						Proto:     17,
+						Pkts:      1234,
+						Bytes:     11223344,
+						CreatedAt: 0,
+						UpdatedAt: 0,
+					},
+				},
+			},
+		},
+		NatRetRender: NatRetRender{
+			Items: []NatRetRenderItem{
+				{
+					Key: StructAddrPortRender{
+						Addr:  "142.0.0.1",
+						Port:  0x007c,
+						Proto: 17,
+					},
+					Val: StructAddrPortStatsRender{
+						Addr:      "10.0.2.10",
+						Port:      4135,
+						Proto:     17,
+						Pkts:      1234,
+						Bytes:     11223344,
+						CreatedAt: 0,
+						UpdatedAt: 0,
+					},
+				},
+			},
+		},
 	}
 	return &c
 }
 
-func (tc EndMfnNormalTcpOpenValidTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContext) {
+func (tc EndMfnNatMultipleVipIterateTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContext) {
 	mc.CounterRender = CounterRender{}
 	mc.Fib4Render = Fib4Render{}
 	mc.Fib6Render = Fib6Render{}
@@ -244,9 +286,37 @@ func (tc EndMfnNormalTcpOpenValidTestCase) PostTestMapContextPreprocess(mc *Prog
 		mc.NatRetRender.Items[i].Val.UpdatedAt = 0
 		mc.NatRetRender.Items[i].Key.Port = mc.NatRetRender.Items[i].Key.Port & 0x00ff // mf-nat
 	}
+
+	items1 := mc.NatOutRender.Items
+	sort.Slice(items1, func(i, j int) bool {
+		if items1[i].Key.Addr != items1[j].Key.Addr {
+			return items1[i].Key.Addr < items1[j].Key.Addr
+		}
+		if items1[i].Key.Port != items1[j].Key.Port {
+			return items1[i].Key.Port < items1[j].Key.Port
+		}
+		if items1[i].Key.Proto != items1[j].Key.Proto {
+			return items1[i].Key.Proto < items1[j].Key.Proto
+		}
+		return false
+	})
+
+	items2 := mc.NatRetRender.Items
+	sort.Slice(items2, func(i, j int) bool {
+		if items2[i].Key.Addr != items2[j].Key.Addr {
+			return items2[i].Key.Addr < items2[j].Key.Addr
+		}
+		if items2[i].Key.Port != items2[j].Key.Port {
+			return items2[i].Key.Port < items2[j].Key.Port
+		}
+		if items2[i].Key.Proto != items2[j].Key.Proto {
+			return items2[i].Key.Proto < items2[j].Key.Proto
+		}
+		return false
+	})
 }
 
-func (tc EndMfnNormalTcpOpenValidTestCase) PostTestMapContextExpect() *ProgRunMapContext {
+func (tc EndMfnNatMultipleVipIterateTestCase) PostTestMapContextExpect() *ProgRunMapContext {
 	c := ProgRunMapContext{
 		NatOutRender: NatOutRender{
 			Items: []NatOutRenderItem{
@@ -254,14 +324,30 @@ func (tc EndMfnNormalTcpOpenValidTestCase) PostTestMapContextExpect() *ProgRunMa
 					Key: StructAddrPortRender{
 						Addr:  "10.0.1.10",
 						Port:  4135,
-						Proto: 6,
+						Proto: 17,
+					},
+					Val: StructAddrPortStatsRender{
+						Addr:      "142.0.0.2",
+						Port:      0x007c,
+						Proto:     17,
+						Pkts:      1,
+						Bytes:     122,
+						CreatedAt: 0,
+						UpdatedAt: 0,
+					},
+				},
+				{
+					Key: StructAddrPortRender{
+						Addr:  "10.0.2.10",
+						Port:  4135,
+						Proto: 17,
 					},
 					Val: StructAddrPortStatsRender{
 						Addr:      "142.0.0.1",
-						Port:      0x0067,
-						Proto:     6,
-						Pkts:      1,
-						Bytes:     118,
+						Port:      0x007c,
+						Proto:     17,
+						Pkts:      1234,
+						Bytes:     11223344,
 						CreatedAt: 0,
 						UpdatedAt: 0,
 					},
@@ -273,21 +359,33 @@ func (tc EndMfnNormalTcpOpenValidTestCase) PostTestMapContextExpect() *ProgRunMa
 				{
 					Key: StructAddrPortRender{
 						Addr:  "142.0.0.1",
-						Port:  0x0067,
-						Proto: 6,
+						Port:  0x007c,
+						Proto: 17,
+					},
+					Val: StructAddrPortStatsRender{
+						Addr:      "10.0.2.10",
+						Port:      4135,
+						Proto:     17,
+						Pkts:      1234,
+						Bytes:     11223344,
+						CreatedAt: 0,
+						UpdatedAt: 0,
+					},
+				},
+				{
+					Key: StructAddrPortRender{
+						Addr:  "142.0.0.2",
+						Port:  0x007c,
+						Proto: 17,
 					},
 					Val: StructAddrPortStatsRender{
 						Addr:      "10.0.1.10",
 						Port:      4135,
-						Proto:     6,
+						Proto:     17,
 						Pkts:      1,
-						Bytes:     118,
+						Bytes:     122,
 						CreatedAt: 0,
 						UpdatedAt: 0,
-						Flags: AddrPortStatsFlags{
-							TcpStateClosing:   false,
-							TcpStateEstablish: false,
-						},
 					},
 				},
 			},
@@ -296,6 +394,6 @@ func (tc EndMfnNormalTcpOpenValidTestCase) PostTestMapContextExpect() *ProgRunMa
 	return &c
 }
 
-func TestEndMfnNormalTcpOpenValidTestCase(t *testing.T) {
-	ExecuteTestCase(EndMfnNormalTcpOpenValidTestCase{}, t)
+func TestEndMfnNatMultipleVipIterateTestCase(t *testing.T) {
+	ExecuteTestCase(EndMfnNatMultipleVipIterateTestCase{}, t)
 }

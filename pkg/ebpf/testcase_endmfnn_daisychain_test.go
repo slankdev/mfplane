@@ -11,6 +11,18 @@ import (
 
 type EndMfnDaisyChainTestCase struct{}
 
+func (tc EndMfnDaisyChainTestCase) ProgInfo() (string, []string) {
+	return "common_main.c", []string{
+		// NOTE(slankdev): with all the following debug feature,
+		// stack size verification will be failed.
+		// "DEBUG_IGNORE_PACKET",
+		// "DEBUG_ERROR_PACKET",
+		"DEBUG_FUNCTION_CALL",
+		"DEBUG_MF_REDIRECT",
+		"DEBUG_PARSE_METADATA",
+	}
+}
+
 func (tc EndMfnDaisyChainTestCase) GenerateInput() ([]byte, error) {
 	// Ethernet
 	ethernetLayer := &layers.Ethernet{
@@ -160,7 +172,7 @@ func (tc EndMfnDaisyChainTestCase) PreTestMapContext() *ProgRunMapContext {
 					Val: StructTrie6ValRender{
 						EndMNFN: &EndMFN{
 							BackendBlockIndex:  0,
-							Vip:                "142.0.0.1",
+							Vip:                []string{"142.0.0.1"},
 							NatPortHashBit:     255,
 							UsidBlockLength:    16,
 							UsidFunctionLength: 16,

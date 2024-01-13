@@ -27,6 +27,7 @@ const (
 )
 
 type TestCase interface {
+	ProgInfo() (string, []string)
 	GenerateInput() ([]byte, error)
 	GenerateOutput() (int, []byte, error)
 	OutputPostProcess(b []byte) ([]byte, error)
@@ -65,11 +66,10 @@ var (
 	ebpfObjFile     string
 )
 
-func TestMain(m *testing.M) {
+func xdpBuildForTest(file string, defines []string, t *testing.T) error {
 	// Map clear
 	if err := unlinkAll("/sys/fs/bpf/xdp/globals/"); err != nil {
-		pp.Println(err)
-		os.Exit(1)
+		return err
 	}
 
 	// Logger
@@ -78,31 +78,15 @@ func TestMain(m *testing.M) {
 	log := logger.Sugar()
 	util.SetLocalExecuteSilence(false)
 
-	// Common vars
+	// Common vars and Build ebpf program
 	ebpfProgramName = "test001"
-
-	// Build ebpf program
-	file := "common_main.c"
-	tmppath, err := Build(log, file,
-		true,
-		ebpfProgramName,
-		[]string{
-			// NOTE(slankdev): with all the following debug feature,
-			// stack size verification will be failed.
-			// "DEBUG_IGNORE_PACKET",
-			// "DEBUG_ERROR_PACKET",
-			"DEBUG_FUNCTION_CALL",
-			"DEBUG_MF_REDIRECT",
-			"DEBUG_PARSE_METADATA",
-		},
-	)
+	tmppath, err := Build(log, file, true, ebpfProgramName, defines)
 	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+		return err
 	}
 
 	ebpfObjFile = fmt.Sprintf("%s/bin/out.o", tmppath)
-	m.Run()
+	return nil
 }
 
 func DiffPackets(b1, b2 []byte) (bool, string, error) {
@@ -132,6 +116,11 @@ func DiffPackets(b1, b2 []byte) (bool, string, error) {
 }
 
 func ExecuteTestCase(tc TestCase, t *testing.T) {
+	progFile, defines := tc.ProgInfo()
+	if err := xdpBuildForTest(progFile, defines, t); err != nil {
+		t.Error(err)
+	}
+
 	// Load ebpf program
 	prog, err := XdpLoad(ebpfObjFile, "xdp_ingress")
 	if err != nil {
@@ -204,6 +193,10 @@ func ExecuteTestCase(tc TestCase, t *testing.T) {
 }
 
 func TestXDPLoad(t *testing.T) {
+	xdpBuildForTest("common_main.c", []string{
+		"DEBUG_FUNCTION_CALL",
+	}, t)
+
 	if _, err := XdpLoad(ebpfObjFile, "xdp_ingress"); err != nil {
 		var ve *ebpf.VerifierError
 		if errors.As(err, &ve) {
