@@ -20,6 +20,10 @@ jobs:
           artifact_name: starbedctl
           asset_name: starbedctl.linux-amd64
           go_version: 1.19
+        - os: ubuntu-22.04
+          artifact_name: rate
+          asset_name: rate.linux-amd64
+          go_version: 1.19
 
     steps:
     - name: set up Go
