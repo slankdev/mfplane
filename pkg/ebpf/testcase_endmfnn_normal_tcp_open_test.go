@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -14,13 +15,8 @@ type EndMfnNormalTcpOpenValidTestCase struct{}
 
 func (tc EndMfnNormalTcpOpenValidTestCase) ProgInfo() (string, []string) {
 	return "common_main.c", []string{
-		// NOTE(slankdev): with all the following debug feature,
-		// stack size verification will be failed.
-		// "DEBUG_IGNORE_PACKET",
-		// "DEBUG_ERROR_PACKET",
 		"DEBUG_FUNCTION_CALL",
 		"DEBUG_MF_REDIRECT",
-		"DEBUG_PARSE_METADATA",
 	}
 }
 
@@ -294,6 +290,29 @@ func (tc EndMfnNormalTcpOpenValidTestCase) PostTestMapContextExpect() *ProgRunMa
 		},
 	}
 	return &c
+}
+
+func (tc EndMfnNormalTcpOpenValidTestCase) PostTestEventPreprocess(events []GenericEvent) []GenericEvent {
+	for idx := range events {
+		events[idx].Timestamp = time.Time{}
+		if events[idx].EventNatSessionCreate != nil {
+			events[idx].EventNatSessionCreate.NatPort &= 0xff00
+		}
+	}
+	return ExcludeEventFunctionCall(events)
+}
+
+func (tc EndMfnNormalTcpOpenValidTestCase) PostTestEventsExpect() []GenericEvent {
+	return []GenericEvent{
+		{EventNatSessionCreate: &EventBodyNatSessionRender{
+			OrgSrc:  "10.0.1.10",
+			OrgPort: 10000,
+			NatSrc:  "142.0.0.1",
+			NatPort: 26548 & 0xff00,
+			Proto:   "tcp",
+			Flags:   0,
+		}},
+	}
 }
 
 func TestEndMfnNormalTcpOpenValidTestCase(t *testing.T) {

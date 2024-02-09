@@ -13,11 +13,8 @@ type EndMfnDaisyChainTestCase struct{}
 
 func (tc EndMfnDaisyChainTestCase) ProgInfo() (string, []string) {
 	return "common_main.c", []string{
-		// NOTE(slankdev): with all the following debug feature,
-		// stack size verification will be failed.
-		// "DEBUG_IGNORE_PACKET",
-		// "DEBUG_ERROR_PACKET",
 		"DEBUG_FUNCTION_CALL",
+		"DEBUG_IPV6",
 		"DEBUG_MF_REDIRECT",
 		"DEBUG_PARSE_METADATA",
 	}
