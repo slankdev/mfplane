@@ -827,27 +827,29 @@ var (
 )
 
 type StructCounterVal struct {
-	XdpActionTxPkts     uint64
-	XdpActionTxBytes    uint64
-	XdpActionDropPkts   uint64
-	XdpActionDropBytes  uint64
-	XdpActionAbortPkts  uint64
-	XdpActionAbortBytes uint64
-	XdpActionPassPkts   uint64
-	XdpActionPassBytes  uint64
-	MfRedirectPkts      uint64
-	MfRedirectBytes     uint64
-	MfRedirectOutPkts   uint64
-	MfRedirectRetPkts   uint64
-	Fib4Miss            uint64
-	Fib6Miss            uint64
-	NeighMiss           uint64
-	NatOutMiss          uint64
-	NatRetMiss          uint64
-	// NatEndpointIndependentMappingConflict - counter for nat conflict.
+	XdpActionTxPkts                       uint64
+	XdpActionTxBytes                      uint64
+	XdpActionDropPkts                     uint64
+	XdpActionDropBytes                    uint64
+	XdpActionAbortPkts                    uint64
+	XdpActionAbortBytes                   uint64
+	XdpActionPassPkts                     uint64
+	XdpActionPassBytes                    uint64
+	MfRedirectPkts                        uint64
+	MfRedirectBytes                       uint64
+	MfRedirectOutPkts                     uint64
+	MfRedirectRetPkts                     uint64
+	Fib4Miss                              uint64
+	Fib6Miss                              uint64
+	NeighMiss                             uint64
+	NatOutMiss                            uint64
+	NatRetMiss                            uint64
 	NatEndpointIndependentMappingConflict uint64
-	// NatReuseClosedSession - counter for internal port reuse.
-	NatReuseClosedSession uint64
+	NatReuseClosedSession                 uint64
+	NatMapUpdateFailed                    uint64
+	PerfEventFailed                       uint64
+	NatSessionCreate                      uint64
+	NatSessionDelete                      uint64
 }
 
 type StructCounterValRender StructCounterVal
@@ -884,6 +886,10 @@ func (raw *StructCounterVal) Summarize(list []StructCounterVal) {
 		raw.NatRetMiss += item.NatRetMiss
 		raw.NatEndpointIndependentMappingConflict += item.NatEndpointIndependentMappingConflict
 		raw.NatReuseClosedSession += item.NatReuseClosedSession
+		raw.NatMapUpdateFailed += item.NatMapUpdateFailed
+		raw.PerfEventFailed += item.PerfEventFailed
+		raw.NatSessionCreate += item.NatSessionCreate
+		raw.NatSessionDelete += item.NatSessionDelete
 	}
 }
 
