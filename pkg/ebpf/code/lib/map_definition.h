@@ -70,8 +70,8 @@ struct {
 
 struct {
   __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
-  __uint(key_size, sizeof(__u32));   // TODO: nos sure it is needed or not
-  __uint(value_size, sizeof(__u32)); // TODO: nos sure it is needed or not
+  __uint(key_size, sizeof(__u32));
+  __uint(value_size, sizeof(__u32));
   __uint(pinning, LIBBPF_PIN_BY_NAME);
 } GLUE(NAME, events) SEC(".maps");
 
