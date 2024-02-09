@@ -10,10 +10,11 @@ import time
 
 
 class Prof1():
-    def create_profile(self, cps):
+    def create_profile(self, cps, test_type):
         prog_c = ASTFProgram()
         prog_c.connect()
-        prog_c.reset()
+        if test_type == "connectreset":
+            prog_c.reset()
         prog_s = ASTFProgram()
         prog_s.wait_for_peer_close()
 
@@ -38,6 +39,7 @@ class Prof1():
 parser = argparse.ArgumentParser()
 parser.add_argument('--mult', "-m", default=1, type=int)
 parser.add_argument('--duration', "-d", default=3600, type=int)
+parser.add_argument('--test', "-t", choices=['connectreset', 'connect'], required=True)
 args = parser.parse_args()
 
 c = ASTFClient()
@@ -45,7 +47,7 @@ c.connect()
 c.reset()
 print("astfclient initialized")
 
-c.load_profile(Prof1().create_profile(1))
+c.load_profile(Prof1().create_profile(1, args.test))
 c.clear_stats()
 c.start(mult=args.mult, duration=args.duration)
 print("started")

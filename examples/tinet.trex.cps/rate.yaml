@@ -1,0 +1,53 @@
+targets:
+- name: n1_net0_tx
+  command: |
+    sudo ip netns exec N1 ip -s -j link show dev net0 \
+      | jq .[0].stats64.tx.packets
+- name: n1_net0_rx
+  command: |
+    sudo ip netns exec N1 ip -s -j link show dev net0 \
+      | jq .[0].stats64.rx.packets
+- name: n1_xdp_tx
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.XdpActionTxPkts
+- name: n1_xdp_drop
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.XdpActionDropPkts
+- name: n1_conflict
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.NatEndpointIndependentMappingConflict
+- name: n1_MfRedirectPkts
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.MfRedirectPkts
+- name: n1_MfRedirectOutPkts
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.MfRedirectOutPkts
+- name: n1_MfRedirectRetPkts
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.MfRedirectRetPkts
+- name: n1_nat_out_miss
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.NatOutMiss
+- name: n1_nat_ret_miss
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.NatRetMiss
+- name: n1_NatReuseClosedSession
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.NatReuseClosedSession
+- name: n1_NatMapUpdateFailed
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.NatMapUpdateFailed
+- name: n1_PerfEventFailed
+  command: |
+    sudo mfpctl bpf map inspect counter -n n1 \
+      | jq .items[0].val.PerfEventFailed
