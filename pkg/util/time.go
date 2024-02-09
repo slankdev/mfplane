@@ -46,6 +46,21 @@ func KtimeToRealMilli(ktimeMilli uint64) (uint64, error) {
 	return uint64(dt.UnixMilli()) + ktimeMilli, nil
 }
 
+// NOTE(slankdev): It may not work fine...
+// THIS_IMPL: 2024-02-09 10:46:39.145877585 +0900 JST
+// MY_EXPECT: 2024-02-09 10:51:39.145877585 +0900 JST
+// Not sure what's this 5sec...
+// presition: nano-second
+func KtimeNanoSecToTime(ktimeNsec uint64) (time.Time, error) {
+	sysinfo := syscall.Sysinfo_t{}
+	if err := syscall.Sysinfo(&sysinfo); err != nil {
+		return time.Time{}, err
+	}
+	unixTimeSecKernelBooted := time.Now().Unix() - sysinfo.Uptime
+	unixTimeSecTarget := unixTimeSecKernelBooted
+	return time.Unix(unixTimeSecTarget, int64(ktimeNsec)), nil
+}
+
 // presition: second
 func KtimeSecToTime(ktimeSec uint64) (time.Time, error) {
 	sysinfo := syscall.Sysinfo_t{}
