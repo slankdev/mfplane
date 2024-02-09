@@ -17,6 +17,8 @@ func (tc EndMflNormalTestCase) ProgInfo() (string, []string) {
 		// stack size verification will be failed.
 		// "DEBUG_IGNORE_PACKET",
 		// "DEBUG_ERROR_PACKET",
+		"DEBUG_IPV6",
+		"DEBUG_JHASH_RESULT",
 		"DEBUG_FUNCTION_CALL",
 		"DEBUG_MF_REDIRECT",
 		"DEBUG_PARSE_METADATA",

@@ -13,10 +13,6 @@ type EndMfnNormalTcpOpenEstbTestCase struct{}
 
 func (tc EndMfnNormalTcpOpenEstbTestCase) ProgInfo() (string, []string) {
 	return "common_main.c", []string{
-		// NOTE(slankdev): with all the following debug feature,
-		// stack size verification will be failed.
-		// "DEBUG_IGNORE_PACKET",
-		// "DEBUG_ERROR_PACKET",
 		"DEBUG_FUNCTION_CALL",
 		"DEBUG_MF_REDIRECT",
 		"DEBUG_PARSE_METADATA",

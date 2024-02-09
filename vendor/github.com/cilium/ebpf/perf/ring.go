@@ -112,7 +112,7 @@ func createPerfEvent(cpu, watermark int, overwritable bool) (int, error) {
 		Type:        unix.PERF_TYPE_SOFTWARE,
 		Config:      unix.PERF_COUNT_SW_BPF_OUTPUT,
 		Bits:        uint64(bits),
-		Sample_type: unix.PERF_SAMPLE_RAW,
+		Sample_type: unix.PERF_SAMPLE_RAW | unix.PERF_SAMPLE_TIME,
 		Wakeup:      uint32(watermark),
 	}
 

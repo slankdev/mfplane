@@ -8,7 +8,7 @@ items:
 - mapfile: /sys/fs/bpf/xdp/globals/l1_fib4
   fib4:
     items:
-    - key: {prefix: "142.0.0.1/32"}
+    - key: {prefix: "142.0.0.0/24"}
       val:
         end_mfn_l:
           backend_block_index: 0
@@ -25,7 +25,6 @@ items:
       val:
         end_mfn_l:
           backend_block_index: 0
-          vip: "142.0.0.1"
           nat_port_hash_bit: 0x00ff
           usid_block_length: 32
           usid_function_length: 32
@@ -33,18 +32,6 @@ items:
           nat_filtering: 0
           sources:
           - prefix: "10.0.1.0/24"
-    - key: {prefix: "fc00:ff02::/32"}
-      val:
-        end_mfn_l:
-          backend_block_index: 0
-          vip: "142.0.0.2"
-          nat_port_hash_bit: 0x00ff
-          usid_block_length: 32
-          usid_function_length: 32
-          nat_mapping: 0
-          nat_filtering: 0
-          sources:
-          - prefix: "10.0.2.0/24"
     - key: {prefix: "fc00:3100::/24"}
       val:
         l3xconnect:
@@ -86,7 +73,12 @@ items:
       val:
         end_mfn_n:
           backend_block_index: 0
-          vip: "142.0.0.1"
+          vip:
+          - "142.0.0.1"
+          - "142.0.0.3"
+          - "142.0.0.5"
+          - "142.0.0.7"
+          - "142.0.0.9"
           nat_port_hash_bit: 0x00ff
           usid_block_length: 16
           usid_function_length: 16
@@ -102,11 +94,6 @@ items:
 - mapfile: /sys/fs/bpf/xdp/globals/n1_fib4
   fib4:
     items:
-    - key: {prefix: "142.0.0.2/32"}
-      val:
-        end_mfn_n:
-          backend_block_index: 0
-          nat_port_hash_bit: 0x00ff
     - key: {prefix: "30.0.0.0/8"}
       val:
         l3xconnect:

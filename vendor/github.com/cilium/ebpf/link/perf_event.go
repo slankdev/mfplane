@@ -224,7 +224,7 @@ func openTracepointPerfEvent(tid uint64, pid int) (*sys.FD, error) {
 	attr := unix.PerfEventAttr{
 		Type:        unix.PERF_TYPE_TRACEPOINT,
 		Config:      tid,
-		Sample_type: unix.PERF_SAMPLE_RAW,
+		Sample_type: unix.PERF_SAMPLE_RAW | unix.PERF_SAMPLE_TIME,
 		Sample:      1,
 		Wakeup:      1,
 	}

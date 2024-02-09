@@ -3,23 +3,23 @@ package ebpf
 import (
 	"net"
 	"testing"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/slankdev/mfplane/pkg/util"
 )
 
-type EndMfnNormalTcpCloseRstTestCase struct{}
+type EndMfnNormalTcpCloseRstCacheClearTestCase struct{}
 
-func (tc EndMfnNormalTcpCloseRstTestCase) ProgInfo() (string, []string) {
+func (tc EndMfnNormalTcpCloseRstCacheClearTestCase) ProgInfo() (string, []string) {
 	return "common_main.c", []string{
 		"DEBUG_FUNCTION_CALL",
-		"DEBUG_MF_REDIRECT",
-		"DEBUG_PARSE_METADATA",
+		"ENABLE_NAT_TCP_RST_CACHE_CLEAR",
 	}
 }
 
-func (tc EndMfnNormalTcpCloseRstTestCase) GenerateInput() ([]byte, error) {
+func (tc EndMfnNormalTcpCloseRstCacheClearTestCase) GenerateInput() ([]byte, error) {
 	// Ethernet
 	ethernetLayer := &layers.Ethernet{
 		SrcMAC:       util.MustParseMAC("52:54:00:00:00:01"),
@@ -86,7 +86,7 @@ func (tc EndMfnNormalTcpCloseRstTestCase) GenerateInput() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (tc EndMfnNormalTcpCloseRstTestCase) GenerateOutput() (int, []byte, error) {
+func (tc EndMfnNormalTcpCloseRstCacheClearTestCase) GenerateOutput() (int, []byte, error) {
 	// Ethernet
 	ethernetLayer := &layers.Ethernet{
 		SrcMAC:       util.MustParseMAC("52:54:00:00:00:02"),
@@ -153,11 +153,11 @@ func (tc EndMfnNormalTcpCloseRstTestCase) GenerateOutput() (int, []byte, error) 
 	return XDP_TX, buf.Bytes(), nil
 }
 
-func (tc EndMfnNormalTcpCloseRstTestCase) OutputPostProcess(b []byte) ([]byte, error) {
+func (tc EndMfnNormalTcpCloseRstCacheClearTestCase) OutputPostProcess(b []byte) ([]byte, error) {
 	return b, nil
 }
 
-func (tc EndMfnNormalTcpCloseRstTestCase) PreTestMapContext() *ProgRunMapContext {
+func (tc EndMfnNormalTcpCloseRstCacheClearTestCase) PreTestMapContext() *ProgRunMapContext {
 	c := ProgRunMapContext{
 		Fib6Render: Fib6Render{
 			Items: []Fib6RenderItem{
@@ -278,7 +278,7 @@ func (tc EndMfnNormalTcpCloseRstTestCase) PreTestMapContext() *ProgRunMapContext
 	return &c
 }
 
-func (tc EndMfnNormalTcpCloseRstTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContext) {
+func (tc EndMfnNormalTcpCloseRstCacheClearTestCase) PostTestMapContextPreprocess(mc *ProgRunMapContext) {
 	mc.CounterRender = CounterRender{}
 	mc.LbBackendRender = LbBackendRender{}
 	mc.EncapSourceRender = EncapSourceRender{}
@@ -295,60 +295,34 @@ func (tc EndMfnNormalTcpCloseRstTestCase) PostTestMapContextPreprocess(mc *ProgR
 	return
 }
 
-func (tc EndMfnNormalTcpCloseRstTestCase) PostTestMapContextExpect() *ProgRunMapContext {
+func (tc EndMfnNormalTcpCloseRstCacheClearTestCase) PostTestMapContextExpect() *ProgRunMapContext {
 	c := ProgRunMapContext{
-		NatOutRender: NatOutRender{
-			Items: []NatOutRenderItem{
-				{
-					Key: StructAddrPortRender{
-						Addr:  "10.0.1.10",
-						Port:  4135,
-						Proto: 6,
-					},
-					Val: StructAddrPortStatsRender{
-						Addr:      "142.0.0.1",
-						Port:      0x0067,
-						Proto:     6,
-						Pkts:      1,
-						Bytes:     118,
-						CreatedAt: 0,
-						UpdatedAt: 0,
-						Flags: AddrPortStatsFlags{
-							TcpStateClosing:   true,
-							TcpStateEstablish: true,
-						},
-					},
-				},
-			},
-		},
-		NatRetRender: NatRetRender{
-			Items: []NatRetRenderItem{
-				{
-					Key: StructAddrPortRender{
-						Addr:  "142.0.0.1",
-						Port:  0x0067,
-						Proto: 6,
-					},
-					Val: StructAddrPortStatsRender{
-						Addr:      "10.0.1.10",
-						Port:      4135,
-						Proto:     6,
-						Pkts:      2,
-						Bytes:     236,
-						CreatedAt: 0,
-						UpdatedAt: 0,
-						Flags: AddrPortStatsFlags{
-							TcpStateClosing:   true,
-							TcpStateEstablish: true,
-						},
-					},
-				},
-			},
-		},
+		NatOutRender: NatOutRender{Items: []NatOutRenderItem{}},
+		NatRetRender: NatRetRender{Items: []NatRetRenderItem{}},
 	}
 	return &c
 }
 
-func TestEndMfnNormalTcpCloseRstTestCase(t *testing.T) {
-	ExecuteTestCase(EndMfnNormalTcpCloseRstTestCase{}, t)
+func (tc EndMfnNormalTcpCloseRstCacheClearTestCase) PostTestEventPreprocess(events []GenericEvent) []GenericEvent {
+	for idx := range events {
+		events[idx].Timestamp = time.Time{}
+	}
+	return ExcludeEventFunctionCall(events)
+}
+
+func (tc EndMfnNormalTcpCloseRstCacheClearTestCase) PostTestEventsExpect() []GenericEvent {
+	return []GenericEvent{
+		{EventNatSessionDeleteByRst: &EventBodyNatSessionRender{
+			OrgSrc:  "10.0.1.10",
+			OrgPort: 10000,
+			NatSrc:  "142.0.0.1",
+			NatPort: 26548 & 0xff00,
+			Proto:   "tcp",
+			Flags:   0,
+		}},
+	}
+}
+
+func TestEndMfnNormalTcpCloseRstCacheClearTestCase(t *testing.T) {
+	ExecuteTestCase(EndMfnNormalTcpCloseRstCacheClearTestCase{}, t)
 }

@@ -18,17 +18,24 @@ limitations under the License.
 package ebpf
 
 import (
+	"bytes"
 	"embed"
+	"encoding/binary"
+	"errors"
 	"fmt"
+	"io"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"time"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/perf"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/slankdev/mfplane/pkg/goroute2"
 	"github.com/slankdev/mfplane/pkg/util"
@@ -154,6 +161,7 @@ func NewCommandBpfMap() *cobra.Command {
 	cmd.AddCommand(NewCommandMapInspectAuto())
 	cmd.AddCommand(NewCommandMapFlush())
 	cmd.AddCommand(NewCommandMapSize())
+	cmd.AddCommand(NewCommandMapEvent())
 	return cmd
 }
 
@@ -430,5 +438,204 @@ func NewCommandMapInspectAuto() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&clioptPinDir, "pin", "p",
 		"/sys/fs/bpf/xdp/globals", "pinned map root dir")
+	return cmd
+}
+
+var (
+	log *zap.Logger
+)
+
+func initLogger(level int) error {
+	cfg := zap.NewProductionConfig()
+	cfg.Sampling = nil
+	cfg.Level = zap.NewAtomicLevelAt(zapcore.Level(level))
+	logger, err := cfg.Build()
+	if err != nil {
+		return err
+	}
+	log = logger
+	return nil
+}
+
+func NewCommandMapEvent() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "event",
+	}
+	cmd.AddCommand(NewCommandMapEventRecord())
+	cmd.AddCommand(NewCommandMapEventReport())
+	return cmd
+}
+
+func NewCommandMapEventRecord() *cobra.Command {
+	var clioptLoglevel int
+	var clioptMap []string
+	var clioptFilterIn []string
+	var clioptFilterOut []string
+	var clioptOutput string
+	var clioptFormat string
+	var clioptPerfEventBufferSize int
+	cmd := &cobra.Command{
+		Use: "record",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := initLogger(clioptLoglevel); err != nil {
+				return err
+			}
+
+			// Reader
+			reader, err := NewEventReader(clioptMap[0], clioptPerfEventBufferSize)
+			if err != nil {
+				log.Error("perf.NewReader", zap.Error(err))
+				return err
+			}
+			defer reader.Close()
+
+			// Loop stopper
+			loop := true
+			quit := make(chan os.Signal, 10)
+			signal.Notify(quit, os.Interrupt)
+			go func() {
+				<-quit
+				loop = false
+			}()
+
+			// Prepare raw data file
+			if !check(clioptFormat, []string{"raw", "json"}) {
+				return fmt.Errorf("invalid output format")
+			}
+
+			// Prepare output file object
+			out := os.Stdout
+			if clioptOutput != "-" {
+				out, err = os.Create(clioptOutput)
+				if err != nil {
+					return err
+				}
+				defer out.Close()
+				log.Info("output", zap.String("path", clioptOutput))
+			}
+
+			// Main loop
+			cnt := 0
+			log.Info("start event subscribing...")
+			for loop {
+				reader.SetDeadline(time.Now().Add(time.Second))
+				record, err := reader.Read()
+				switch {
+				case err == nil:
+					cnt++
+					switch clioptFormat {
+					case "raw":
+						if err := writeRawPerfEvent(record, out); err != nil {
+							log.Error("writeRawPerfEvent. ignored", zap.Error(err))
+							return err
+						}
+					case "json":
+						if err := printPerfEvent(record, &PrintPerfEventOptions{
+							FilterIn:  clioptFilterIn,
+							FilterOut: clioptFilterOut,
+						}, out); err != nil {
+							log.Error("printPerfEvent. ignored", zap.Error(err))
+						}
+					default:
+						return fmt.Errorf("invalid format %s", clioptFormat)
+					}
+				case errors.Is(err, os.ErrDeadlineExceeded):
+					continue
+				default:
+					log.Error("unknown error. ignored", zap.Error(err))
+					continue
+				}
+			}
+			log.Info("bye...", zap.Int("EventCount", cnt))
+			return nil
+		},
+	}
+	cmd.Flags().StringArrayVarP(&clioptMap, "map", "m",
+		[]string{}, "pinned map root dir")
+	cmd.Flags().IntVarP(&clioptLoglevel, "log", "l", int(zapcore.InfoLevel),
+		"-1:Debug, 0:Info, 1:Warn: 2:Error")
+	cmd.Flags().StringArrayVarP(&clioptFilterIn, "filter", "f",
+		[]string{}, "Include specified types")
+	cmd.Flags().StringArrayVarP(&clioptFilterOut, "filter-out", "F",
+		[]string{}, "Ignore specified types")
+	cmd.Flags().StringVarP(&clioptOutput, "output", "o", "-",
+		"-:stdout")
+	cmd.Flags().IntVarP(&clioptPerfEventBufferSize, "buffer", "b", 16384,
+		"Perf event buffer size")
+	cmd.Flags().StringVar(&clioptFormat, "format", "json",
+		"Choice of [json, raw]")
+	return cmd
+}
+
+func NewCommandMapEventReport() *cobra.Command {
+	var clioptLoglevel int
+	var clioptFilterIn []string
+	var clioptFilterOut []string
+	var clioptInput string
+	cmd := &cobra.Command{
+		Use: "report",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := initLogger(clioptLoglevel); err != nil {
+				return err
+			}
+
+			f, err := os.Open(clioptInput)
+			if err != nil {
+				return err
+			}
+			buf, err := io.ReadAll(f)
+			if err != nil {
+				return err
+			}
+			reader := bytes.NewReader(buf)
+
+			cnt := 0
+			for {
+				// Read Header
+				var length uint16
+				var losts uint64
+				if err := binary.Read(reader, binary.BigEndian, &length); err != nil {
+					if err == io.EOF {
+						log.Info("EOF")
+						break
+					}
+					return err
+				}
+				if err := binary.Read(reader, binary.BigEndian, &losts); err != nil {
+					return err
+				}
+
+				// Read Data
+				data := make([]byte, length)
+				if err := binary.Read(reader, binary.BigEndian, data); err != nil {
+					return err
+				}
+				record := perf.Record{
+					RawSample:   data,
+					LostSamples: losts,
+				}
+
+				// Print
+				if err := printPerfEvent(record, &PrintPerfEventOptions{
+					FilterIn:  clioptFilterIn,
+					FilterOut: clioptFilterOut,
+				}, os.Stdout); err != nil {
+					log.Error("printPerfEvent. ignored", zap.Error(err))
+				}
+
+				cnt++
+			}
+			log.Info("bye...", zap.Int("EventCount", cnt))
+			return nil
+		},
+	}
+	cmd.Flags().IntVarP(&clioptLoglevel, "log", "l", int(zapcore.InfoLevel),
+		"-1:Debug, 0:Info, 1:Warn: 2:Error")
+	cmd.Flags().StringArrayVarP(&clioptFilterIn, "filter", "f",
+		[]string{}, "Include specified types")
+	cmd.Flags().StringArrayVarP(&clioptFilterOut, "filter-out", "F",
+		[]string{}, "Ignore specified types")
+	cmd.Flags().StringVarP(&clioptInput, "input", "i", "/tmp/event.data",
+		"Input raw data")
 	return cmd
 }

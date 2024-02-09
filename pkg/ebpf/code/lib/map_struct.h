@@ -174,6 +174,10 @@ struct counter_val {
   __u64 nat_ret_miss;
   __u64 nat_endpoint_independent_mapping_conflict;
   __u64 nat_reuse_closed_session;
+  __u64 nat_map_update_failed;
+  __u64 perf_event_failed;
+  __u64 nat_session_create;
+  __u64 nat_session_delete;
 }  __attribute__ ((packed));
 
 // NOTE(slankdev); It's possible verifier will be failed when the semantic
@@ -195,6 +199,19 @@ struct metadata {
   struct in6_addr outer_ip6_saddr; // 48
   struct in6_addr outer_ip6_daddr; // 64
   struct in6_addr nh_addr6;        // 72
+  union {
+    struct {
+      __u8 tcp_flag_fin:1;
+      __u8 tcp_flag_syn:1;
+      __u8 tcp_flag_rst:1;
+      __u8 tcp_flag_psh:1;
+      __u8 tcp_flag_ack:1;
+      __u8 tcp_flag_urg:1;
+      __u8 tcp_flag_ece:1;
+      __u8 tcp_flag_cwr:1;
+    } tcp_flags;
+    __u8 tcp_flags_raw;
+  } tcp_flags
 }  __attribute__ ((packed));
 
 #endif /* _MAP_STRUCT_H_ */

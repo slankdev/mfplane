@@ -34,6 +34,93 @@
 #include "map_struct.h"
 #include "map_definition.h"
 
+/* Types of event_header.type */
+enum {
+  EVENT_TYPE_UNSPEC = 0,
+  EVENT_TYPE_DEBUG,
+  EVENT_TYPE_NAT_SESSION_CREATE,
+  EVENT_TYPE_NAT_SESSION_DELETE_BY_RST,
+  EVENT_TYPE_FUNCTION_CALL,
+  EVENT_TYPE_NAT_CONFLICT,
+  EVENT_TYPE_IPV6_LOOKUP,
+  EVENT_TYPE_PARSE_METADATA,
+  EVENT_TYPE_JHASH_RESULT,
+  EVENT_TYPE_MF_REDIRECT,
+  EVENT_TYPE_PACKET_RECORD,
+};
+
+#define NOTIFY_COMMON_HDR \
+  __u16  type;   \
+  __u16  length;
+
+struct event_body_nat_session {
+  NOTIFY_COMMON_HDR
+  __u32 org_src;
+  __u16 ort_port;
+  __u32 nat_src;
+  __u16 nat_port;
+  __u8 proto;
+  __u8 flags;
+}  __attribute__ ((packed));
+
+struct event_body_function_call {
+  NOTIFY_COMMON_HDR
+  __u16 func_name_idx;
+  __u16 func_call_line;
+}  __attribute__ ((packed));
+
+struct event_body_nat_conflict {
+  NOTIFY_COMMON_HDR
+  __u32 org_src;
+  __u16 ort_port;
+  __u8 proto;
+}  __attribute__ ((packed));
+
+struct event_body_ipv6_lookup {
+  NOTIFY_COMMON_HDR
+  __u8 addr[16];
+}  __attribute__ ((packed));
+
+struct event_body_parse_metadata {
+  NOTIFY_COMMON_HDR
+  __s32 result;
+}  __attribute__ ((packed));
+
+struct event_body_jhash_result {
+  NOTIFY_COMMON_HDR
+  __u32 hash;
+}  __attribute__ ((packed));
+
+struct event_body_redirect_result {
+  NOTIFY_COMMON_HDR
+  __u8 updated_addr[16];
+}  __attribute__ ((packed));
+
+struct event_body_packet_record {
+  NOTIFY_COMMON_HDR
+  __u32 src_addr;
+  __u32 dst_addr;
+  __u16 src_port;
+  __u16 dst_port;
+  __u8 proto;
+  __u8 metadata1;
+  __u8 metadata2;
+  __u8 metadata3;
+}  __attribute__ ((packed));
+
+static inline void
+mfplane_dbg(struct xdp_md *ctx, void *obj, int size) {
+  long ret = bpf_perf_event_output(ctx, &GLUE(NAME, events),
+    BPF_F_CURRENT_CPU, obj, size);
+  if (ret < 0) {
+    __u32 idx = 0;
+    struct counter_val *counter;
+    counter = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+    if (counter)
+      counter->perf_event_failed++;
+    }
+}
+
 #define NSEC_PER_SEC  (1000ULL * 1000ULL * 1000UL)
 #define NSEC_PER_MSEC (1000ULL * 1000ULL)
 #define NSEC_PER_USEC (1000UL)
@@ -91,20 +178,43 @@ struct l4hdr {
   __u16 icmp_id;
 } __attribute__ ((packed));
 
-static inline void
-debug_function_call(struct xdp_md *ctx, const char *func, int line)
-{
+enum {
+  FUNCTION_NAME_unspec = 0,
+  FUNCTION_NAME_ignore_packet,
+  FUNCTION_NAME_error_packet,
+  FUNCTION_NAME_tx_packet,
+  FUNCTION_NAME_tx_packet_neigh,
+  FUNCTION_NAME_parse_metadata,
+  FUNCTION_NAME_process_nat_return,
+  FUNCTION_NAME_process_ipv4,
+  FUNCTION_NAME_process_mf_redirect,
+  FUNCTION_NAME_process_nat_ret,
+  FUNCTION_NAME_process_nat_out,
+  FUNCTION_NAME_process_srv6_end_mfn_nat,
+  FUNCTION_NAME_process_srv6_end_mfl_nat,
+  FUNCTION_NAME_process_ipv6,
+  FUNCTION_NAME_process_ethernet,
+};
+
 #ifdef DEBUG_FUNCTION_CALL
-  bpf_printk(STR(NAME)"%p:call %s:%d", ctx, func, line);
+#define debug_function_call(ctx, name, line) \
+  do { \
+    struct event_body_function_call ev = { \
+      .type = EVENT_TYPE_FUNCTION_CALL, \
+      .func_name_idx = FUNCTION_NAME_##name, \
+      .func_call_line = line, \
+    }; \
+    mfplane_dbg(ctx, &ev, sizeof(ev)); \
+  } while(0)
+#else
+#define debug_function_call(ctx, name, line) ;;
 #endif
-}
 
 static inline int
 ignore_packet(struct xdp_md *ctx, int line)
 {
-  debug_function_call(ctx, __func__, line);
 #ifdef DEBUG_IGNORE_PACKET
-  bpf_printk(STR(NAME)"%p:call %s:%d", ctx, __func__, line);
+  debug_function_call(ctx, ignore_packet, line);
 #endif
 
   // Increment Counter Vals
@@ -121,9 +231,8 @@ ignore_packet(struct xdp_md *ctx, int line)
 static inline int
 error_packet(struct xdp_md *ctx, int line)
 {
-  debug_function_call(ctx, __func__, line);
 #ifdef DEBUG_ERROR_PACKET
-  bpf_printk(STR(NAME)"%p:call %s:%d", ctx, __func__, line);
+  debug_function_call(ctx, error_packet, line);
 #endif
 
   // Increment Counter Vals
@@ -140,7 +249,9 @@ error_packet(struct xdp_md *ctx, int line)
 static inline int
 tx_packet(struct xdp_md *ctx, int line)
 {
-  debug_function_call(ctx, __func__, line);
+#ifdef DEBUG_TX_PACKET
+  debug_function_call(ctx, tx_packet, line);
+#endif
 
   // Increment Counter Vals
   __u32 idx = 0;

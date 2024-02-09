@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,6 +38,11 @@ type TestCase interface {
 	PostTestMapContextExpect() *ProgRunMapContext
 }
 
+type TestCaseWithEvent interface {
+	PostTestEventsExpect() []GenericEvent
+	PostTestEventPreprocess(events []GenericEvent) []GenericEvent
+}
+
 func unlinkAll(rootdir string) error {
 	files, err := os.ReadDir(rootdir)
 	if err != nil {
@@ -46,6 +53,14 @@ func unlinkAll(rootdir string) error {
 	toBeDeleted := []string{}
 	for _, file := range files {
 		if !file.IsDir() {
+			// NOTE(slankdev):
+			// When the event map is re-created, all processes that watch the
+			// existing perf event become zombies, even if they are on the same path.
+			// It is not a neat solution, but we exclude this map from cleanup so
+			// that we can continue to watch perf events while running go test.
+			if strings.HasSuffix(file.Name(), "_events") {
+				continue
+			}
 			toBeDeleted = append(toBeDeleted, file.Name())
 		}
 	}
@@ -145,6 +160,14 @@ func ExecuteTestCase(tc TestCase, t *testing.T) {
 		t.Error(err)
 	}
 
+	// Start PerfEvent subscribe
+	reader, err := NewEventReader(fmt.Sprintf(
+		"/sys/fs/bpf/xdp/globals/%s_events", ebpfProgramName), 4096)
+	if err != nil {
+		t.Error(err)
+	}
+	defer reader.Close()
+
 	// Test ebpf program
 	input, err := tc.GenerateInput()
 	if err != nil {
@@ -190,6 +213,35 @@ func ExecuteTestCase(tc TestCase, t *testing.T) {
 	if !reflect.DeepEqual(check, dump) {
 		t.Errorf("map invalid DIFF:\n%s", cmp.Diff(check, dump))
 	}
+
+	// Dump result event data
+	if tc, ok := tc.(TestCaseWithEvent); ok {
+		events := tc.PostTestEventsExpect()
+		eventsResults := []GenericEvent{}
+		loop := true
+		for loop {
+			reader.SetDeadline(time.Now().Add(time.Second))
+			record, err := reader.Read()
+			switch {
+			case errors.Is(err, os.ErrDeadlineExceeded):
+				loop = false
+			case err == nil:
+				e, err := ParseEvent(record)
+				if err != nil {
+					t.Error(err)
+				}
+				eventsResults = append(eventsResults, *e)
+			case errors.Is(err, os.ErrDeadlineExceeded):
+				continue
+			default:
+				t.Error(err)
+			}
+		}
+		eventsResults = tc.PostTestEventPreprocess(eventsResults)
+		if !reflect.DeepEqual(eventsResults, events) {
+			t.Errorf("events invalid DIFF:\n%s", cmp.Diff(eventsResults, events))
+		}
+	}
 }
 
 func TestXDPLoad(t *testing.T) {
@@ -209,4 +261,18 @@ func TestXDPLoad(t *testing.T) {
 		}
 		t.Error(errors.Wrap(err, "log:/tmp/verifier.log"))
 	}
+}
+
+func ExcludeEventFunctionCall(events []GenericEvent) []GenericEvent {
+	deleteIdx := []int{}
+	for idx := range events {
+		if events[idx].EventBodyFunctionCall != nil {
+			deleteIdx = append(deleteIdx, idx)
+		}
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(deleteIdx)))
+	for _, idx := range deleteIdx {
+		events = append(events[:idx], events[idx+1:]...)
+	}
+	return events
 }

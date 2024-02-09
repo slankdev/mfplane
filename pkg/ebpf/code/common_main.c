@@ -25,7 +25,7 @@
 #define NAT_CACHE_MAX_RULES 65535
 #endif
 #ifndef SNAT_MATCH_LOOP_COUNT
-#define SNAT_MATCH_LOOP_COUNT 256
+#define SNAT_MATCH_LOOP_COUNT 32
 #endif
 #ifndef SNAT_VIPS_LOOP_COUNT
 #define SNAT_VIPS_LOOP_COUNT 16
@@ -33,11 +33,16 @@
 
 #include "lib/lib.h"
 
+struct maps {
+  struct metadata *md;
+  struct counter_val *counter;
+};
+
 static inline int
 tx_packet_neigh(struct xdp_md *ctx, int line,
-                struct metadata *md)
+                struct maps *maps)
 {
-  debug_function_call(ctx, __func__, line);
+  debug_function_call(ctx, tx_packet_neigh, line);
 
   struct trie4_key key = {0};
   struct trie4_val *val = NULL;
@@ -48,9 +53,9 @@ tx_packet_neigh(struct xdp_md *ctx, int line,
   __u8 *mac = NULL;
 
   // L3 Lookup
-  switch (md->nh_family) {
+  switch (maps->md->nh_family) {
   case AF_INET:
-    key.addr = md->nh_addr4;
+    key.addr = maps->md->nh_addr4;
     key.prefixlen = 32;
     val = bpf_map_lookup_elem(&GLUE(NAME, fib4), &key);
     if (!val) {
@@ -75,7 +80,7 @@ tx_packet_neigh(struct xdp_md *ctx, int line,
     }
     break;
   case AF_INET6:
-    memcpy(&t6_key.addr, &md->nh_addr6, sizeof(struct in6_addr));
+    memcpy(&t6_key.addr, &maps->md->nh_addr6, sizeof(struct in6_addr));
     t6_key.prefixlen = 128;
     t6_val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &t6_key);
     if (!t6_val) {
@@ -115,12 +120,7 @@ tx_packet_neigh(struct xdp_md *ctx, int line,
   assert_len(eh, data_end);
   memcpy(eh->h_dest, mac, 6);
 
-  // Increment Counter Vals
-  __u32 idx = 0;
-  struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
-  if (cv)
-    cv->xdp_action_tx_pkts ++;
-
+  maps->counter->xdp_action_tx_pkts ++;
   return XDP_TX;
 }
 
@@ -133,7 +133,8 @@ tx_packet_neigh(struct xdp_md *ctx, int line,
 static inline int
 parse_metadata(struct xdp_md *ctx, struct metadata *md)
 {
-  debug_function_call(ctx, __func__, __LINE__);
+  debug_function_call(ctx, parse_metadata, __LINE__);
+
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
   __u64 size_srh = 0;
@@ -146,6 +147,7 @@ parse_metadata(struct xdp_md *ctx, struct metadata *md)
   struct srh *srh = NULL;
   struct iphdr *inner_i4h = NULL;
   struct l4hdr *inner_l4h = NULL;
+  struct tcphdr *th = NULL;
 
   // Prepare Headers
   eh = (struct ethhdr *)data;
@@ -166,6 +168,16 @@ parse_metadata(struct xdp_md *ctx, struct metadata *md)
     md->l3_daddr = i4h->daddr;
     switch (md->l3_proto) {
     case IPPROTO_TCP:
+      th = (struct tcphdr *)(inner_l4h);
+      assert_len(th, data_end);
+      md->tcp_flags.tcp_flags.tcp_flag_fin = th->fin;
+      md->tcp_flags.tcp_flags.tcp_flag_syn = th->syn;
+      md->tcp_flags.tcp_flags.tcp_flag_rst = th->rst;
+      md->tcp_flags.tcp_flags.tcp_flag_psh = th->psh;
+      md->tcp_flags.tcp_flags.tcp_flag_ack = th->ack;
+      md->tcp_flags.tcp_flags.tcp_flag_urg = th->urg;
+      md->tcp_flags.tcp_flags.tcp_flag_ece = th->ece;
+      md->tcp_flags.tcp_flags.tcp_flag_cwr = th->cwr;
     case IPPROTO_UDP:
       md->l4_sport = l4h->source;
       md->l4_dport = l4h->dest;
@@ -195,6 +207,16 @@ parse_metadata(struct xdp_md *ctx, struct metadata *md)
       md->l3_daddr = inner_i4h->daddr;
       switch (md->l3_proto) {
       case IPPROTO_TCP:
+        th = (struct tcphdr *)(inner_l4h);
+        assert_len(th, data_end);
+        md->tcp_flags.tcp_flags.tcp_flag_fin = th->fin;
+        md->tcp_flags.tcp_flags.tcp_flag_syn = th->syn;
+        md->tcp_flags.tcp_flags.tcp_flag_rst = th->rst;
+        md->tcp_flags.tcp_flags.tcp_flag_psh = th->psh;
+        md->tcp_flags.tcp_flags.tcp_flag_ack = th->ack;
+        md->tcp_flags.tcp_flags.tcp_flag_urg = th->urg;
+        md->tcp_flags.tcp_flags.tcp_flag_ece = th->ece;
+        md->tcp_flags.tcp_flags.tcp_flag_cwr = th->cwr;
       case IPPROTO_UDP:
         md->l4_sport = inner_l4h->source;
         md->l4_dport = inner_l4h->dest;
@@ -226,6 +248,16 @@ parse_metadata(struct xdp_md *ctx, struct metadata *md)
           md->l3_daddr = inner_i4h->daddr;
           switch (md->l3_proto) {
           case IPPROTO_TCP:
+            th = (struct tcphdr *)(inner_l4h);
+            assert_len(th, data_end);
+            md->tcp_flags.tcp_flags.tcp_flag_fin = th->fin;
+            md->tcp_flags.tcp_flags.tcp_flag_syn = th->syn;
+            md->tcp_flags.tcp_flags.tcp_flag_rst = th->rst;
+            md->tcp_flags.tcp_flags.tcp_flag_psh = th->psh;
+            md->tcp_flags.tcp_flags.tcp_flag_ack = th->ack;
+            md->tcp_flags.tcp_flags.tcp_flag_urg = th->urg;
+            md->tcp_flags.tcp_flags.tcp_flag_ece = th->ece;
+            md->tcp_flags.tcp_flags.tcp_flag_cwr = th->cwr;
           case IPPROTO_UDP:
             md->l4_sport = inner_l4h->source;
             md->l4_dport = inner_l4h->dest;
@@ -259,9 +291,9 @@ parse_metadata(struct xdp_md *ctx, struct metadata *md)
 
 static inline int
 process_nat_return(struct xdp_md *ctx, struct trie4_key *key,
-                   struct trie4_val *val, struct metadata *md)
+                   struct trie4_val *val, struct maps *maps)
 {
-  debug_function_call(ctx, __func__, __LINE__);
+  debug_function_call(ctx, process_nat_return, __LINE__);
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
   __u64 pkt_len = data_end - data;
@@ -292,26 +324,6 @@ process_nat_return(struct xdp_md *ctx, struct trie4_key *key,
   if (!p) {
     return ignore_packet(ctx, __LINE__);
   }
-
-#ifdef DEBUG
-  char tmp[128] = {0};
-  char transport_debug_msg[128] = {0};
-  if (ih->protocol == IPPROTO_TCP || ih->protocol == IPPROTO_UDP) {
-    BPF_SNPRINTF(transport_debug_msg, sizeof(transport_debug_msg),
-                 "0x%02x %pi4:%u %pi4:%u]", ih->protocol,
-                 &ih->saddr, bpf_ntohs(l4h->source),
-                 &ih->daddr, bpf_ntohs(l4h->dest));
-  } else if (ih->protocol == IPPROTO_ICMP) {
-    BPF_SNPRINTF(transport_debug_msg, sizeof(transport_debug_msg),
-                 "0x%02x %pi4:%u %pi4]", ih->protocol,
-                 &ih->saddr, bpf_ntohs(l4h->icmp_id),
-                 &ih->daddr);
-  }
-  BPF_SNPRINTF(tmp, sizeof(tmp),
-               "dn-flow=[%s] hash=0x%08x/%u idx=%u hb=0x%x",
-               transport_debug_msg, hash, hash, idx, val->nat_port_hash_bit);
-  // bpf_printk(STR(NAME)"%s", tmp);
-#endif
 
   // Adjust packet buffer head pointer
   if (bpf_xdp_adjust_head(ctx, 0 - (int)(sizeof(struct outer_header)))) {
@@ -353,15 +365,16 @@ process_nat_return(struct xdp_md *ctx, struct trie4_key *key,
   oh->srh.type = 4;
   memcpy(&oh->seg, &p->addr, sizeof(struct in6_addr));
 
-  md->nh_family = AF_INET6;
-  memcpy(&md->nh_addr6, &p->addr, sizeof(struct in6_addr));
-  return tx_packet_neigh(ctx, __LINE__, md);
+  maps->md->nh_family = AF_INET6;
+  memcpy(&maps->md->nh_addr6, &p->addr, sizeof(struct in6_addr));
+  return tx_packet_neigh(ctx, __LINE__, maps);
 }
 
 static inline int
-process_ipv4(struct xdp_md *ctx, struct metadata *md)
+process_ipv4(struct xdp_md *ctx,
+             struct maps *maps)
 {
-  debug_function_call(ctx, __func__, __LINE__);
+  debug_function_call(ctx, process_ipv4, __LINE__);
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
   __u64 pkt_len = data_end - data;
@@ -380,7 +393,7 @@ process_ipv4(struct xdp_md *ctx, struct metadata *md)
   key.prefixlen = 32;
   struct trie4_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib4), &key);
   if (val) {
-    return process_nat_return(ctx, &key, val, md);
+    return process_nat_return(ctx, &key, val, maps);
   }
 
   // normal c-plane packets
@@ -431,17 +444,14 @@ static inline int finished(struct in6_addr *addr, int oct_offset, int n_shifts)
 
 static inline int
 process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
-                    struct metadata *md)
+                    struct maps *maps)
 {
-  debug_function_call(ctx, __func__, __LINE__);
+  debug_function_call(ctx, process_mf_redirect, __LINE__);
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
   // Increment Counter Vals
-  __u32 idx = 0;
-  struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
-  if (cv)
-    cv->mf_redirect_pkts ++;
+  maps->counter->mf_redirect_pkts ++;
 
   // Prepare Headers
   struct ethhdr *eh = (struct ethhdr *)data;
@@ -449,18 +459,19 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
   struct outer_header *oh = (struct outer_header *)(eh + 1);
   assert_len(oh, data_end);
 
-#ifdef DEBUG_MF_REDIRECT
-    const __u8 *da = oh->ip6.daddr.s6_addr;
-    bpf_printk(STR(NAME)"%p before-shift addr begin ---", ctx);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[0], da[1]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[2], da[3]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[4], da[5]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[6], da[7]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[8], da[9]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[10], da[11]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[12], da[13]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[14], da[15]);
-    bpf_printk(STR(NAME)"%p before-shift addr end   ---", ctx);
+#ifdef DEBUG_MF_REDIRECT_PACKET_RECORD
+  struct event_body_packet_record ev0 = {
+    .type = EVENT_TYPE_PACKET_RECORD,
+    .src_addr = maps->md->l3_saddr,
+    .dst_addr = maps->md->l3_daddr,
+    .src_port = maps->md->l4_sport,
+    .dst_port = maps->md->l4_dport,
+    .proto = maps->md->l3_proto,
+    .metadata1 = 0xaa, // magic number
+    .metadata2 = 0xbb, // magic number
+    .metadata3 = maps->md->tcp_flags.tcp_flags_raw,
+  };
+  mfplane_dbg(ctx, &ev0, sizeof(ev0));
 #endif
 
   // Execute bit shitt
@@ -474,54 +485,11 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
     return error_packet(ctx, __LINE__);
 
 #ifdef DEBUG_MF_REDIRECT
-    da = oh->ip6.daddr.s6_addr;
-    bpf_printk(STR(NAME)"%p after-shift addr begin ---", ctx);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[0], da[1]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[2], da[3]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[4], da[5]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[6], da[7]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[8], da[9]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[10], da[11]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[12], da[13]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[14], da[15]);
-    bpf_printk(STR(NAME)"%p after-shift addr end   ---", ctx);
-#endif
-
-#if 0
-  // STAT Get
-  struct mf_redir_rate_stat_key skey = {0};
-  skey.addr = apkey->addr;
-  skey.port = apkey->port;
-  skey.proto = apkey->proto;
-  skey.is_out = is_out;
-  memcpy(&skey.next_sid, &oh->ip6.daddr, sizeof(struct in6_addr));
-
-  struct mf_redir_rate_stat_val isval = {0};
-  struct mf_redir_rate_stat_val *sval = bpf_map_lookup_elem(
-    &(GLUE(NAME, rate_stats)), &skey);
-  __u64 now = bpf_ktime_get_ns();
-
-  if (!sval) {
-    isval.bytes = data_end - data;
-    isval.pkts = 1;
-    isval.last_reset = now;
-    bpf_map_update_elem(&GLUE(NAME, rate_stats), &skey, &isval, BPF_ANY);
-    sval = &isval;
-  } else {
-    if (now - sval->last_reset > 5000000000) {
-      if (sval->pkts > (5 * 10)) {
-        // bpf_printk("perf");
-        bpf_perf_event_output(ctx, &GLUE(NAME, events), BPF_F_CURRENT_CPU,
-          &skey, sizeof(skey));
-      }
-      sval->bytes = data_end - data;
-      sval->pkts = 1;
-      sval->last_reset = now;
-    } else {
-      sval->bytes += data_end - data;
-      sval->pkts += 1;
-    }
-  }
+  struct event_body_redirect_result ev = {
+    .type = EVENT_TYPE_MF_REDIRECT,
+  };
+  memcpy(&ev.updated_addr, oh->ip6.daddr.s6_addr, sizeof(struct in6_addr));
+  mfplane_dbg(ctx, &ev, sizeof(ev));
 #endif
 
   // Set src mac addrs
@@ -530,16 +498,16 @@ process_mf_redirect(struct xdp_md *ctx, struct trie6_val *val,
   val->stats_redir_pkts++;
 
   // TX packets
-  md->nh_family = AF_INET6;
-  memcpy(&md->nh_addr6, &oh->ip6.daddr, 16);
-  return tx_packet_neigh(ctx, __LINE__, md);
+  maps->md->nh_family = AF_INET6;
+  memcpy(&maps->md->nh_addr6, &oh->ip6.daddr, 16);
+  return tx_packet_neigh(ctx, __LINE__, maps);
 }
 
 static inline int
 process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
-                struct trie6_val *val, struct metadata *md)
+                struct trie6_val *val, struct maps *maps)
 {
-  debug_function_call(ctx, __func__, __LINE__);
+  debug_function_call(ctx, process_nat_ret, __LINE__);
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
@@ -585,13 +553,9 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   struct addr_port_stats *nval = NULL;
   nval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret)), &key);
   if (!nval) {
-    __u32 idx = 0;
-    struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
-    if (cv) {
-      cv->nat_ret_miss ++;
-      cv->mf_redirect_ret_pkts ++;
-    }
-    return process_mf_redirect(ctx, val, md);
+    maps->counter->nat_ret_miss ++;
+    maps->counter->mf_redirect_ret_pkts ++;
+    return process_mf_redirect(ctx, val, maps);
   }
   nval->pkts++;
   nval->bytes += data_end - data;
@@ -614,19 +578,20 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
     if (tcp_closing_rst != 0) {
       bpf_map_delete_elem(&(GLUE(NAME, nat_out)), nval);
       bpf_map_delete_elem(&(GLUE(NAME, nat_ret)), &key);
+
+      // PerfEvent
+      struct event_body_nat_session ev = {
+        .type     = EVENT_TYPE_NAT_SESSION_DELETE_BY_RST,
+        .proto    = nval->proto,
+        .org_src  = nval->addr,
+        .ort_port = nval->port,
+        .nat_src  = key.addr,
+        .nat_port = key.port,
+      };
+      mfplane_dbg(ctx, &ev, sizeof(ev));
     }
 #endif
   }
-
-#ifdef DEBUG
-    // char tmp[128] = {0};
-    // BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u -> %pi4:%u/%pi4:%u",
-    //             in_ih->protocol,
-    //             &in_ih->saddr, bpf_ntohs(in_l4h->source),
-    //             &in_ih->daddr, bpf_ntohs(in_l4h->dest),
-    //             &nval->addr, bpf_ntohs(nval->port));
-    // bpf_printk(STR(NAME)"nat-ret %s", tmp);
-#endif
 
   // Reverse nat
   __u32 olddest = in_ih->daddr;
@@ -677,16 +642,16 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
   memcpy(&oh->ip6.daddr, &overlay_val->segs[0], sizeof(struct in6_addr));
   memcpy(&oh->seg, &overlay_val->segs[0], sizeof(struct in6_addr));
 
-  md->nh_family = AF_INET6;
-  memcpy(&md->nh_addr6, &oh->ip6.daddr, sizeof(struct in6_addr));
-  return tx_packet_neigh(ctx, __LINE__, md);
+  maps->md->nh_family = AF_INET6;
+  memcpy(&maps->md->nh_addr6, &oh->ip6.daddr, sizeof(struct in6_addr));
+  return tx_packet_neigh(ctx, __LINE__, maps);
 }
 
 static inline int
 process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
-                struct trie6_val *val, struct metadata *md)
+                struct trie6_val *val, struct maps *maps)
 {
-  debug_function_call(ctx, __func__, __LINE__);
+  debug_function_call(ctx, process_nat_out, __LINE__);
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
@@ -709,7 +674,6 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
   if (in_ih->protocol != IPPROTO_TCP &&
       in_ih->protocol != IPPROTO_UDP &&
       in_ih->protocol != IPPROTO_ICMP) {
-    bpf_printk(STR(NAME)"nat unsupport l4 proto %d", in_ih->protocol);
     return ignore_packet(ctx, __LINE__);
   }
 
@@ -753,30 +717,24 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
 
   // Check lookup result
   if (!asval) {
-    __u32 idx = 0;
-    struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
-    if (cv)
-      cv->nat_out_miss ++;
+    maps->counter->nat_out_miss ++;
 
     // Un-Hit sesson cache
     __u32 hash = 0;
     switch (in_ih->protocol) {
     case IPPROTO_TCP:
       if (tcp_syn == 0) {
-        if (cv)
-          cv->mf_redirect_out_pkts ++;
-        return process_mf_redirect(ctx, val, md);
+        maps->counter->mf_redirect_out_pkts ++;
+        return process_mf_redirect(ctx, val, maps);
       }
       hash = jhash_2words(in_ih->daddr, in_ih->saddr, 0xdeadbeaf);
       hash = jhash_2words(in_l4h->dest, in_l4h->source, hash);
       hash = jhash_2words(in_ih->protocol, 0, hash);
-      //bpf_printk(STR(NAME)"hash 0x%08x", hash);
       break;
     case IPPROTO_UDP:
       if (key->addr[4] != 0x00 || key->addr[5] != 0x00) {
-        if (cv)
-          cv->mf_redirect_out_pkts ++;
-        return process_mf_redirect(ctx, val, md);
+        maps->counter->mf_redirect_out_pkts ++;
+        return process_mf_redirect(ctx, val, maps);
       }
       hash = jhash_2words(in_ih->saddr, in_l4h->source, 0xdeadbeaf);
       hash = jhash_2words(in_ih->protocol, 0, hash);
@@ -789,8 +747,16 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
       return ignore_packet(ctx, __LINE__);
     }
     hash = hash & 0xffff;
+#ifdef DEBUG_JHASH_RESULT
+    {
+      struct event_body_jhash_result ev = {
+        .type     = EVENT_TYPE_JHASH_RESULT,
+        .hash = hash,
+      };
+      mfplane_dbg(ctx, &ev, sizeof(ev));
+    }
+#endif
     hash = hash & val->nat_port_hash_bit;
-    // bpf_printk(STR(NAME)"hash 0x%08x (short)", hash);
 
     // TODO(slankdev): we should search un-used slot instead of rand-val.
     __u32 rand = bpf_get_prandom_u32();
@@ -834,34 +800,48 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
     }
 
     if (allocated_index < 0) {
-      __u32 idx = 0;
-      struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
-      if (cv)
-        cv->nat_endpoint_independent_mapping_conflict++;
 #ifdef DEBUG_NAT_CONFLICT
-      bpf_printk(STR(NAME)"conflict (non alloced)");
-      bpf_printk(STR(NAME)"%p:warn nat conflict hash %04x", ctx, sourceport);
-      bpf_printk(STR(NAME)"%p:warn nat conflict new-conn %08x %04x",
-        ctx, orgval.addr, orgval.port);
+      struct event_body_nat_conflict ev = {
+        .type     = EVENT_TYPE_NAT_CONFLICT,
+        .proto    = orgval.proto,
+        .org_src  = orgval.addr,
+        .ort_port = orgval.port,
+      };
+      mfplane_dbg(ctx, &ev, sizeof(ev));
 #endif
+      maps->counter->nat_endpoint_independent_mapping_conflict++;
       return error_packet(ctx, __LINE__);
     }
     sourceaddr = val->vip[allocated_index];
 
     if (in_ih->protocol == IPPROTO_ICMP)
       orgval.port = org_icmp_id;
-    bpf_map_update_elem(&GLUE(NAME, nat_ret), &natval, &orgval, BPF_ANY);
-    bpf_map_update_elem(&GLUE(NAME, nat_out), &orgval, &natval, BPF_ANY);
-  } else {
-    if ((tcp_closing == 0) && ((asval->flags & TCP_STATE_CLOSING) != 0)) {
-#ifdef DEBUG_NAT_REUSE_PORT
-      bpf_printk(STR(NAME)"%p:warn reuse closed session cache", ctx);
-#endif
-      __u32 idx = 0;
-      struct counter_val *cv = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
-      if (cv)
-        cv->nat_reuse_closed_session ++;
+    int ret;
+    ret = bpf_map_update_elem(&GLUE(NAME, nat_ret), &natval, &orgval, BPF_NOEXIST);
+    if (ret < 0) {
+      maps->counter->nat_map_update_failed ++;
+      return error_packet(ctx, __LINE__);
     }
+    ret = bpf_map_update_elem(&GLUE(NAME, nat_out), &orgval, &natval, BPF_NOEXIST);
+    if (ret < 0) {
+      maps->counter->nat_map_update_failed ++;
+      return error_packet(ctx, __LINE__);
+    }
+    maps->counter->nat_session_create++;
+
+    // PerfEvent
+    struct event_body_nat_session ev = {
+      .type     = EVENT_TYPE_NAT_SESSION_CREATE,
+      .proto    = orgval.proto,
+      .org_src  = orgval.addr,
+      .ort_port = orgval.port,
+      .nat_src  = natval.addr,
+      .nat_port = natval.port,
+    };
+    mfplane_dbg(ctx, &ev, sizeof(ev));
+  } else {
+    if ((tcp_closing == 0) && ((asval->flags & TCP_STATE_CLOSING) != 0))
+      maps->counter->nat_reuse_closed_session ++;
 
     // Existing connection
     asval->pkts++;
@@ -880,20 +860,22 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
       if (tcp_closing_rst != 0) {
         bpf_map_delete_elem(&(GLUE(NAME, nat_out)), &apkey);
         bpf_map_delete_elem(&(GLUE(NAME, nat_ret)), asval);
+        maps->counter->nat_session_delete++;
+
+        // PerfEvent
+        struct event_body_nat_session ev = {
+          .type     = EVENT_TYPE_NAT_SESSION_DELETE_BY_RST,
+          .proto    = apkey.proto,
+          .org_src  = apkey.addr,
+          .ort_port = apkey.port,
+          .nat_src  = asval->addr,
+          .nat_port = asval->port,
+        };
+        mfplane_dbg(ctx, &ev, sizeof(ev));
       }
 #endif
     }
   }
-
-#ifdef DEBUG
-  char tmp[128] = {0};
-  BPF_SNPRINTF(tmp, sizeof(tmp), "%u %pi4:%u/%pi4:%u -> %pi4:%u",
-              in_ih->protocol,
-              &in_ih->saddr, bpf_ntohs(org_sport),
-              &val->vip, bpf_ntohs(sourceport),
-              &in_ih->daddr, bpf_ntohs(org_dport));
-  // bpf_printk(STR(NAME)"nat-out %s", tmp);
-#endif
 
   // Update header
   __u32 oldsource = in_ih->saddr;
@@ -954,16 +936,16 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
   if (bpf_xdp_adjust_head(ctx, 0 + (int)sizeof(struct outer_header))) {
     return error_packet(ctx, __LINE__);
   }
-  md->nh_family = AF_INET;
-  md->nh_addr4 = nh_addr4;
-  return tx_packet_neigh(ctx, __LINE__, md);
+  maps->md->nh_family = AF_INET;
+  maps->md->nh_addr4 = nh_addr4;
+  return tx_packet_neigh(ctx, __LINE__, maps);
 }
 
 static inline int
 process_srv6_end_mfn_nat(struct xdp_md *ctx, struct trie6_key *key,
-                         struct trie6_val *val, struct metadata *md)
+                         struct trie6_val *val, struct maps *maps)
 {
-  debug_function_call(ctx, __func__, __LINE__);
+  debug_function_call(ctx, process_srv6_end_mfn_nat, __LINE__);
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
   __u64 pkt_len = data_end - data;
@@ -978,40 +960,48 @@ process_srv6_end_mfn_nat(struct xdp_md *ctx, struct trie6_key *key,
 
   // NAT check
   return snat_match(val, in_ih->saddr) ?
-    process_nat_out(ctx, key, val, md) :
-    process_nat_ret(ctx, key, val, md);
+    process_nat_out(ctx, key, val, maps) :
+    process_nat_ret(ctx, key, val, maps);
 }
 
 static inline int
 process_srv6_end_mfl_nat(struct xdp_md *ctx, struct trie6_val *val,
-                         struct metadata *md)
+                         struct maps *maps)
 {
-  debug_function_call(ctx, __func__, __LINE__);
+  debug_function_call(ctx, process_srv6_end_mfl_nat, __LINE__);
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
   __u64 pkt_len = data_end - data;
 
   // Calculate Hash
   __u32 hash = 0;
-  switch (md->l3_proto) {
+  switch (maps->md->l3_proto) {
   case IPPROTO_TCP:
-    hash = jhash_2words(md->l3_daddr, md->l3_saddr, 0xdeadbeaf);
-    hash = jhash_2words(md->l4_dport, md->l4_sport, hash);
-    hash = jhash_2words(md->l3_proto, 0, hash);
+    hash = jhash_2words(maps->md->l3_daddr, maps->md->l3_saddr, 0xdeadbeaf);
+    hash = jhash_2words(maps->md->l4_dport, maps->md->l4_sport, hash);
+    hash = jhash_2words(maps->md->l3_proto, 0, hash);
     break;
   case IPPROTO_UDP:
-    hash = jhash_2words(md->l3_saddr, md->l4_sport, 0xdeadbeaf);
-    hash = jhash_2words(md->l3_proto, 0, hash);
+    hash = jhash_2words(maps->md->l3_saddr, maps->md->l4_sport, 0xdeadbeaf);
+    hash = jhash_2words(maps->md->l3_proto, 0, hash);
     break;
   case IPPROTO_ICMP:
-    hash = jhash_2words(md->l3_daddr, md->l3_saddr, 0xdeadbeaf);
-    hash = jhash_2words(md->l3_proto, md->l4_icmp_id, hash);
+    hash = jhash_2words(maps->md->l3_daddr, maps->md->l3_saddr, 0xdeadbeaf);
+    hash = jhash_2words(maps->md->l3_proto, maps->md->l4_icmp_id, hash);
     break;
   default:
-    // bpf_printk(STR(NAME)"nat unsupport l4 proto %d", md->l3_proto);
     return ignore_packet(ctx, __LINE__);
   }
   hash = hash & 0xffff;
+#ifdef DEBUG_JHASH_RESULT
+  {
+    struct event_body_jhash_result ev = {
+      .type     = EVENT_TYPE_JHASH_RESULT,
+      .hash = hash,
+    };
+    mfplane_dbg(ctx, &ev, sizeof(ev));
+  }
+#endif
   hash = hash & val->nat_port_hash_bit;
 
   // Resolve Backend node
@@ -1019,7 +1009,6 @@ process_srv6_end_mfl_nat(struct xdp_md *ctx, struct trie6_val *val,
   idx = RING_SIZE * val->backend_block_index + idx;
   struct flow_processor *p = bpf_map_lookup_elem(&GLUE(NAME, lb_backend), &idx);
   if (!p) {
-    // bpf_printk(STR(NAME)"no entry fatal");
     return ignore_packet(ctx, __LINE__);
   }
 
@@ -1034,10 +1023,10 @@ process_srv6_end_mfl_nat(struct xdp_md *ctx, struct trie6_val *val,
 
   // Header Adjustment
   __u16 updated_ip6_payload_len = ctx->data_end
-    - ctx->data - md->l3_offset
+    - ctx->data - maps->md->l3_offset
     + sizeof(struct srh)
     + sizeof(struct in6_addr);
-  int adjust_len = md->l3_offset
+  int adjust_len = maps->md->l3_offset
     - sizeof(struct outer_header)
     - sizeof(struct ethhdr);
   if (bpf_xdp_adjust_head(ctx, adjust_len))
@@ -1052,8 +1041,8 @@ process_srv6_end_mfl_nat(struct xdp_md *ctx, struct trie6_val *val,
   assert_len(oh, data_end);
 
   // Craft New header
-  memcpy(eh->h_source, md->ether_dst, 6);
-  eh->h_proto = bpf_ntohs(md->ether_type);
+  memcpy(eh->h_source, maps->md->ether_dst, 6);
+  eh->h_proto = bpf_ntohs(maps->md->ether_type);
   oh->ip6.version = 6;
   oh->ip6.priority = 0;
   oh->ip6.flow_lbl[0] = flow_lbl0;
@@ -1062,7 +1051,7 @@ process_srv6_end_mfl_nat(struct xdp_md *ctx, struct trie6_val *val,
   oh->ip6.payload_len = bpf_htons(updated_ip6_payload_len);
   oh->ip6.nexthdr = IPPROTO_ROUTING;
   oh->ip6.hop_limit = hop_limit;
-  memcpy(&oh->ip6.saddr, &md->outer_ip6_saddr, sizeof(struct in6_addr));
+  memcpy(&oh->ip6.saddr, &maps->md->outer_ip6_saddr, sizeof(struct in6_addr));
   memcpy(&oh->ip6.daddr, &p->addr, sizeof(struct in6_addr));
   memcpy(&oh->seg, &p->addr, sizeof(struct in6_addr));
   oh->srh.nexthdr = IPPROTO_IPIP;
@@ -1074,42 +1063,22 @@ process_srv6_end_mfl_nat(struct xdp_md *ctx, struct trie6_val *val,
   oh->padding[2] = 0;
   oh->padding[3] = 0;
 
-#ifdef DEBUG
-  char tmpstr[128] = {0};
-  char transport_debug_msg[128] = {0};
-  if (in_ih->protocol == IPPROTO_TCP || in_ih->protocol == IPPROTO_UDP) {
-    BPF_SNPRINTF(transport_debug_msg, sizeof(transport_debug_msg),
-                 "0x%02x %pi4:%u %pi4:%u]", in_ih->protocol,
-                 &in_ih->saddr, bpf_ntohs(in_l4h->source),
-                 &in_ih->daddr, bpf_ntohs(in_l4h->dest));
-  } else if (in_ih->protocol == IPPROTO_ICMP) {
-    BPF_SNPRINTF(transport_debug_msg, sizeof(transport_debug_msg),
-                 "0x%02x %pi4:%u %pi4]", in_ih->protocol,
-                 &in_ih->saddr, bpf_ntohs(in_l4h->icmp_id),
-                 &in_ih->daddr);
-  }
-  BPF_SNPRINTF(tmpstr, sizeof(tmpstr),
-               "up-flow=[%s] hash=0x%08x/%u idx=%u hb=0x%x",
-               transport_debug_msg, hash, hash, idx, val->nat_port_hash_bit);
-  // bpf_printk(STR(NAME)"%s", tmpstr);
-#endif
-
-  md->nh_family = AF_INET6;
-  memcpy(&md->nh_addr6, &p->addr, sizeof(struct in6_addr));
-  return tx_packet_neigh(ctx, __LINE__, md);
+  maps->md->nh_family = AF_INET6;
+  memcpy(&maps->md->nh_addr6, &p->addr, sizeof(struct in6_addr));
+  return tx_packet_neigh(ctx, __LINE__, maps);
 }
 
 static inline int
-process_ipv6(struct xdp_md *ctx, struct metadata *md)
+process_ipv6(struct xdp_md *ctx, struct maps *maps)
 {
-  debug_function_call(ctx, __func__, __LINE__);
+  debug_function_call(ctx, process_ipv6, __LINE__);
   __u64 data = ctx->data;
   __u64 data_end = ctx->data_end;
 
   // Lookup SRv6 SID
   struct trie6_key key = {0};
   key.prefixlen = 128;
-  memcpy(&key.addr, &md->outer_ip6_daddr, sizeof(struct in6_addr));
+  memcpy(&key.addr, &maps->md->outer_ip6_daddr, sizeof(struct in6_addr));
   struct trie6_val *val = bpf_map_lookup_elem(&GLUE(NAME, fib6), &key);
   if (!val) {
     return ignore_packet(ctx, __LINE__);
@@ -1118,25 +1087,19 @@ process_ipv6(struct xdp_md *ctx, struct metadata *md)
   val->stats_total_pkts++;
 
 #ifdef DEBUG_IPV6
-    const __u8 *da = md->i6h->daddr.s6_addr;
-    bpf_printk(STR(NAME)"%p ipv6-lookup addr begin ---", ctx);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[0], da[1]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[2], da[3]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[4], da[5]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[6], da[7]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[8], da[9]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[10], da[11]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[12], da[13]);
-    bpf_printk(STR(NAME)"%p   %02x%02x", ctx, da[14], da[15]);
-    bpf_printk(STR(NAME)"%p ipv6-lookup addr end   ---", ctx);
+    struct event_body_ipv6_lookup ev = {
+      .type = EVENT_TYPE_IPV6_LOOKUP,
+    };
+    memcpy(&ev.addr, &maps->md->outer_ip6_daddr, sizeof(struct in6_addr));
+    mfplane_dbg(ctx, &ev, sizeof(ev));
 #endif
 
   // Switch localSID types
   switch (val->action) {
   case 123: // TODO(slankdev) to be const
-    return process_srv6_end_mfl_nat(ctx, val, md);
+    return process_srv6_end_mfl_nat(ctx, val, maps);
   case 456: // TODO(slankdev) to be const
-    return process_srv6_end_mfn_nat(ctx, &key, val, md);
+    return process_srv6_end_mfn_nat(ctx, &key, val, maps);
   default:
     return ignore_packet(ctx, __LINE__);
   }
@@ -1145,7 +1108,7 @@ process_ipv6(struct xdp_md *ctx, struct metadata *md)
 static inline int
 process_ethernet(struct xdp_md *ctx)
 {
-  debug_function_call(ctx, __func__, __LINE__);
+  debug_function_call(ctx, process_ethernet, __LINE__);
 
   // Parse metadata
   __u32 idx = 0;
@@ -1154,16 +1117,32 @@ process_ethernet(struct xdp_md *ctx)
     return error_packet(ctx, __LINE__);
   int ret = parse_metadata(ctx, md);
 #ifdef DEBUG_PARSE_METADATA
-  bpf_printk(STR(NAME)"%p:parse_metadata result=%d", ctx, ret);
+  struct event_body_parse_metadata ev = {
+    .type     = EVENT_TYPE_PARSE_METADATA,
+    .result = ret,
+  };
+  mfplane_dbg(ctx, &ev, sizeof(ev));
 #endif
   if (ret < 0)
     return ignore_packet(ctx, __LINE__);
 
+  // Get Counter
+  struct counter_val *counter;
+  counter = bpf_map_lookup_elem(&GLUE(NAME, counter), &idx);
+  if (!counter)
+    return error_packet(ctx, __LINE__);
+
+  // Summarize Maps
+  struct maps maps = {
+    .md = md,
+    .counter = counter,
+  };
+
   switch (md->ether_type) {
   case ETH_P_IP:
-    return process_ipv4(ctx, md);
+    return process_ipv4(ctx, &maps);
   case ETH_P_IPV6:
-    return process_ipv6(ctx, md);
+    return process_ipv6(ctx, &maps);
   default:
     return ignore_packet(ctx, __LINE__);
   }
