@@ -66,6 +66,7 @@ const (
 	PerfBitWatermark          = linux.PerfBitWatermark
 	PerfBitWriteBackward      = linux.PerfBitWriteBackward
 	PERF_SAMPLE_RAW           = linux.PERF_SAMPLE_RAW
+	PERF_SAMPLE_TIME          = linux.PERF_SAMPLE_TIME
 	PERF_FLAG_FD_CLOEXEC      = linux.PERF_FLAG_FD_CLOEXEC
 	RLIM_INFINITY             = linux.RLIM_INFINITY
 	RLIMIT_MEMLOCK            = linux.RLIMIT_MEMLOCK

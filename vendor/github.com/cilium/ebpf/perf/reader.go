@@ -48,6 +48,9 @@ type Record struct {
 	// The number of samples which could not be output, since
 	// the ring buffer was full.
 	LostSamples uint64
+
+	// Timestamp
+	Timestamp uint64
 }
 
 // Read a record from a reader and tag it as being from the given CPU.
@@ -67,6 +70,10 @@ func readRecord(rd io.Reader, rec *Record, buf []byte, overwritable bool) error 
 		internal.NativeEndian.Uint32(buf[0:4]),
 		internal.NativeEndian.Uint16(buf[4:6]),
 		internal.NativeEndian.Uint16(buf[6:8]),
+	}
+
+	if err := binary.Read(rd, internal.NativeEndian, &rec.Timestamp); err != nil {
+		return fmt.Errorf("read perf event timestamp: %v", err)
 	}
 
 	switch header.Type {
