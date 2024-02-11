@@ -156,7 +156,7 @@ func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
 	// BatchDelete
 	m, err := ciliumebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
-		return errors.Wrap(err, "ebpf.LoadPinnedMap")
+		return errors.Wrap(err, "natOut ebpf.LoadPinnedMap")
 	}
 	log.Info("nat_out batchDelete start",
 		zap.Int("count", len(keys)),
@@ -166,7 +166,7 @@ func batchNatOut(mapfile string, natOut *ebpf.NatOutRender) error {
 	)
 	before := time.Now()
 	if _, err := m.BatchDelete(keys, nil); err != nil {
-		return errors.Wrap(err, "m.BatchDelete")
+		return errors.Wrap(err, "natOut m.BatchDelete")
 	}
 	diff := time.Since(before)
 	log.Info("nat_out batchDelete finished",
@@ -231,7 +231,7 @@ func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
 	// BatchDelete
 	m, err := ciliumebpf.LoadPinnedMap(mapfile, nil)
 	if err != nil {
-		return errors.Wrap(err, "ebpf.LoadPinnedMap")
+		return errors.Wrap(err, "natRet ebpf.LoadPinnedMap")
 	}
 	log.Info("nat_ret batchDelete start",
 		zap.Int("count", len(keys)),
@@ -241,7 +241,7 @@ func batchNatRet(mapfile string, natRet *ebpf.NatRetRender) error {
 	)
 	before := time.Now()
 	if _, err := m.BatchDelete(keys, nil); err != nil {
-		return errors.Wrap(err, "m.BatchDelete")
+		return errors.Wrap(err, "natRet m.BatchDelete")
 	}
 	diff := time.Since(before)
 	log.Info("nat_ret batchDelete finished",
