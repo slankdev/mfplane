@@ -3,6 +3,7 @@ package mfpctl
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"time"
@@ -288,38 +289,67 @@ func mainDeamonNat() {
 		return
 	}
 
-	// Const
-	ticker1s := time.NewTicker(time.Second)
+	// Loop stopper
+	loop := true
+	quit := make(chan os.Signal, 10)
+	signal.Notify(quit, os.Interrupt)
+	go func() {
+		<-quit
+		loop = false
+	}()
 
-	// Main loop
-	for {
-		select {
-		case <-ticker1s.C:
-			log.Debug("tick")
-
-			// nat_out
-			for _, mapfile := range mapfilesNatOut {
-				natOut := ebpf.NatOutRender{}
-				if err := ebpf.Read(mapfile, &natOut); err == nil {
-					if err := batchNatOut(mapfile, &natOut); err != nil {
+	// nat_out
+	go func() {
+		ticker1s := time.NewTicker(time.Second)
+		for loop {
+			select {
+			case <-ticker1s.C:
+				log.Debug("tick")
+				for _, mapfile := range mapfilesNatOut {
+					before := time.Now()
+					natOut := ebpf.NatOutRender{}
+					if err := ebpf.Read(mapfile, &natOut); err == nil {
+						diff := time.Since(before)
+						log.Info("nat_out read latency",
+							zap.Duration("latency", diff))
+						if err := batchNatOut(mapfile, &natOut); err != nil {
+							log.Error("ERROR", zap.Error(err))
+						}
+					} else {
 						log.Error("ERROR", zap.Error(err))
 					}
-				} else {
-					log.Error("ERROR", zap.Error(err))
-				}
-			}
-
-			// nat_ret
-			for _, mapfile := range mapfilesNatRet {
-				natRet := ebpf.NatRetRender{}
-				if err := ebpf.Read(mapfile, &natRet); err == nil {
-					if err := batchNatRet(mapfile, &natRet); err != nil {
-						log.Error("ERROR", zap.Error(err))
-					}
-				} else {
-					log.Error("ERROR", zap.Error(err))
 				}
 			}
 		}
+	}()
+
+	// nat_ret
+	go func() {
+		ticker1s := time.NewTicker(time.Second)
+		for loop {
+			select {
+			case <-ticker1s.C:
+				log.Debug("tick")
+				for _, mapfile := range mapfilesNatRet {
+					before := time.Now()
+					natRet := ebpf.NatRetRender{}
+					if err := ebpf.Read(mapfile, &natRet); err == nil {
+						diff := time.Since(before)
+						log.Info("nat_ret read latency",
+							zap.Duration("latency", diff))
+						if err := batchNatRet(mapfile, &natRet); err != nil {
+							log.Error("ERROR", zap.Error(err))
+						}
+					} else {
+						log.Error("ERROR", zap.Error(err))
+					}
+				}
+			}
+		}
+	}()
+
+	// Main loop
+	for loop {
+		time.Sleep(time.Second)
 	}
 }
