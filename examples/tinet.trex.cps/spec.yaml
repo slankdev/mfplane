@@ -10,6 +10,7 @@
 nodes:
 - name: T1
   image: tinynetwork/trex:develop
+  #image: nicolaka/netshoot
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: HV1#net1 }
@@ -73,6 +74,24 @@ node_configs:
   - cmd: ip link set net1 address 52:54:00:02:00:01
   - cmd: ip link set net1 up
   - cmd: nohup ./_t-rex-64 -i --astf --cfg ./cfg.yaml >/dev/null &
+
+  # - cmd: ip netns add ns0
+  # - cmd: ip link set net0 netns ns0
+  # - cmd: ip netns exec ns0 ip link set lo up
+  # - cmd: ip netns exec ns0 ip link set net0 up
+  # - cmd: ip netns exec ns0 ip addr add 20.0.0.1/32 dev lo
+  # - cmd: ip netns exec ns0 ip addr add 50.0.0.2/24 dev net0
+  # - cmd: ip netns exec ns0 ip route add default via 50.0.0.1
+  # - cmd: ip netns exec ns0 ethtool -K net0 rx off tso off gso off tx off
+  # - cmd: ip netns add ns1
+  # - cmd: ip link set net1 netns ns1
+  # - cmd: ip netns exec ns1 ip link set lo up
+  # - cmd: ip netns exec ns1 ip link set net1 up
+  # - cmd: ip netns exec ns1 ip addr add 30.0.0.1/32 dev lo
+  # - cmd: ip netns exec ns1 ip addr add 40.0.0.2/24 dev net1
+  # - cmd: ip netns exec ns1 ip route add default via 40.0.0.1
+  # - cmd: ip netns exec ns1 ethtool -K net1 rx off tso off gso off tx off
+
 - name: BR
   cmds:
   - cmd: ip link add br0 type bridge
@@ -160,6 +179,7 @@ postinit:
       EOF
   - cmd: docker exec HV1 mkdir -p /etc/vpp
   - cmd: docker exec HV2 mkdir -p /etc/vpp
+  - cmd: docker exec T1 mkdir -p /opt/trex/automation/trex_control_plane/interactive/trex/examples/astf
   - cmd: docker cp /tmp/t1_cfg.yaml  T1:/opt/trex/cfg.yaml
   - cmd: docker cp /tmp/hv1_exec.vpp HV1:/etc/vpp/exec.vpp
   - cmd: docker cp /tmp/hv2_exec.vpp HV2:/etc/vpp/exec.vpp

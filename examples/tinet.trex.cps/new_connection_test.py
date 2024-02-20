@@ -9,13 +9,19 @@ import sys
 import time
 
 
+data = b"\0" * 100
+
 class Prof1():
-    def create_profile(self, cps, test_type):
+    def create_profile(self, cps, test_type, datas):
         prog_c = ASTFProgram()
         prog_c.connect()
+        for i in range(datas):
+            prog_c.send(data)
         if test_type == "connectreset":
             prog_c.reset()
         prog_s = ASTFProgram()
+        for i in range(datas):
+            prog_s.recv(len(data), True)
         prog_s.wait_for_peer_close()
 
         # ip generator
@@ -40,6 +46,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mult', "-m", default=1, type=int)
 parser.add_argument('--duration', "-d", default=3600, type=int)
 parser.add_argument('--test', "-t", choices=['connectreset', 'connect'], required=True)
+parser.add_argument('--datas', "-D", default=0, type=int)
 args = parser.parse_args()
 
 c = ASTFClient()
@@ -47,7 +54,7 @@ c.connect()
 c.reset()
 print("astfclient initialized")
 
-c.load_profile(Prof1().create_profile(1, args.test))
+c.load_profile(Prof1().create_profile(1, args.test, args.datas))
 c.clear_stats()
 c.start(mult=args.mult, duration=args.duration)
 print("started")
