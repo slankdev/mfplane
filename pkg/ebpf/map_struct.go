@@ -850,6 +850,12 @@ type StructCounterVal struct {
 	PerfEventFailed                       uint64
 	NatSessionCreate                      uint64
 	NatSessionDelete                      uint64
+	NatOutTimerCall                       uint64
+	NatOutTimerWalk                       uint64
+	NatOutTimerWalkClean                  uint64
+	NatRetTimerCall                       uint64
+	NatRetTimerWalk                       uint64
+	NatRetTimerWalkClean                  uint64
 }
 
 type StructCounterValRender StructCounterVal
@@ -890,6 +896,12 @@ func (raw *StructCounterVal) Summarize(list []StructCounterVal) {
 		raw.PerfEventFailed += item.PerfEventFailed
 		raw.NatSessionCreate += item.NatSessionCreate
 		raw.NatSessionDelete += item.NatSessionDelete
+		raw.NatOutTimerCall += item.NatOutTimerCall
+		raw.NatOutTimerWalk += item.NatOutTimerWalk
+		raw.NatOutTimerWalkClean += item.NatOutTimerWalkClean
+		raw.NatRetTimerCall += item.NatRetTimerCall
+		raw.NatRetTimerWalk += item.NatRetTimerWalk
+		raw.NatRetTimerWalkClean += item.NatRetTimerWalkClean
 	}
 }
 

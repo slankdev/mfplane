@@ -178,6 +178,12 @@ struct counter_val {
   __u64 perf_event_failed;
   __u64 nat_session_create;
   __u64 nat_session_delete;
+  __u64 nat_out_timer_call;
+  __u64 nat_out_timer_walk;
+  __u64 nat_out_timer_walk_clean;
+  __u64 nat_ret_timer_call;
+  __u64 nat_ret_timer_walk;
+  __u64 nat_ret_timer_walk_clean;
 }  __attribute__ ((packed));
 
 // NOTE(slankdev); It's possible verifier will be failed when the semantic
@@ -212,6 +218,11 @@ struct metadata {
     } tcp_flags;
     __u8 tcp_flags_raw;
   } tcp_flags
+}  __attribute__ ((packed));
+
+struct timer_val {
+  __u64 init;
+  struct bpf_timer timer;
 }  __attribute__ ((packed));
 
 #endif /* _MAP_STRUCT_H_ */
