@@ -100,4 +100,12 @@ struct {
   __uint(pinning, LIBBPF_PIN_BY_NAME);
 } GLUE(NAME, metadata) SEC(".maps");
 
+struct {
+  __uint(type, BPF_MAP_TYPE_ARRAY);
+  __uint(max_entries, _TIMER_MAX);
+  __type(key, int);
+  __type(value, struct timer_val);
+  __uint(pinning, LIBBPF_PIN_BY_NAME);
+} GLUE(NAME, timers) SEC(".maps");
+
 #endif /* _MAP_DEFINITION_H_ */

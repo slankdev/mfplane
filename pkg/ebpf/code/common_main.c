@@ -25,18 +25,114 @@
 #define NAT_CACHE_MAX_RULES 65535
 #endif
 #ifndef SNAT_MATCH_LOOP_COUNT
-#define SNAT_MATCH_LOOP_COUNT 32
+#define SNAT_MATCH_LOOP_COUNT 8
 #endif
 #ifndef SNAT_VIPS_LOOP_COUNT
 #define SNAT_VIPS_LOOP_COUNT 16
 #endif
+#ifndef NAT_TIMEOUT_SECOND_TCP_CLOSING
+#define NAT_TIMEOUT_SECOND_TCP_CLOSING 5
+#endif
+#ifndef NAT_TIMEOUT_SECOND_TCP_OPENING
+#define NAT_TIMEOUT_SECOND_TCP_OPENING 5
+#endif
+#ifndef NAT_TIMEOUT_SECOND_TCP_ESTB
+#define NAT_TIMEOUT_SECOND_TCP_ESTB 10
+#endif
+#ifndef NAT_TIMEOUT_SECOND_UDP
+#define NAT_TIMEOUT_SECOND_UDP 10
+#endif
+#ifndef NAT_TIMEOUT_SECOND_ICMP
+#define NAT_TIMEOUT_SECOND_ICMP 10
+#endif
+#ifndef NAT_TIMEROUT_SECOND_UNKNOWN
+#define NAT_TIMEROUT_SECOND_UNKNOWN 5
+#endif
 
 #include "lib/lib.h"
+
+const __u32 zero = 0;
+int idx = 0;
 
 struct maps {
   struct metadata *md;
   struct counter_val *counter;
 };
+
+struct nat_clean_ctx {
+  __u64 now;
+  __u64 clean;
+  struct counter_val *counter;
+};
+
+static __u64 inline
+timeout_sec(__u8 proto, __u64 flags)
+{
+  switch (proto) {
+  case IPPROTO_TCP:
+    if ((flags & TCP_STATE_CLOSING) != 0)
+      return NAT_TIMEOUT_SECOND_TCP_CLOSING;
+    else if ((flags & TCP_STATE_ESTABLISH) != 0)
+      return NAT_TIMEOUT_SECOND_TCP_ESTB;
+    else
+      return NAT_TIMEOUT_SECOND_TCP_OPENING;
+  case IPPROTO_UDP:
+    return NAT_TIMEOUT_SECOND_UDP;
+  case IPPROTO_ICMP:
+    return NAT_TIMEOUT_SECOND_ICMP;
+  default:
+    return NAT_TIMEROUT_SECOND_UNKNOWN;
+  }
+}
+
+static __u64
+nat_clean(struct bpf_map *map, struct addr_port *key,
+          struct addr_port_stats *val, struct nat_clean_ctx *ctx)
+{
+  if (ctx->now > (val->update_at + timeout_sec(val->proto, val->flags))) {
+    bpf_map_delete_elem(map, key);
+    ctx->clean++;
+  }
+  return 0;
+}
+
+static int
+timer_callback_nat_out(void *map, int *key, struct timer_val *tval)
+{
+  struct nat_clean_ctx ctx;
+  ctx.now = bpf_ktime_get_sec();
+  ctx.clean = 0;
+  ctx.counter = bpf_map_lookup_elem(&GLUE(NAME, counter), &zero);
+  if (!ctx.counter)
+    return 0;
+
+  long loop;
+  loop = bpf_for_each_map_elem(&GLUE(NAME, nat_out), nat_clean, &ctx, 0);
+  ctx.counter->nat_out_timer_call ++;
+  ctx.counter->nat_out_timer_walk += loop;
+  ctx.counter->nat_out_timer_walk_clean += ctx.clean;
+  bpf_timer_start(&tval->timer, 1 * NSEC_PER_SEC, 0);
+  return 0;
+}
+
+static int
+timer_callback_nat_ret(void *map, int *key, struct timer_val *tval)
+{
+  struct nat_clean_ctx ctx;
+  ctx.now = bpf_ktime_get_sec();
+  ctx.clean = 0;
+  ctx.counter = bpf_map_lookup_elem(&GLUE(NAME, counter), &zero);
+  if (!ctx.counter)
+    return 0;
+
+  long loop;
+  loop = bpf_for_each_map_elem(&GLUE(NAME, nat_ret), nat_clean, &ctx, 0);
+  ctx.counter->nat_ret_timer_call ++;
+  ctx.counter->nat_ret_timer_walk += loop;
+  ctx.counter->nat_ret_timer_walk_clean += ctx.clean;
+  bpf_timer_start(&tval->timer, 1 * NSEC_PER_SEC, 0);
+  return 0;
+}
 
 static inline int
 tx_packet_neigh(struct xdp_md *ctx, int line,
@@ -839,6 +935,36 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
       .nat_port = natval.port,
     };
     mfplane_dbg(ctx, &ev, sizeof(ev));
+
+    // NOTE(slankdev):
+    // The following two bpf_timer_init should be executed in early functions
+    // such as process_ethernet or xdp_ingress, but for some reason, starting
+    // the following two timers in such early timing fails to get the values of
+    // nat_ out, and nat_ret in the timer callback. We start the timer here
+    // because we must probably always start the timer after calling
+    // bpf_map_lookup_elem. We have tested with kernel 5.15 and kernel 6.2.
+
+    // Timer Init and Start for nat_out
+    struct timer_val *nat_out_tval;
+    idx = TIMER_NAT_OUT;
+    nat_out_tval = bpf_map_lookup_elem(&GLUE(NAME, timers), &idx);
+    if (nat_out_tval && nat_out_tval->init == 0) {
+      bpf_timer_init(&nat_out_tval->timer, &GLUE(NAME, timers), CLOCK_BOOTTIME);
+      bpf_timer_set_callback(&nat_out_tval->timer, timer_callback_nat_out);
+      bpf_timer_start(&nat_out_tval->timer, 1 * NSEC_PER_SEC, 0);
+      nat_out_tval->init = 1;
+    }
+
+    // Timer Init and Start for nat_out
+    struct timer_val *nat_ret_tval;
+    idx = TIMER_NAT_RET;
+    nat_ret_tval = bpf_map_lookup_elem(&GLUE(NAME, timers), &idx);
+    if (nat_ret_tval && nat_ret_tval->init == 0) {
+      bpf_timer_init(&nat_ret_tval->timer, &GLUE(NAME, timers), CLOCK_BOOTTIME);
+      bpf_timer_set_callback(&nat_ret_tval->timer, timer_callback_nat_ret);
+      bpf_timer_start(&nat_ret_tval->timer, 1 * NSEC_PER_SEC, 0);
+      nat_ret_tval->init = 1;
+    }
   } else {
     if ((tcp_closing == 0) && ((asval->flags & TCP_STATE_CLOSING) != 0))
       maps->counter->nat_reuse_closed_session ++;
