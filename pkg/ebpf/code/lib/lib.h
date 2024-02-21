@@ -121,6 +121,22 @@ mfplane_dbg(struct xdp_md *ctx, void *obj, int size) {
     }
 }
 
+enum {
+	BPF_F_TIMER_ABS = (1ULL << 0),
+	BPF_F_TIMER_CPU_PIN = (1ULL << 1),
+};
+
+#define CLOCK_REALTIME           0
+#define CLOCK_MONOTONIC          1
+#define CLOCK_PROCESS_CPUTIME_ID 2
+#define CLOCK_THREAD_CPUTIME_ID  3
+#define CLOCK_MONOTONIC_RAW      4
+#define CLOCK_REALTIME_COARSE    5
+#define CLOCK_MONOTONIC_COARSE   6
+#define CLOCK_BOOTTIME           7
+#define CLOCK_REALTIME_ALARM     8
+#define CLOCK_BOOTTIME_ALARM     9
+
 #define NSEC_PER_SEC  (1000ULL * 1000ULL * 1000UL)
 #define NSEC_PER_MSEC (1000ULL * 1000ULL)
 #define NSEC_PER_USEC (1000UL)

@@ -51,11 +51,18 @@ type StructAddrPortStats struct {
 	Addr      [4]uint8
 	Port      uint16
 	Proto     uint8
+	Reserve   uint8
 	Pkts      uint64
 	Bytes     uint64
 	CreatedAt uint64
 	UpdatedAt uint64
 	Flags     uint64
+	Timer     StructBpfTimer
+}
+
+type StructBpfTimer struct {
+	Reserv1 uint64 `json:"reserv1"`
+	Reserv2 uint64 `json:"reserv2"`
 }
 
 const (
@@ -850,6 +857,10 @@ type StructCounterVal struct {
 	PerfEventFailed                       uint64
 	NatSessionCreate                      uint64
 	NatSessionDelete                      uint64
+	NatTimerStartOut                      uint64
+	NatTimerStartRet                      uint64
+	NatTimerCallbackOutCalled             uint64
+	NatTimerCallbackRetCalled             uint64
 }
 
 type StructCounterValRender StructCounterVal
@@ -890,6 +901,10 @@ func (raw *StructCounterVal) Summarize(list []StructCounterVal) {
 		raw.PerfEventFailed += item.PerfEventFailed
 		raw.NatSessionCreate += item.NatSessionCreate
 		raw.NatSessionDelete += item.NatSessionDelete
+		raw.NatTimerStartOut += item.NatTimerStartOut
+		raw.NatTimerStartRet += item.NatTimerStartRet
+		raw.NatTimerCallbackOutCalled += item.NatTimerCallbackOutCalled
+		raw.NatTimerCallbackRetCalled += item.NatTimerCallbackRetCalled
 	}
 }
 
