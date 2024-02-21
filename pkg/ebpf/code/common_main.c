@@ -25,13 +25,79 @@
 #define NAT_CACHE_MAX_RULES 65535
 #endif
 #ifndef SNAT_MATCH_LOOP_COUNT
-#define SNAT_MATCH_LOOP_COUNT 32
+#define SNAT_MATCH_LOOP_COUNT 8
 #endif
 #ifndef SNAT_VIPS_LOOP_COUNT
 #define SNAT_VIPS_LOOP_COUNT 16
 #endif
+#ifndef NAT_TIMEOUT_SECOND_TCP_CLOSING
+#define NAT_TIMEOUT_SECOND_TCP_CLOSING 5
+#endif
+#ifndef NAT_TIMEOUT_SECOND_TCP_OPENING
+#define NAT_TIMEOUT_SECOND_TCP_OPENING 5
+#endif
+#ifndef NAT_TIMEOUT_SECOND_TCP_ESTB
+#define NAT_TIMEOUT_SECOND_TCP_ESTB 10
+#endif
+#ifndef NAT_TIMEOUT_SECOND_UDP
+#define NAT_TIMEOUT_SECOND_UDP 10
+#endif
+#ifndef NAT_TIMEOUT_SECOND_ICMP
+#define NAT_TIMEOUT_SECOND_ICMP 10
+#endif
+#ifndef NAT_TIMEROUT_SECOND_UNKNOWN
+#define NAT_TIMEROUT_SECOND_UNKNOWN 5
+#endif
 
 #include "lib/lib.h"
+
+const __u32 zero = 0;
+
+static __u64 inline
+timeout_nsec(__u8 proto, __u64 flags)
+{
+  switch (proto) {
+  case IPPROTO_TCP:
+    if ((flags & TCP_STATE_CLOSING) != 0)
+      return NAT_TIMEOUT_SECOND_TCP_CLOSING * NSEC_PER_SEC;
+    else if ((flags & TCP_STATE_ESTABLISH) != 0)
+      return NAT_TIMEOUT_SECOND_TCP_ESTB * NSEC_PER_SEC;
+    else
+      return NAT_TIMEOUT_SECOND_TCP_OPENING * NSEC_PER_SEC;
+  case IPPROTO_UDP:
+    return NAT_TIMEOUT_SECOND_UDP * NSEC_PER_SEC;
+  case IPPROTO_ICMP:
+    return NAT_TIMEOUT_SECOND_ICMP * NSEC_PER_SEC;
+  default:
+    return NAT_TIMEROUT_SECOND_UNKNOWN * NSEC_PER_SEC;
+  }
+}
+
+static int
+timer_cb_out(void *map,
+             struct addr_port *key,
+             struct addr_port_stats *val)
+{
+  bpf_map_delete_elem(&(GLUE(NAME, nat_out)), key);
+  bpf_map_delete_elem(&(GLUE(NAME, nat_ret)), val);
+  struct counter_val *cnt = bpf_map_lookup_elem(&GLUE(NAME, counter), &zero);
+  if (cnt)
+    cnt->nat_timer_callback_out_called++;
+  return 0;
+}
+
+static int
+timer_cb_ret(void *map,
+             struct addr_port *key,
+             struct addr_port_stats *val)
+{
+  bpf_map_delete_elem(&(GLUE(NAME, nat_ret)), key);
+  bpf_map_delete_elem(&(GLUE(NAME, nat_out)), val);
+  struct counter_val *cnt = bpf_map_lookup_elem(&GLUE(NAME, counter), &zero);
+  if (cnt)
+    cnt->nat_timer_callback_ret_called++;
+  return 0;
+}
 
 struct maps {
   struct metadata *md;
@@ -593,6 +659,10 @@ process_nat_ret(struct xdp_md *ctx, struct trie6_key *key_,
 #endif
   }
 
+  // Refresh Timer
+  bpf_timer_start(&nval->timer, timeout_nsec(nval->proto, nval->flags), 0);
+  maps->counter->nat_timer_start_ret ++;
+
   // Reverse nat
   __u32 olddest = in_ih->daddr;
   __u16 olddestport = in_l4h->dest;
@@ -716,6 +786,8 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
     &(GLUE(NAME, nat_out)), &apkey);
 
   // Check lookup result
+  __u8 timer_init = 0;
+  struct addr_port_stats *retval;
   if (!asval) {
     maps->counter->nat_out_miss ++;
 
@@ -828,6 +900,13 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
       return error_packet(ctx, __LINE__);
     }
     maps->counter->nat_session_create++;
+    timer_init = 1;
+    asval = bpf_map_lookup_elem(&(GLUE(NAME, nat_out)), &orgval);
+    if (!asval)
+      return error_packet(ctx, __LINE__);
+    retval = bpf_map_lookup_elem(&(GLUE(NAME, nat_ret)), &natval);
+    if (!retval)
+      return error_packet(ctx, __LINE__);
 
     // PerfEvent
     struct event_body_nat_session ev = {
@@ -876,6 +955,18 @@ process_nat_out(struct xdp_md *ctx, struct trie6_key *key,
 #endif
     }
   }
+
+  // Init Timer
+  if (timer_init > 0) {
+    bpf_timer_init(&asval->timer, &GLUE(NAME, nat_out), CLOCK_BOOTTIME);
+    bpf_timer_init(&retval->timer, &GLUE(NAME, nat_ret), CLOCK_BOOTTIME);
+    bpf_timer_set_callback(&asval->timer, timer_cb_out);
+    bpf_timer_set_callback(&retval->timer, timer_cb_ret);
+  }
+
+  // Refresh Timer
+  bpf_timer_start(&asval->timer, timeout_nsec(asval->proto, asval->flags), 0);
+  maps->counter->nat_timer_start_out ++;
 
   // Update header
   __u32 oldsource = in_ih->saddr;

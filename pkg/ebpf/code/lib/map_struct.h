@@ -21,11 +21,13 @@ struct addr_port_stats {
   __u32 addr;
   __u16 port;
   __u8 proto;
+  __u8 reserv;
   __u64 pkts;
   __u64 bytes;
   __u64 created_at;
   __u64 update_at;
   __u64 flags;
+  struct bpf_timer timer;
 }  __attribute__ ((packed));
 
 enum tcp_state_t {
@@ -178,6 +180,10 @@ struct counter_val {
   __u64 perf_event_failed;
   __u64 nat_session_create;
   __u64 nat_session_delete;
+  __u64 nat_timer_start_out;
+  __u64 nat_timer_start_ret;
+  __u64 nat_timer_callback_out_called;
+  __u64 nat_timer_callback_ret_called;
 }  __attribute__ ((packed));
 
 // NOTE(slankdev); It's possible verifier will be failed when the semantic
