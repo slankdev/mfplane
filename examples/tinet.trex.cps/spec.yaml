@@ -9,7 +9,7 @@
 #             N1  ------+
 nodes:
 - name: T1
-  image: tinynetwork/trex:develop
+  image: docker.io/slankdev/mfplane-trex:develop
   #image: nicolaka/netshoot
   docker_run_extra_args: --entrypoint bash
   interfaces:
@@ -179,13 +179,9 @@ postinit:
       EOF
   - cmd: docker exec HV1 mkdir -p /etc/vpp
   - cmd: docker exec HV2 mkdir -p /etc/vpp
-  - cmd: docker exec T1 mkdir -p /opt/trex/automation/trex_control_plane/interactive/trex/examples/astf
   - cmd: docker cp /tmp/t1_cfg.yaml  T1:/opt/trex/cfg.yaml
   - cmd: docker cp /tmp/hv1_exec.vpp HV1:/etc/vpp/exec.vpp
   - cmd: docker cp /tmp/hv2_exec.vpp HV2:/etc/vpp/exec.vpp
   - cmd: mkdir -p /var/run/netns
   - cmd: ln -s /proc/$(docker inspect L1 -f {{.State.Pid}})/ns/net /var/run/netns/L1
   - cmd: ln -s /proc/$(docker inspect N1 -f {{.State.Pid}})/ns/net /var/run/netns/N1
-  - cmd: >-
-      docker cp new_connection_test.py
-      T1:/opt/trex/automation/trex_control_plane/interactive/trex/examples/astf

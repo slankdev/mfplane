@@ -15,6 +15,7 @@ jobs:
         - artifact_name: mfpctl
         - artifact_name: starbedctl
         - artifact_name: rate
+        - artifact_name: trex
 
     steps:
     - name: clone repo
