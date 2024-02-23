@@ -9,10 +9,9 @@ import sys
 import time
 
 
-data = b"\0" * 100
-
 class Prof1():
-    def create_profile(self, cps, test_type, datas):
+    def create_profile(self, cps, test_type, datas, datasize):
+        data = b"\0" * datasize
         prog_c = ASTFProgram()
         prog_c.connect()
         for i in range(datas):
@@ -36,9 +35,16 @@ class Prof1():
         temp_s = ASTFTCPServerTemplate(program=prog_s)
         template = ASTFTemplate(client_template=temp_c, server_template=temp_s)
 
+        c_glob_info = ASTFGlobalInfo()
+        c_glob_info.tcp.mss = 1000
+        s_glob_info = ASTFGlobalInfo()
+        s_glob_info.tcp.mss = 1000
+
         # profile
         profile = ASTFProfile(default_ip_gen=ip_gen,
-                              templates=template)
+                              templates=template,
+                              default_c_glob_info=c_glob_info,
+                              default_s_glob_info=s_glob_info)
         return profile
 
 
@@ -47,6 +53,7 @@ parser.add_argument('--mult', "-m", default=1, type=int)
 parser.add_argument('--duration', "-d", default=3600, type=int)
 parser.add_argument('--test', "-t", choices=['connectreset', 'connect'], required=True)
 parser.add_argument('--datas', "-D", default=0, type=int)
+parser.add_argument('--size', "-s", default=1, type=int)
 args = parser.parse_args()
 
 c = ASTFClient()
@@ -54,7 +61,7 @@ c.connect()
 c.reset()
 print("astfclient initialized")
 
-c.load_profile(Prof1().create_profile(1, args.test, args.datas))
+c.load_profile(Prof1().create_profile(1, args.test, args.datas, args.size))
 c.clear_stats()
 c.start(mult=args.mult, duration=args.duration)
 print("started")
