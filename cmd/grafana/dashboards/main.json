@@ -653,7 +653,6 @@
       "datasource": {
         "type": "prometheus"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
