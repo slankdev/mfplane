@@ -16,6 +16,7 @@ jobs:
         - artifact_name: starbedctl
         - artifact_name: rate
         - artifact_name: trex
+        - artifact_name: grafana
 
     steps:
     - name: clone repo
