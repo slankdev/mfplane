@@ -9,7 +9,7 @@
 #             N1  ------+
 nodes:
 - name: T1
-  image: docker.io/slankdev/mfplane-trex:develop
+  image: ghcr.io/slankdev/mfplane-trex:branch-main
   #image: nicolaka/netshoot
   docker_run_extra_args: --entrypoint bash
   interfaces:
