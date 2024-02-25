@@ -120,6 +120,9 @@ items:
     - key: {addr6: 2001::1}
       val:
         mac: 52:54:00:ff:00:01
+    - key: {addr6: fe80::5054:ff:feff:4}
+      val:
+        mac: 52:54:00:ff:00:05
 - mapfile: /sys/fs/bpf/xdp/globals/n2_overlay_fib4
   overlay_fib4:
     items:
