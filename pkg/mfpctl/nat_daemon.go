@@ -377,7 +377,6 @@ func writeFile(path string, names []string, counters []ebpf.CounterRender) error
 }
 
 func NewCommandDaemonMetrics() *cobra.Command {
-	var clioptNames []string
 	var clioptDir string
 	var clioptLoglevel int
 	cmd := &cobra.Command{
@@ -403,17 +402,18 @@ func NewCommandDaemonMetrics() *cobra.Command {
 				loop = false
 			}()
 
+			mapfiles, err := getMatchingFiles(mapfileDir, ".*_counter$")
+			if err != nil {
+				log.Error("ERROR", zap.Error(err))
+				return err
+			}
+
 			ticker1s := time.NewTicker(time.Second)
 			for loop {
-				//XXX
-				loop = false
-				//XXX
-
 				select {
 				case <-ticker1s.C:
 					counters := []ebpf.CounterRender{}
-					for _, name := range clioptNames {
-						mapfile := fmt.Sprintf("/sys/fs/bpf/xdp/globals/%s_counter", name)
+					for _, mapfile := range mapfiles {
 						counter := ebpf.CounterRender{}
 						if err := ebpf.Read(mapfile, &counter); err != nil {
 							logger.Error("ebpf.Read", zap.Error(err),
@@ -422,7 +422,7 @@ func NewCommandDaemonMetrics() *cobra.Command {
 						counters = append(counters, counter)
 					}
 					d := fmt.Sprintf("%s/counter.prom.$$", clioptDir)
-					if err := writeFile(d, clioptNames, counters); err != nil {
+					if err := writeFile(d, mapfiles, counters); err != nil {
 						return err
 					}
 					if err := os.Rename(d, fmt.Sprintf("%s/counter.prom",
@@ -436,7 +436,6 @@ func NewCommandDaemonMetrics() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&clioptDir, "dir", "d", "/var/run/mfplane/stats", "")
-	cmd.Flags().StringArrayVarP(&clioptNames, "name", "n", []string{}, "")
 	cmd.Flags().IntVarP(&clioptLoglevel, "log", "l", int(zapcore.InfoLevel),
 		"-1:Debug, 0:Info, 1:Warn: 2:Error")
 	return cmd
