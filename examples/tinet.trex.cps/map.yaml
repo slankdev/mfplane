@@ -93,6 +93,11 @@ items:
           nat_filtering: 0
           sources:
           - prefix: "20.0.0.0/16"
+    - key: {prefix: "fc00:3200::/32"}
+      val:
+        l3xconnect:
+          nexthops:
+          - nh_addr6: fe80::5054:ff:feff:4
     - key: {prefix: "fc00:1101::/32"}
       val:
         l3xconnect:
@@ -124,8 +129,12 @@ items:
 - mapfile: /sys/fs/bpf/xdp/globals/n2_fib6
   fib6:
     items:
-    - key:
-        prefix: "fc00:3200::/32"
+    - key: {prefix: "fc00:3100::/32"}
+      val:
+        l3xconnect:
+          nexthops:
+          - nh_addr6: fe80::5054:ff:feff:3
+    - key: {prefix: "fc00:3200::/32"}
       val:
         end_mfn_n:
           backend_block_index: 0
@@ -166,3 +175,6 @@ items:
         addr6: 2001::1
       val:
         mac: 52:54:00:ff:00:01
+    - key: {addr6: fe80::5054:ff:feff:3}
+      val:
+        mac: 52:54:00:ff:00:04
