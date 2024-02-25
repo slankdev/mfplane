@@ -65,14 +65,14 @@ items:
     - key: {addr6: fe80::5054:ff:feff:3}
       val:
         mac: 52:54:00:ff:00:04
-    - key:
-        addr6: fe80::5054:ff:feff:4
+    - key: {addr6: fe80::5054:ff:feff:4}
       val:
         mac: 52:54:00:ff:00:05
 - mapfile: /sys/fs/bpf/xdp/globals/n1_overlay_fib4
   overlay_fib4:
     items:
-    - {key: {vrf_id: 1, addr: "20.0.0.0"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - key: {vrf_id: 1, addr: "20.0.0.0"}
+      val: {flags: 0, segs: ["fc00:1101::"]}
 - mapfile: /sys/fs/bpf/xdp/globals/n1_fib6
   fib6:
     items:
@@ -120,12 +120,11 @@ items:
     - key: {addr6: 2001::1}
       val:
         mac: 52:54:00:ff:00:01
-
-# KOKO
 - mapfile: /sys/fs/bpf/xdp/globals/n2_overlay_fib4
   overlay_fib4:
     items:
-    - {key: {vrf_id: 1, addr: "20.0.0.0"}, val: {flags: 0, segs: ["fc00:1101::"]}}
+    - key: {vrf_id: 1, addr: "20.0.0.0"}
+      val: {flags: 0, segs: ["fc00:1101::"]}
 - mapfile: /sys/fs/bpf/xdp/globals/n2_fib6
   fib6:
     items:
@@ -167,12 +166,10 @@ items:
 - mapfile: /sys/fs/bpf/xdp/globals/n2_neigh
   neigh:
     items:
-    - key:
-        addr4: 40.0.0.1
+    - key: {addr4: 40.0.0.1}
       val:
         mac: 52:54:00:ff:00:02
-    - key:
-        addr6: 2001::1
+    - key: {addr6: 2001::1}
       val:
         mac: 52:54:00:ff:00:01
     - key: {addr6: fe80::5054:ff:feff:3}
