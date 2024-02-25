@@ -44,6 +44,7 @@ nodes:
   - { name: hv2, type: direct, args: HV2#net0 }
   - { name: l1 , type: direct, args: L1#net0 }
   - { name: n1 , type: direct, args: N1#net0 }
+  - { name: n2 , type: direct, args: N2#net0 }
   sysctls: []
 - name: L1
   image: ghcr.io/slankdev/mfplane-mfpctl:branch-main
@@ -59,6 +60,15 @@ nodes:
   docker_run_extra_args: --entrypoint bash
   interfaces:
   - { name: net0, type: direct, args: BR#n1 }
+  sysctls:
+  - sysctl: net.ipv4.ip_forward=1
+  - sysctl: net.ipv6.conf.all.disable_ipv6=0
+  - sysctl: net.ipv6.conf.default.disable_ipv6=0
+- name: N2
+  image: ghcr.io/slankdev/mfplane-mfpctl:branch-main
+  docker_run_extra_args: --entrypoint bash
+  interfaces:
+  - { name: net0, type: direct, args: BR#n2 }
   sysctls:
   - sysctl: net.ipv4.ip_forward=1
   - sysctl: net.ipv6.conf.all.disable_ipv6=0
@@ -100,6 +110,7 @@ node_configs:
   - cmd: ip link set hv2 master br0
   - cmd: ip link set l1 master br0
   - cmd: ip link set n1 master br0
+  - cmd: ip link set n2 master br0
 - name: HV1
   cmds:
   - cmd: ip link set net0 down
@@ -121,6 +132,11 @@ node_configs:
   cmds:
   - cmd: ip link set net0 down
   - cmd: ip link set net0 address 52:54:00:ff:00:04
+  - cmd: ip link set net0 up
+- name: N2
+  cmds:
+  - cmd: ip link set net0 down
+  - cmd: ip link set net0 address 52:54:00:ff:00:05
   - cmd: ip link set net0 up
 
 postinit:
@@ -185,3 +201,4 @@ postinit:
   - cmd: mkdir -p /var/run/netns
   - cmd: ln -s /proc/$(docker inspect L1 -f {{.State.Pid}})/ns/net /var/run/netns/L1
   - cmd: ln -s /proc/$(docker inspect N1 -f {{.State.Pid}})/ns/net /var/run/netns/N1
+  - cmd: ln -s /proc/$(docker inspect N2 -f {{.State.Pid}})/ns/net /var/run/netns/N2
