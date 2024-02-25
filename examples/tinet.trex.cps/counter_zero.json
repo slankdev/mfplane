@@ -1,0 +1,133 @@
+{
+  "items": [
+    {
+      "mapfile": "/sys/fs/bpf/xdp/globals/l1_counter",
+      "counter": {
+        "items": [
+          {
+            "key": {
+              "index": 0
+            },
+            "val": {
+              "XdpActionTxPkts": 0,
+              "XdpActionTxBytes": 0,
+              "XdpActionDropPkts": 0,
+              "XdpActionDropBytes": 0,
+              "XdpActionAbortPkts": 0,
+              "XdpActionAbortBytes": 0,
+              "XdpActionPassPkts": 0,
+              "XdpActionPassBytes": 0,
+              "MfRedirectPkts": 0,
+              "MfRedirectBytes": 0,
+              "MfRedirectOutPkts": 0,
+              "MfRedirectRetPkts": 0,
+              "Fib4Miss": 0,
+              "Fib6Miss": 0,
+              "NeighMiss": 0,
+              "NatOutMiss": 0,
+              "NatRetMiss": 0,
+              "NatEndpointIndependentMappingConflict": 0,
+              "NatReuseClosedSession": 0,
+              "NatMapUpdateFailed": 0,
+              "PerfEventFailed": 0,
+              "NatSessionCreate": 0,
+              "NatSessionDelete": 0,
+              "NatOutTimerCall": 0,
+              "NatOutTimerWalk": 0,
+              "NatOutTimerWalkClean": 0,
+              "NatRetTimerCall": 0,
+              "NatRetTimerWalk": 0,
+              "NatRetTimerWalkClean": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "mapfile": "/sys/fs/bpf/xdp/globals/n1_counter",
+      "counter": {
+        "items": [
+          {
+            "key": {
+              "index": 0
+            },
+            "val": {
+              "XdpActionTxPkts": 0,
+              "XdpActionTxBytes": 0,
+              "XdpActionDropPkts": 0,
+              "XdpActionDropBytes": 0,
+              "XdpActionAbortPkts": 0,
+              "XdpActionAbortBytes": 0,
+              "XdpActionPassPkts": 6,
+              "XdpActionPassBytes": 0,
+              "MfRedirectPkts": 0,
+              "MfRedirectBytes": 0,
+              "MfRedirectOutPkts": 0,
+              "MfRedirectRetPkts": 0,
+              "Fib4Miss": 0,
+              "Fib6Miss": 0,
+              "NeighMiss": 0,
+              "NatOutMiss": 0,
+              "NatRetMiss": 0,
+              "NatEndpointIndependentMappingConflict": 0,
+              "NatReuseClosedSession": 0,
+              "NatMapUpdateFailed": 0,
+              "PerfEventFailed": 0,
+              "NatSessionCreate": 0,
+              "NatSessionDelete": 0,
+              "NatOutTimerCall": 0,
+              "NatOutTimerWalk": 0,
+              "NatOutTimerWalkClean": 0,
+              "NatRetTimerCall": 0,
+              "NatRetTimerWalk": 0,
+              "NatRetTimerWalkClean": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "mapfile": "/sys/fs/bpf/xdp/globals/n2_counter",
+      "counter": {
+        "items": [
+          {
+            "key": {
+              "index": 0
+            },
+            "val": {
+              "XdpActionTxPkts": 0,
+              "XdpActionTxBytes": 0,
+              "XdpActionDropPkts": 0,
+              "XdpActionDropBytes": 0,
+              "XdpActionAbortPkts": 0,
+              "XdpActionAbortBytes": 0,
+              "XdpActionPassPkts": 0,
+              "XdpActionPassBytes": 0,
+              "MfRedirectPkts": 0,
+              "MfRedirectBytes": 0,
+              "MfRedirectOutPkts": 0,
+              "MfRedirectRetPkts": 0,
+              "Fib4Miss": 0,
+              "Fib6Miss": 0,
+              "NeighMiss": 0,
+              "NatOutMiss": 0,
+              "NatRetMiss": 0,
+              "NatEndpointIndependentMappingConflict": 0,
+              "NatReuseClosedSession": 0,
+              "NatMapUpdateFailed": 0,
+              "PerfEventFailed": 0,
+              "NatSessionCreate": 0,
+              "NatSessionDelete": 0,
+              "NatOutTimerCall": 0,
+              "NatOutTimerWalk": 0,
+              "NatOutTimerWalkClean": 0,
+              "NatRetTimerCall": 0,
+              "NatRetTimerWalk": 0,
+              "NatRetTimerWalkClean": 0
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
