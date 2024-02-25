@@ -195,10 +195,12 @@ postinit:
       EOF
   - cmd: docker exec HV1 mkdir -p /etc/vpp
   - cmd: docker exec HV2 mkdir -p /etc/vpp
+  - cmd: docker exec T1 mkdir -p /opt/trex
   - cmd: docker cp /tmp/t1_cfg.yaml  T1:/opt/trex/cfg.yaml
   - cmd: docker cp /tmp/hv1_exec.vpp HV1:/etc/vpp/exec.vpp
   - cmd: docker cp /tmp/hv2_exec.vpp HV2:/etc/vpp/exec.vpp
   - cmd: mkdir -p /var/run/netns
+  - cmd: ln -s /proc/$(docker inspect BR -f {{.State.Pid}})/ns/net /var/run/netns/BR
   - cmd: ln -s /proc/$(docker inspect L1 -f {{.State.Pid}})/ns/net /var/run/netns/L1
   - cmd: ln -s /proc/$(docker inspect N1 -f {{.State.Pid}})/ns/net /var/run/netns/N1
   - cmd: ln -s /proc/$(docker inspect N2 -f {{.State.Pid}})/ns/net /var/run/netns/N2
