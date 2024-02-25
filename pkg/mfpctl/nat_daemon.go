@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -24,6 +25,7 @@ func NewCommandDaemon() *cobra.Command {
 		Use: "daemon",
 	}
 	cmd.AddCommand(NewCommandDaemonNat())
+	cmd.AddCommand(NewCommandDaemonMetrics())
 	return cmd
 }
 
@@ -352,4 +354,90 @@ func mainDeamonNat() {
 	for loop {
 		time.Sleep(time.Second)
 	}
+}
+
+func writeFile(path string, names []string, counters []ebpf.CounterRender) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	for idx := range counters {
+		n := names[idx]
+		v := counters[idx].Items[0].Val
+		rv := reflect.ValueOf(v)
+		rt := rv.Type()
+		for i := 0; i < rt.NumField(); i++ {
+			field := rt.Field(i)
+			fmt.Fprintf(f, "counter{name=\"%s\",counter=\"%s\"} %v\n", n,
+				field.Name, rv.FieldByName(field.Name))
+		}
+	}
+	return nil
+}
+
+func NewCommandDaemonMetrics() *cobra.Command {
+	var clioptNames []string
+	var clioptDir string
+	var clioptLoglevel int
+	cmd := &cobra.Command{
+		Use: "metrics",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg := zap.NewProductionConfig()
+			cfg.Level = zap.NewAtomicLevelAt(zapcore.Level(clioptLoglevel))
+			logger, err := cfg.Build()
+			if err != nil {
+				return err
+			}
+
+			if err := os.MkdirAll(clioptDir, os.ModePerm); err != nil {
+				return err
+			}
+
+			// Loop stopper
+			loop := true
+			quit := make(chan os.Signal, 10)
+			signal.Notify(quit, os.Interrupt)
+			go func() {
+				<-quit
+				loop = false
+			}()
+
+			ticker1s := time.NewTicker(time.Second)
+			for loop {
+				//XXX
+				loop = false
+				//XXX
+
+				select {
+				case <-ticker1s.C:
+					counters := []ebpf.CounterRender{}
+					for _, name := range clioptNames {
+						mapfile := fmt.Sprintf("/sys/fs/bpf/xdp/globals/%s_counter", name)
+						counter := ebpf.CounterRender{}
+						if err := ebpf.Read(mapfile, &counter); err != nil {
+							logger.Error("ebpf.Read", zap.Error(err),
+								zap.String("mapfile", mapfile))
+						}
+						counters = append(counters, counter)
+					}
+					d := fmt.Sprintf("%s/counter.prom.$$", clioptDir)
+					if err := writeFile(d, clioptNames, counters); err != nil {
+						return err
+					}
+					if err := os.Rename(d, fmt.Sprintf("%s/counter.prom",
+						clioptDir)); err != nil {
+						return err
+					}
+				}
+			}
+
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&clioptDir, "dir", "d", "/var/run/mfplane/stats", "")
+	cmd.Flags().StringArrayVarP(&clioptNames, "name", "n", []string{}, "")
+	cmd.Flags().IntVarP(&clioptLoglevel, "log", "l", int(zapcore.InfoLevel),
+		"-1:Debug, 0:Info, 1:Warn: 2:Error")
+	return cmd
 }
