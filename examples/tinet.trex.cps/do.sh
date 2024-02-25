@@ -12,6 +12,8 @@ sudo mfpctl bpf xdp attach common \
   --define ENABLE_NAT_TCP_RST_CACHE_CLEAR \
   --define DEBUG_FUNCTION_CALL_ \
   --define DEBUG_MF_REDIRECT_PACKET_RECORD \
+  --define NAT_TIMEOUT_SECOND_TCP_ESTB=180 \
+  --define NAT_TIMEOUT_SECOND_TCP_CLOSING=10 \
   #END
 sudo mfpctl bpf xdp attach common \
   --netns N2 --interface net0 --name n2 -v -f \
@@ -22,5 +24,7 @@ sudo mfpctl bpf xdp attach common \
   --define ENABLE_NAT_TCP_RST_CACHE_CLEAR \
   --define DEBUG_FUNCTION_CALL_ \
   --define DEBUG_MF_REDIRECT_PACKET_RECORD \
+  --define NAT_TIMEOUT_SECOND_TCP_ESTB=180 \
+  --define NAT_TIMEOUT_SECOND_TCP_CLOSING=10 \
   #END
 sudo mfpctl bpf map set-auto -f map.yaml
