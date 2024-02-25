@@ -62,8 +62,7 @@ items:
 - mapfile: /sys/fs/bpf/xdp/globals/l1_neigh
   neigh:
     items:
-    - key:
-        addr6: fe80::5054:ff:feff:3
+    - key: {addr6: fe80::5054:ff:feff:3}
       val:
         mac: 52:54:00:ff:00:04
     - key:
@@ -77,8 +76,7 @@ items:
 - mapfile: /sys/fs/bpf/xdp/globals/n1_fib6
   fib6:
     items:
-    - key:
-        prefix: "fc00:3100::/32"
+    - key: {prefix: "fc00:3100::/32"}
       val:
         end_mfn_n:
           backend_block_index: 0
@@ -111,14 +109,13 @@ items:
 - mapfile: /sys/fs/bpf/xdp/globals/n1_neigh
   neigh:
     items:
-    - key:
-        addr4: 40.0.0.1
+    - key: {addr4: 40.0.0.1}
       val:
         mac: 52:54:00:ff:00:02
-    - key:
-        addr6: 2001::1
+    - key: {addr6: 2001::1}
       val:
         mac: 52:54:00:ff:00:01
+
 # KOKO
 - mapfile: /sys/fs/bpf/xdp/globals/n2_overlay_fib4
   overlay_fib4:
