@@ -9,6 +9,19 @@ import sys
 import time
 
 
+def conv(f, m, prefix):
+    if isinstance(m, dict):
+        for key in m:
+            conv(f, m[key], f"{prefix}.{key}")
+    elif isinstance(m, list):
+        raise "ValueError"
+    elif isinstance(m, int) or \
+         isinstance(m, float):
+        f.write(f"counter{{key=\"{prefix}\"}} {m}\n")
+    else:
+        raise ValueError
+
+
 class Prof1():
     def create_profile(self, cps, test_type, datas, datasize, send_time, recv_time):
         data = b"\0" * datasize
@@ -77,44 +90,17 @@ c.clear_stats()
 c.start(mult=args.mult, duration=args.duration)
 print("started")
 
-def dig(d, keys):
-    for key in keys:
-        d = d.get(key, None)
-        if d is None:
-            return 0
-            break
-    return d
-
 try:
     os.makedirs(args.metrics, exist_ok=True)
-    sv_tcps_connects = 0
-    cl_tcps_connects = 0
-    last_sv_tcps_connects = 0
-    last_cl_tcps_connects = 0
     while True:
         stats = c.get_stats()
-        last_sv_tcps_connects = sv_tcps_connects
-        last_cl_tcps_connects = cl_tcps_connects
-        cl_tcps_connects = dig(stats, ["traffic", "client", "tcps_connects"])
-        sv_tcps_connects = dig(stats, ["traffic", "server", "tcps_connects"])
-        rate_sv_tcps_connects = sv_tcps_connects - last_sv_tcps_connects
-        rate_cl_tcps_connects = cl_tcps_connects - last_cl_tcps_connects
-        print("global.tx_cps: {}".format(stats.get("global", {}).get("tx_cps", {})))
-        print("global.cpu_util: {}".format(stats.get("global", {}).get("cpu_util", {})))
-        print("global.rx_drop_bps: {}".format(stats.get("global", {}).get("rx_drop_bps", {})))
-        print("traffic.client.tcps_connattempt: {}".format(dig(stats, ["traffic", "client", "tcps_connattempt"])))
-        print("traffic.client.tcps_connects: {}".format(dig(stats, ["traffic", "client", "tcps_connects"])))
-        print("traffic.server.tcps_connects: {}".format(dig(stats, ["traffic", "server", "tcps_connects"])))
-        print("rate traffic.client.tcps_connects: {}".format(rate_cl_tcps_connects))
-        print("rate traffic.server.tcps_connects: {}".format(rate_sv_tcps_connects))
-        print("---")
-        print(json.dumps(stats))
+        start = time.time()
         with open(f"{args.metrics}/counters.prom.$$", "w") as f:
-            # for key in stats:
-            # KOKOK
-            f.write("counter{hoge=\"fuga\"} 1\n")
+            conv(f, stats, "")
+        diff = time.time() - start
         os.rename(f"{args.metrics}/counters.prom.$$",
                   f"{args.metrics}/counters.prom")
+        print(f"metrics files updated ({diff} sec)")
         time.sleep(1)
 except KeyboardInterrupt:
     c.stop()
