@@ -1,0 +1,9 @@
+targets:
+- name: clientTcpConnectRate
+  command: >
+    sudo docker exec T1 cat /var/run/trex/metrics/counters.prom
+    | grep traffic.client.tcps_connects | awk '{print $2}'
+- name: serverTcpConnectRate
+  command: >
+    sudo docker exec T1 cat /var/run/trex/metrics/counters.prom
+    | grep traffic.server.tcps_connects | awk '{print $2}'

@@ -1,0 +1,12 @@
+kind: auto
+items:
+- mapfile: /sys/fs/bpf/xdp/globals/l1_lb_backend
+  lb_backend:
+    items:
+    - {key: {index:  0}, val: {addr: "fc00:3100:3200:0000:0000:0000:0000:0000"}}
+    - {key: {index:  1}, val: {addr: "fc00:3100:3200:0000:0000:0000:0000:0000"}}
+    - {key: {index:  2}, val: {addr: "fc00:3100:3200:0000:0000:0000:0000:0000"}}
+    - {key: {index:  3}, val: {addr: "fc00:3100:3200:0000:0000:0000:0000:0000"}}
+    - {key: {index:  4}, val: {addr: "fc00:3100:3200:0000:0000:0000:0000:0000"}}
+    - {key: {index:  5}, val: {addr: "fc00:3100:3200:0000:0000:0000:0000:0000"}}
+    - {key: {index:  6}, val: {addr: "fc00:3100:3200:0000:0000:0000:0000:0000"}}

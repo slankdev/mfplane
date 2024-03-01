@@ -81,7 +81,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -101,6 +102,7 @@
         "y": 1
       },
       "id": 2,
+      "interval": "1",
       "options": {
         "legend": {
           "calcs": [],
@@ -176,7 +178,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -196,6 +199,7 @@
         "y": 1
       },
       "id": 4,
+      "interval": "1",
       "options": {
         "legend": {
           "calcs": [],
@@ -271,7 +275,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -291,6 +296,7 @@
         "y": 6
       },
       "id": 5,
+      "interval": "1",
       "options": {
         "legend": {
           "calcs": [],
@@ -366,7 +372,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -386,6 +393,7 @@
         "y": 6
       },
       "id": 6,
+      "interval": "1",
       "options": {
         "legend": {
           "calcs": [],
@@ -461,7 +469,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -481,6 +490,7 @@
         "y": 11
       },
       "id": 7,
+      "interval": "1",
       "options": {
         "legend": {
           "calcs": [],
@@ -556,7 +566,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -601,6 +612,7 @@
         "y": 11
       },
       "id": 8,
+      "interval": "1",
       "options": {
         "legend": {
           "calcs": [],
@@ -629,19 +641,230 @@
       ],
       "title": "irate TX-Drop PPS (eno12399)",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 11,
+      "panels": [],
+      "title": "MF-Plane Stats",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "cps",
+          "unitScale": true
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 12,
+      "interval": "1",
+      "maxPerRow": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Name",
+          "sortDesc": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "repeat": "Metrics",
+      "repeatDirection": "h",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "irate($Metrics[1m])",
+          "instant": false,
+          "legendFormat": "{{instance}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "$Metrics ",
+      "type": "timeseries"
     }
   ],
   "refresh": "1s",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 2,
+        "includeAll": true,
+        "label": "",
+        "multi": true,
+        "name": "Metrics",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "XdpActionTxPkts",
+            "value": "XdpActionTxPkts"
+          },
+          {
+            "selected": false,
+            "text": "XdpActionDropPkts",
+            "value": "XdpActionDropPkts"
+          },
+          {
+            "selected": false,
+            "text": "XdpActionAbortPkts",
+            "value": "XdpActionAbortPkts"
+          },
+          {
+            "selected": false,
+            "text": "XdpActionPassPkts",
+            "value": "XdpActionPassPkts"
+          },
+          {
+            "selected": false,
+            "text": "NatOutTimerWalk",
+            "value": "NatOutTimerWalk"
+          },
+          {
+            "selected": false,
+            "text": "NatRetTimerWalk",
+            "value": "NatRetTimerWalk"
+          },
+          {
+            "selected": false,
+            "text": "NatOutTimerWalkClean",
+            "value": "NatOutTimerWalkClean"
+          },
+          {
+            "selected": false,
+            "text": "NatRetTimerWalkClean",
+            "value": "NatRetTimerWalkClean"
+          },
+          {
+            "selected": false,
+            "text": "NatSessionCreate",
+            "value": "NatSessionCreate"
+          },
+          {
+            "selected": false,
+            "text": "NatSessionDelete",
+            "value": "NatSessionDelete"
+          },
+          {
+            "selected": false,
+            "text": "NatReuseClosedSession",
+            "value": "NatReuseClosedSession"
+          },
+          {
+            "selected": false,
+            "text": "NatEndpointIndependentMappingConflict",
+            "value": "NatEndpointIndependentMappingConflict"
+          },
+          {
+            "selected": false,
+            "text": "MfRedirectOutPkts",
+            "value": "MfRedirectOutPkts"
+          },
+          {
+            "selected": false,
+            "text": "MfRedirectRetPkts",
+            "value": "MfRedirectRetPkts"
+          }
+        ],
+        "query": "XdpActionTxPkts, XdpActionDropPkts, XdpActionAbortPkts, XdpActionPassPkts, NatOutTimerWalk, NatRetTimerWalk, NatOutTimerWalkClean, NatRetTimerWalkClean, NatSessionCreate, NatSessionDelete, NatReuseClosedSession, NatEndpointIndependentMappingConflict, MfRedirectOutPkts, MfRedirectRetPkts",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-3m",
     "to": "now"
   },
-	"timepicker": {
+  "timepicker": {
     "refresh_intervals": [
       "100ms",
       "1s",
@@ -654,6 +877,5 @@
   },
   "timezone": "",
   "title": "Main",
-  "uid": "11111111-1111-1111-1111-111111111111",
   "weekStart": ""
 }

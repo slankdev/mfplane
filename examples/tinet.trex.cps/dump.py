@@ -11,13 +11,14 @@ def executeGetJson(cmd):
         universal_newlines=True).strip())
 
 
-def convert(direction, item):
+def convert(name, direction, item):
     state = "opening"
     if item["val"]["flags"]["tcp_state_closing"]:
         state = "closing"
     elif item["val"]["flags"]["tcp_state_establish"]:
         state = "estb"
     return {
+        "name": name,
         "dir": direction,
         "match": "{}:{}:{}".format(item["key"]["proto"],
                                    item["key"]["addr"],
@@ -31,13 +32,14 @@ def convert(direction, item):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-n', '--name', default="n1")
+parser.add_argument('-n', '--name', nargs="*", type=str, default=["n1"])
 args = parser.parse_args()
 data = []
-for item in executeGetJson(
-    f"sudo mfpctl bpf map inspect nat_out -n {args.name}")["items"]:
-    data.append(convert("out", item))
-for item in executeGetJson(
-    f"sudo mfpctl bpf map inspect nat_ret -n {args.name}")["items"]:
-    data.append(convert("ret", item))
+for name in args.name:
+    for item in executeGetJson(
+        f"sudo mfpctl bpf map inspect nat_out -n {name}")["items"]:
+        data.append(convert(name, "out", item))
+    for item in executeGetJson(
+        f"sudo mfpctl bpf map inspect nat_ret -n {name}")["items"]:
+        data.append(convert(name, "ret", item))
 print(tabulate.tabulate(data, headers='keys'))

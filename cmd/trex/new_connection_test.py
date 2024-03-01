@@ -9,18 +9,38 @@ import sys
 import time
 
 
+def conv(f, m, prefix):
+    if isinstance(m, dict):
+        for key in m:
+            conv(f, m[key], f"{prefix}.{key}")
+    elif isinstance(m, list):
+        raise "ValueError"
+    elif isinstance(m, int) or \
+         isinstance(m, float):
+        f.write(f"counter{{key=\"{prefix}\"}} {m}\n")
+    else:
+        raise ValueError
+
+
 class Prof1():
-    def create_profile(self, cps, test_type, datas, datasize):
+    def create_profile(self, cps, test_type, datas, datasize, send_time, recv_time):
         data = b"\0" * datasize
         prog_c = ASTFProgram()
         prog_c.connect()
+        prog_c.set_tick_var("var1")
+        prog_c.set_label("a:")
         for i in range(datas):
             prog_c.send(data)
+        prog_c.jmp_dp("var1", "a:", send_time)
         if test_type == "connectreset":
             prog_c.reset()
+
         prog_s = ASTFProgram()
+        prog_s.set_tick_var("var2")
+        prog_s.set_label("b:")
         for i in range(datas):
             prog_s.recv(len(data), True)
+        prog_s.jmp_dp("var2", "b:", recv_time)
         prog_s.wait_for_peer_close()
 
         # ip generator
@@ -49,11 +69,15 @@ class Prof1():
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--cps', "-c", default=1, type=float)
 parser.add_argument('--mult', "-m", default=1, type=int)
 parser.add_argument('--duration', "-d", default=3600, type=int)
 parser.add_argument('--test', "-t", choices=['connectreset', 'connect'], required=True)
 parser.add_argument('--datas', "-D", default=0, type=int)
 parser.add_argument('--size', "-s", default=1, type=int)
+parser.add_argument('--send-time', default=0, type=int)
+parser.add_argument('--recv-time', default=0, type=int)
+parser.add_argument('--metrics', default="/var/run/trex/metrics", type=str)
 args = parser.parse_args()
 
 c = ASTFClient()
@@ -61,41 +85,22 @@ c.connect()
 c.reset()
 print("astfclient initialized")
 
-c.load_profile(Prof1().create_profile(1, args.test, args.datas, args.size))
+c.load_profile(Prof1().create_profile(args.cps, args.test, args.datas, args.size, args.send_time, args.recv_time))
 c.clear_stats()
 c.start(mult=args.mult, duration=args.duration)
 print("started")
 
-def dig(d, keys):
-    for key in keys:
-        d = d.get(key, None)
-        if d is None:
-            return 0
-            break
-    return d
-
 try:
-    sv_tcps_connects = 0
-    cl_tcps_connects = 0
-    last_sv_tcps_connects = 0
-    last_cl_tcps_connects = 0
+    os.makedirs(args.metrics, exist_ok=True)
     while True:
         stats = c.get_stats()
-        last_sv_tcps_connects = sv_tcps_connects
-        last_cl_tcps_connects = cl_tcps_connects
-        cl_tcps_connects = dig(stats, ["traffic", "client", "tcps_connects"])
-        sv_tcps_connects = dig(stats, ["traffic", "server", "tcps_connects"])
-        rate_sv_tcps_connects = sv_tcps_connects - last_sv_tcps_connects
-        rate_cl_tcps_connects = cl_tcps_connects - last_cl_tcps_connects
-        print("global.tx_cps: {}".format(stats.get("global", {}).get("tx_cps", {})))
-        print("global.cpu_util: {}".format(stats.get("global", {}).get("cpu_util", {})))
-        print("global.rx_drop_bps: {}".format(stats.get("global", {}).get("rx_drop_bps", {})))
-        print("traffic.client.tcps_connattempt: {}".format(dig(stats, ["traffic", "client", "tcps_connattempt"])))
-        print("traffic.client.tcps_connects: {}".format(dig(stats, ["traffic", "client", "tcps_connects"])))
-        print("traffic.server.tcps_connects: {}".format(dig(stats, ["traffic", "server", "tcps_connects"])))
-        print("rate traffic.client.tcps_connects: {}".format(rate_cl_tcps_connects))
-        print("rate traffic.server.tcps_connects: {}".format(rate_sv_tcps_connects))
-        print("---")
+        start = time.time()
+        with open(f"{args.metrics}/counters.prom.$$", "w") as f:
+            conv(f, stats, "")
+        diff = time.time() - start
+        os.rename(f"{args.metrics}/counters.prom.$$",
+                  f"{args.metrics}/counters.prom")
+        print(f"metrics files updated ({diff} sec)")
         time.sleep(1)
 except KeyboardInterrupt:
     c.stop()
