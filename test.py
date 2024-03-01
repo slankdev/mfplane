@@ -7,16 +7,18 @@ import time
 import json
 
 
-stats = {}
-with open('in.json') as f:
-    stats = json.load(f)
+def conv(m, prefix):
+    if isinstance(m, dict):
+        for key in m:
+            conv(m[key], f"{prefix}.{key}")
+    elif isinstance(m, list):
+        raise "ValueError"
+    elif isinstance(m, int) or \
+         isinstance(m, float):
+        print(f"{prefix} {m}")
+    else:
+        raise ValueError
 
-pprint.pprint(stats)
-# class Prof1():
-#     def create_profile(self, cps, test_type, datas, datasize, send_time, recv_time):
-#         data = b"\0" * datasize
-#         prog_c = ASTFProgram()
-#         prog_c.connect()
-#         prog_c.set_tick_var("var1")
-#         prog_c.set_label("a:")
-#         for i in range(datas):
+
+stats = json.load(open('in.json'))
+conv(stats, "")
