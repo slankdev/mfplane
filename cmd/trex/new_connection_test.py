@@ -64,6 +64,7 @@ parser.add_argument('--datas', "-D", default=0, type=int)
 parser.add_argument('--size', "-s", default=1, type=int)
 parser.add_argument('--send-time', default=0, type=int)
 parser.add_argument('--recv-time', default=0, type=int)
+parser.add_argument('--metrics', default="/var/run/trex/metrics", type=str)
 args = parser.parse_args()
 
 c = ASTFClient()
@@ -85,6 +86,7 @@ def dig(d, keys):
     return d
 
 try:
+    os.makedirs(args.metrics, exist_ok=True)
     sv_tcps_connects = 0
     cl_tcps_connects = 0
     last_sv_tcps_connects = 0
@@ -106,6 +108,13 @@ try:
         print("rate traffic.client.tcps_connects: {}".format(rate_cl_tcps_connects))
         print("rate traffic.server.tcps_connects: {}".format(rate_sv_tcps_connects))
         print("---")
+        print(json.dumps(stats))
+        with open(f"{args.metrics}/counters.prom.$$", "w") as f:
+            # for key in stats:
+            # KOKOK
+            f.write("counter{hoge=\"fuga\"} 1\n")
+        os.rename(f"{args.metrics}/counters.prom.$$",
+                  f"{args.metrics}/counters.prom")
         time.sleep(1)
 except KeyboardInterrupt:
     c.stop()
