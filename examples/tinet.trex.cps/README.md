@@ -8,9 +8,7 @@ docker exec -it -w /opt/trex/automation/trex_control_plane/interactive/trex/exam
 
 ```
 docker run --rm -it --net container:HV1 nicolaka/netshoot tcpdump -qtnni any
-```
-
-```
+docker run --rm -it --net container:T1 nicolaka/netshoot tcpdump -tnni net0 ip
 docker exec -it T1 ip netns exec ns1 nc -nvl 9999
 docker exec -it T1 ip netns exec ns0 nc -vs 20.0.0.1 30.0.0.1 9999
 ```
