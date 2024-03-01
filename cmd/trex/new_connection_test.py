@@ -10,17 +10,24 @@ import time
 
 
 class Prof1():
-    def create_profile(self, cps, test_type, datas, datasize):
+    def create_profile(self, cps, test_type, datas, datasize, send_time, recv_time):
         data = b"\0" * datasize
         prog_c = ASTFProgram()
         prog_c.connect()
+        prog_c.set_tick_var("var1")
+        prog_c.set_label("a:")
         for i in range(datas):
             prog_c.send(data)
+        prog_c.jmp_dp("var1", "a:", send_time)
         if test_type == "connectreset":
             prog_c.reset()
+
         prog_s = ASTFProgram()
+        prog_s.set_tick_var("var2")
+        prog_s.set_label("b:")
         for i in range(datas):
             prog_s.recv(len(data), True)
+        prog_s.jmp_dp("var2", "b:", recv_time)
         prog_s.wait_for_peer_close()
 
         # ip generator
@@ -54,6 +61,8 @@ parser.add_argument('--duration', "-d", default=3600, type=int)
 parser.add_argument('--test', "-t", choices=['connectreset', 'connect'], required=True)
 parser.add_argument('--datas', "-D", default=0, type=int)
 parser.add_argument('--size', "-s", default=1, type=int)
+parser.add_argument('--send-time', default=0, type=int)
+parser.add_argument('--recv-time', default=0, type=int)
 args = parser.parse_args()
 
 c = ASTFClient()
@@ -61,7 +70,7 @@ c.connect()
 c.reset()
 print("astfclient initialized")
 
-c.load_profile(Prof1().create_profile(1, args.test, args.datas, args.size))
+c.load_profile(Prof1().create_profile(1, args.test, args.datas, args.size, args.send_time, args.recv_time))
 c.clear_stats()
 c.start(mult=args.mult, duration=args.duration)
 print("started")
