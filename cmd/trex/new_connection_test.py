@@ -56,6 +56,7 @@ class Prof1():
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--cps', "-c", default=1, type=float)
 parser.add_argument('--mult', "-m", default=1, type=int)
 parser.add_argument('--duration', "-d", default=3600, type=int)
 parser.add_argument('--test', "-t", choices=['connectreset', 'connect'], required=True)
@@ -70,7 +71,7 @@ c.connect()
 c.reset()
 print("astfclient initialized")
 
-c.load_profile(Prof1().create_profile(1, args.test, args.datas, args.size, args.send_time, args.recv_time))
+c.load_profile(Prof1().create_profile(args.cps, args.test, args.datas, args.size, args.send_time, args.recv_time))
 c.clear_stats()
 c.start(mult=args.mult, duration=args.duration)
 print("started")
